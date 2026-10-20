@@ -3,6 +3,9 @@
 
 Inspirado en la arquitectura del **Agente COD** (`dropshipping-cod-agent`), este sistema convierte el generador de documentos en una **aplicación web moderna, autónoma y multi-usuario** con backend en **FastAPI (Python)** y frontend reactivo en tiempo real mediante **Server-Sent Events (Streaming)** conectado a **Google Gemini**.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/juancamilocoronelbernal-debug/el-memorialista-juridico)
+
+
 ---
 
 ## 🌟 Características Principales
