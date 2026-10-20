@@ -1,0 +1,1645 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>El Memorialista - Generador Jurídico con IA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
+<link id="fuenteHojaCss" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<style>
+:root{
+  --mesa:#ebe9f0;
+  --superficie:#fcfbfe;
+  --superficie-2:#f3f1f7;
+  --tinta:#1c1926;
+  --tinta-2:#5d596c;
+  --tinta-3:#807c90;
+  --regla:#dcd8e5;
+  --regla-fuerte:#bab4c9;
+  --sello:#4a32a6;
+  --sello-hover:#3a2589;
+  --sello-tenue:#ece7fc;
+  --sello-sobre:#ffffff;
+  --chip-c:#fff1b0;
+  --chip-c-tinta:#5b4800;
+  --chip-v:#ffe2c9;
+  --chip-v-tinta:#843800;
+  --ok:#1b7a4b;
+  --error:#b3261e;
+  --error-tenue:#fdecea;
+  --hoja:#ffffff;
+  --hoja-tinta:#141414;
+  --hoja-gris:#5f5f5f;
+  --marca-c:#fff1a8;
+  --marca-v:#ffe1c7;
+  --marca-v-tinta:#7a3300;
+  --sombra-hoja:0 1px 2px rgba(28,25,38,.08),0 10px 30px rgba(28,25,38,.12);
+  --sombra-flota:0 6px 24px rgba(28,25,38,.18);
+  --f-ui:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-maq:"Courier Prime","Courier New",Courier,monospace;
+  --r:5px;
+  --barra-h:62px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --mesa:#121019;--superficie:#1b1824;--superficie-2:#24212f;--tinta:#ecebf4;--tinta-2:#a8a4ba;--tinta-3:#8a869c;--regla:#322e3f;--regla-fuerte:#4b4660;
+    --sello:#ab9bff;--sello-hover:#c4b8ff;--sello-tenue:#2b2546;--sello-sobre:#17131f;
+    --chip-c:#4a3f0c;--chip-c-tinta:#ffe48a;--chip-v:#4d2a10;--chip-v-tinta:#ffc29a;
+    --ok:#63d59d;--error:#ff8f86;--error-tenue:#3a1715;
+    --sombra-hoja:0 0 0 1px #2d2a39,0 12px 34px rgba(0,0,0,.55);--sombra-flota:0 8px 28px rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --mesa:#121019;--superficie:#1b1824;--superficie-2:#24212f;--tinta:#ecebf4;--tinta-2:#a8a4ba;--tinta-3:#8a869c;--regla:#322e3f;--regla-fuerte:#4b4660;
+  --sello:#ab9bff;--sello-hover:#c4b8ff;--sello-tenue:#2b2546;--sello-sobre:#17131f;
+  --chip-c:#4a3f0c;--chip-c-tinta:#ffe48a;--chip-v:#4d2a10;--chip-v-tinta:#ffc29a;
+  --ok:#63d59d;--error:#ff8f86;--error-tenue:#3a1715;
+  --sombra-hoja:0 0 0 1px #2d2a39,0 12px 34px rgba(0,0,0,.55);--sombra-flota:0 8px 28px rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--mesa)}
+body{margin:0;color:var(--tinta);font-family:var(--f-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--superficie)}
+h1,h2,h3{text-wrap:balance}
+button{font:inherit}
+.maq{font-family:var(--f-maq)}
+.gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- barra superior ---------- */
+.barra{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--superficie);border-bottom:1px solid var(--regla)}
+.barra-in{display:flex;align-items:center;gap:14px 22px;min-height:62px;padding-block:8px;flex-wrap:wrap}
+.sello{display:inline-flex;flex-direction:column;align-items:center;gap:1px;color:var(--sello);text-decoration:none;border:2px solid currentColor;outline:1px solid currentColor;outline-offset:2px;border-radius:2px;padding:4px 10px 3px;transform:rotate(-2deg);line-height:1.05;flex:none;margin:4px 4px 4px 2px}
+.sello b{font-weight:800;font-stretch:125%;font-size:12.5px;letter-spacing:.16em}
+.sello small{font-family:var(--f-maq);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase}
+.sello:focus-visible{outline-color:var(--sello);outline-width:2px}
+.pestanas{display:flex;gap:3px;background:var(--superficie-2);padding:3px;border-radius:7px;border:1px solid var(--regla);overflow-x:auto;max-width:100%}
+.pestanas button{border:0;background:transparent;cursor:pointer;padding:7px 14px;border-radius:5px;font-weight:600;font-size:14px;color:var(--tinta-2);white-space:nowrap}
+.pestanas button:hover{color:var(--tinta)}
+.pestanas button[aria-selected="true"]{background:var(--superficie);color:var(--tinta);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.pestanas button:focus-visible{outline:2px solid var(--sello);outline-offset:1px}
+.perfil-chip{margin-left:auto;display:inline-flex;align-items:center;gap:9px;border:1px solid var(--regla);background:var(--superficie);color:var(--tinta);border-radius:999px;padding:4px 12px 4px 4px;cursor:pointer;font-size:13.5px;max-width:100%}
+.perfil-chip .ini{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--sello-tenue);color:var(--sello);font-weight:700;font-size:12px;flex:none}
+.perfil-chip .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.perfil-chip.pendiente{border-style:dashed;border-color:var(--regla-fuerte)}
+.perfil-chip:focus-visible{outline:2px solid var(--sello);outline-offset:2px}
+
+/* ---------- controles ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:14px;border-radius:var(--r);padding:8px 13px;border:1px solid var(--regla-fuerte);background:var(--superficie);color:var(--tinta);cursor:pointer;white-space:nowrap;line-height:1.2;text-decoration:none}
+.btn:hover{border-color:var(--tinta-2)}
+.btn.primario{background:var(--sello);border-color:var(--sello);color:var(--sello-sobre)}
+.btn.primario:hover{background:var(--sello-hover);border-color:var(--sello-hover)}
+.btn.fantasma{border-color:transparent;background:transparent;color:var(--tinta-2)}
+.btn.fantasma:hover{color:var(--tinta);background:var(--superficie-2)}
+.btn.peligro{color:var(--error);border-color:var(--error)}
+.btn.grande{padding:12px 18px;font-size:15px}
+.btn.chico{padding:5px 9px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--sello);outline-offset:2px}
+.btn svg{width:16px;height:16px;flex:none}
+.campo{display:grid;gap:6px;min-width:0}
+.campo>label,.campo .etq{font-weight:600;font-size:13.5px}
+.campo .req{color:var(--sello);font-weight:700;margin-left:2px}
+.ayuda{font-size:12.5px;color:var(--tinta-2);margin:0}
+input[type=text],input[type=email],input[type=tel],input[type=number],input[type=search],select,textarea{width:100%;font:inherit;font-size:14.5px;color:var(--tinta);background:var(--superficie);border:1px solid var(--regla-fuerte);border-radius:var(--r);padding:9px 11px;line-height:1.45;min-width:0}
+textarea{resize:vertical;min-height:70px}
+input::placeholder,textarea::placeholder{color:var(--tinta-3)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--sello);outline-offset:-1px;border-color:var(--sello)}
+input.maq{font-family:var(--f-maq);font-size:15px;letter-spacing:.02em}
+.campo.err input,.campo.err textarea,.campo.err .chips{border-color:var(--error);outline-color:var(--error)}
+.msg-err{color:var(--error);font-size:12.5px;margin:0}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
+.check input{margin-top:3px;accent-color:var(--sello);width:16px;height:16px;flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--regla-fuerte);border-radius:4px;padding:5px 10px;font-size:13px;background:var(--superficie);color:var(--tinta);cursor:pointer;line-height:1.3}
+.chip:hover{border-color:var(--tinta-2)}
+.chip[aria-pressed="true"]{background:var(--sello-tenue);border-color:var(--sello);color:var(--tinta);font-weight:600}
+.chip:focus-visible{outline:2px solid var(--sello);outline-offset:1px}
+.chip-otro{display:flex;gap:6px;margin-top:6px}
+.chip-otro input{max-width:260px;padding:6px 9px;font-size:13.5px}
+.leyenda{display:flex;align-items:center;gap:10px;margin:0;font-family:var(--f-maq);font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-2)}
+.leyenda::after{content:"";flex:1;border-bottom:1px dashed var(--regla-fuerte);transform:translateY(-3px)}
+.grupo{display:grid;gap:16px}
+.rejilla{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}
+.rejilla .ancho{grid-column:1/-1}
+@media (max-width:560px){.rejilla{grid-template-columns:1fr}}
+
+/* ---------- vistas ---------- */
+.vista[hidden]{display:none!important}
+.redactar{display:grid;grid-template-columns:minmax(340px,460px) minmax(0,1fr)}
+.col-form{background:var(--superficie);border-right:1px solid var(--regla);height:calc(100dvh - var(--barra-h));overflow:auto;min-width:0}
+.col-hoja{height:calc(100dvh - var(--barra-h));overflow:auto;min-width:0;position:relative}
+.form-in{padding-block:20px 0;display:grid;gap:24px}
+#zonaTipo{display:grid;gap:16px}
+.form-caso{display:grid;gap:30px}
+@media (max-width:999px){
+  .redactar{grid-template-columns:minmax(0,1fr)}
+  .col-form,.col-hoja{height:auto;overflow:visible}
+  .col-form{border-right:0;border-bottom:1px solid var(--regla)}
+  .hoja-barra{position:static}
+}
+@media (max-width:699px){
+  .barra{position:static}
+  .barra-in{gap:10px 12px;min-height:0}
+  .pestanas{order:3;width:100%}
+  .pestanas button{flex:1;padding:7px 8px}
+  .perfil-chip{padding:4px}
+  .perfil-chip .txt{display:none}
+  .sello b{font-size:11.5px}
+  .col-form,.col-hoja{height:auto}
+}
+.intro h1{font-size:21px;font-weight:750;font-stretch:112%;margin:0 0 4px;letter-spacing:-.005em}
+.intro p{margin:0;color:var(--tinta-2);font-size:14px}
+.buscador{position:relative}
+.catalogo{display:grid;gap:18px}
+.cat-grupo h3{font-family:var(--f-maq);font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--tinta-2);margin:0 0 4px;font-weight:700}
+.cat-items{display:grid;gap:1px}
+.cat-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:9px 10px;border-radius:var(--r);cursor:pointer;border:0;background:transparent;color:var(--tinta);text-align:left;width:100%}
+.cat-item:hover{background:var(--superficie-2)}
+.cat-item:focus-visible{outline:2px solid var(--sello);outline-offset:-2px}
+.cat-item .n{font-weight:650;font-size:14.5px}
+.cat-item .nm{font-family:var(--f-maq);font-size:11.5px;color:var(--tinta-3);white-space:nowrap;align-self:center}
+.cat-item .d{grid-column:1/-1;color:var(--tinta-2);font-size:13px}
+@media (max-width:480px){.cat-item{grid-template-columns:1fr}.cat-item .nm{white-space:normal}}
+.tipo-actual{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:start;padding:14px 16px;border:1px solid var(--regla);border-radius:var(--r);background:var(--superficie-2)}
+.tipo-actual .eyebrow{font-family:var(--f-maq);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-3);grid-column:1/-1}
+.tipo-actual h2{margin:0;font-size:19px;font-weight:750;font-stretch:108%}
+.tipo-actual .nm{grid-column:1/-1;font-family:var(--f-maq);font-size:12.5px;color:var(--tinta-2)}
+.tipo-actual .d{grid-column:1/-1;color:var(--tinta-2);font-size:13.5px;margin:0}
+.fila-ejemplo{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.acciones-form{position:sticky;bottom:0;z-index:2;padding-block:16px max(16px,env(safe-area-inset-bottom,0px));background:linear-gradient(to bottom,transparent,var(--superficie) 22%);display:grid;gap:8px;margin-top:4px}
+.acciones-form .btn{width:100%}
+.acciones-form .nota{font-size:12.5px;color:var(--tinta-2);margin:0;text-align:center}
+.aviso{border:1px solid var(--regla);background:var(--superficie-2);border-radius:var(--r);padding:10px 12px;font-size:13.5px;color:var(--tinta-2)}
+.aviso a,.aviso button.enlace{color:var(--sello);font-weight:600}
+button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-size:inherit}
+.vacio{border:1px dashed var(--regla-fuerte);border-radius:var(--r);padding:28px 20px;text-align:center;color:var(--tinta-2)}
+.vacio strong{display:block;color:var(--tinta);font-size:16px;margin-bottom:4px}
+
+/* ---------- hoja ---------- */
+.hoja-barra{position:sticky;top:0;z-index:5;background:var(--mesa);border-bottom:1px solid var(--regla);padding-block:10px;display:grid;gap:10px}
+.hb-fila{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hb-estado{font-family:var(--f-maq);font-size:13px;color:var(--tinta-2);margin-right:auto;display:flex;align-items:center;gap:8px;min-width:0}
+.hb-estado .punto{width:8px;height:8px;border-radius:50%;background:var(--tinta-3);flex:none}
+.hb-estado.vivo .punto{background:var(--sello);animation:latido 1.1s ease-in-out infinite}
+.hb-estado.listo .punto{background:var(--ok)}
+.hb-estado.error .punto{background:var(--error)}
+@keyframes latido{50%{opacity:.25}}
+.verif{display:flex;gap:8px;flex-wrap:wrap}
+.vchip{display:inline-flex;align-items:center;gap:6px;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:600;border:0;cursor:pointer}
+.vchip.c{background:var(--chip-c);color:var(--chip-c-tinta)}
+.vchip.v{background:var(--chip-v);color:var(--chip-v-tinta)}
+.vchip.ok{background:transparent;color:var(--ok);cursor:default;font-weight:600;padding-left:0}
+.vchip:focus-visible{outline:2px solid var(--sello);outline-offset:1px}
+.panel-verif{background:var(--superficie);border:1px solid var(--regla);border-radius:var(--r);padding:12px 14px;display:grid;gap:10px;max-height:32vh;overflow:auto}
+.panel-verif h3{margin:0;font-size:13px;font-family:var(--f-maq);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2)}
+.panel-verif ol{margin:0;padding-left:20px;display:grid;gap:8px}
+.panel-verif li{font-size:13.5px}
+.panel-verif .ctx{color:var(--tinta-2)}
+.panel-verif .acc{display:inline-flex;gap:10px;margin-left:6px}
+.panel-verif a,.panel-verif button.enlace{color:var(--sello);font-weight:600;font-size:13px}
+.panel-verif .nota{font-size:12.5px;color:var(--tinta-2);margin:0}
+.ajuste{display:grid;gap:8px;background:var(--superficie);border:1px solid var(--regla);border-radius:var(--r);padding:12px}
+.ajuste-fila{display:flex;gap:8px;flex-wrap:wrap}
+.ajuste-fila input{flex:1 1 240px}
+.sugerencias{display:flex;gap:6px;flex-wrap:wrap}
+.edicion{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.edicion .sep{width:1px;height:20px;background:var(--regla-fuerte);margin:0 4px}
+.edicion .btn{padding:4px 9px;font-size:13px}
+.mesa-hoja{padding-block:22px 70px;display:flex;justify-content:center;min-width:0}
+.hoja{--hoja-ancho:21.59cm;--hoja-alto:27.94cm;--m-sup:3cm;--m-der:2.5cm;--m-inf:2.5cm;--m-izq:3cm;--hoja-fuente:"Arimo",Arial,sans-serif;--hoja-tam:12pt;--hoja-int:1.725;--hoja-esp:8pt;--hoja-alin:justify;--hoja-tit-alin:center;--hoja-sangria:0cm;--ref-sangria:0cm;--cita-estilo:italic;--memb-color:#1f3a68;
+  position:relative;width:var(--hoja-ancho);min-height:var(--hoja-alto);flex:none;
+  padding:1.25cm var(--m-der) 1.25cm var(--m-izq);background:var(--hoja);color:var(--hoja-tinta);box-shadow:var(--sombra-hoja);
+  display:flex;flex-direction:column;font-family:var(--hoja-fuente);font-size:var(--hoja-tam);line-height:var(--hoja-int)}
+.hoja.lectura{width:100%;min-height:0;padding:22px 18px 26px;font-size:15px;line-height:1.6}
+.hoja.lectura .cuerpo{padding-top:0!important}
+.membrete{line-height:1.2;margin-bottom:.75cm}
+.membrete:empty{display:none}
+.hoja.sin-membrete .cuerpo{padding-top:calc(var(--m-sup) - 1.25cm)}
+.memb-centrado{display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.5pt}
+.memb-logo{display:block;max-height:1.7cm;max-width:6cm;object-fit:contain}
+.memb-centrado .memb-logo{margin-bottom:3pt}
+.memb-nombre{font-weight:700;font-size:15pt;letter-spacing:.06em;text-transform:uppercase;color:var(--memb-color)}
+.memb-sub{font-size:9.5pt;color:var(--hoja-gris)}
+.memb-contacto{font-size:8.5pt;color:var(--hoja-gris)}
+.memb-linea{height:0;border-top:3px double var(--memb-color);margin-top:5pt;width:100%}
+.memb-lateral{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:2pt .5cm}
+.memb-lateral .memb-logo{max-height:2cm;max-width:5cm}
+.memb-lateral .memb-texto{text-align:right;display:grid;gap:1.5pt}
+.memb-lateral.sin-logo{grid-template-columns:minmax(0,1fr)}
+.memb-lateral.sin-logo .memb-texto{text-align:left}
+.memb-lateral .memb-nombre{font-size:14pt;letter-spacing:.03em}
+.memb-lateral .memb-linea{grid-column:1/-1;border-top:1.5px solid var(--memb-color);margin-top:4pt}
+.memb-sobrio{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2pt 1cm;align-items:end}
+.memb-sobrio .memb-nombre{font-size:11.5pt;letter-spacing:.14em}
+.memb-sobrio .der{text-align:right}
+.memb-sobrio .memb-linea{grid-column:1/-1;border-top:.75pt solid #a6a6a6;margin-top:4pt}
+.memb-plantilla{display:grid;gap:3pt;justify-items:center;text-align:center}
+.memb-plantilla img{display:block;max-width:100%;object-fit:contain}
+.memb-plantilla .tx{font-size:9pt;color:var(--hoja-gris)}
+.memb-vacio{color:#a3a3a3}
+.cuerpo{flex:1;outline:none;min-height:3cm}
+.cuerpo>p{margin:0 0 var(--hoja-esp);text-align:var(--hoja-alin);text-indent:var(--hoja-sangria)}
+.cuerpo>p.multi,.cuerpo>p[data-b="ref"]{text-align:left;text-indent:0}
+.cuerpo>p[data-b="h1"]{text-align:center;font-weight:700;margin:12pt 0;font-size:1.08em;text-indent:0}
+.cuerpo>p[data-b="h2"]{text-align:var(--hoja-tit-alin);font-weight:700;margin:12pt 0 6pt;text-indent:0}
+.cuerpo>p[data-b="h3"]{font-weight:700;margin:8pt 0 4pt;text-indent:0;text-align:left}
+.hoja.mayus .cuerpo>p[data-b="h1"],.hoja.mayus .cuerpo>p[data-b="h2"]{text-transform:uppercase}
+.cuerpo>p[data-b="quote"]{margin:0 2cm var(--hoja-esp);font-size:.92em;line-height:1.2;font-style:var(--cita-estilo);text-indent:0;text-align:justify}
+.cuerpo>p[data-b="ref"]{margin-left:var(--ref-sangria);line-height:1.25}
+.cuerpo>p[data-b="li"]{padding-left:1.27cm;text-indent:-.63cm}
+.cuerpo>p[data-b="li"]::before{content:"•";display:inline-block;width:.63cm;text-indent:0}
+.cuerpo mark{color:inherit;border-radius:2px;padding:0 1px}
+.cuerpo mark.mk-c{background:var(--marca-c)}
+.cuerpo mark.mk-v{background:var(--marca-v);color:var(--marca-v-tinta);font-size:.76em;font-family:var(--f-ui);font-weight:650;letter-spacing:.03em;font-style:normal;vertical-align:.08em}
+.cuerpo .destello{animation:destello 1.6s ease-out}
+@keyframes destello{0%,35%{background:color-mix(in srgb,var(--sello) 22%,transparent)}100%{background:transparent}}
+.cuerpo[contenteditable="true"]:focus{box-shadow:0 0 0 1px color-mix(in srgb,var(--sello) 35%,transparent);border-radius:2px}
+.cuerpo.escribiendo>:last-child::after{content:"";display:inline-block;width:.5em;height:1em;vertical-align:-.12em;background:var(--sello);margin-left:2px;animation:parpadeo 1s steps(2,start) infinite}
+@keyframes parpadeo{to{visibility:hidden}}
+.esperando{font-family:var(--f-maq);color:#6d6a78;font-size:11pt;line-height:1.5;padding:.4cm 0}
+.esperando::after{content:"";display:inline-block;width:.5em;height:1em;vertical-align:-.15em;background:#4a32a6;margin-left:4px;animation:parpadeo 1s steps(2,start) infinite}
+.firma{margin:4pt 0 var(--hoja-esp);line-height:1.2;text-indent:0;text-align:left}
+.firma.centro{text-align:center}
+.firma-img{display:block;max-height:1.6cm;max-width:6cm;margin-bottom:-.25cm}
+.firma.centro .firma-img{margin-inline:auto}
+.firma-espacio{height:1.3cm}
+.ph{color:#9b9b9b;font-style:italic}
+.pie{margin-top:auto;padding-top:.9cm;font-size:8.5pt;color:var(--hoja-gris);line-height:1.35;text-align:center;font-family:var(--hoja-fuente)}
+.pie .pie-linea{border-top:.75pt solid var(--memb-color);margin-bottom:4pt}
+.pie .pie-pag{text-align:right}
+.sello-ejemplo{position:absolute;top:.9cm;right:.9cm;transform:rotate(-7deg);color:#4a32a6;border:2.5px solid currentColor;outline:1px solid currentColor;outline-offset:2.5px;padding:5px 12px 4px;text-align:center;line-height:1.1;font-family:var(--f-ui);pointer-events:none;opacity:.88}
+.sello-ejemplo b{display:block;font-weight:800;font-stretch:125%;letter-spacing:.2em;font-size:15px}
+.sello-ejemplo small{display:block;font-family:var(--f-maq);font-size:10px;letter-spacing:.06em}
+.hoja.lectura .sello-ejemplo{top:10px;right:10px;transform:rotate(-5deg) scale(.85)}
+
+/* ---------- ajustes ---------- */
+.ajustes-in{display:grid;grid-template-columns:minmax(0,660px) minmax(0,1fr);gap:28px;padding-block:24px 80px;max-width:1400px}
+.aj-form{display:grid;gap:30px;min-width:0}
+.aj-cab h1{font-size:24px;font-weight:750;font-stretch:112%;margin:0 0 4px}
+.aj-cab p{margin:0;color:var(--tinta-2)}
+.guardado{font-size:12.5px;color:var(--tinta-2);display:inline-block;margin-top:8px;min-height:1.2em}
+.aj-sec{display:grid;gap:16px;background:var(--superficie);border:1px solid var(--regla);border-radius:var(--r);padding:18px}
+.aj-sec>p.ayuda{margin-top:-6px}
+.aj-previa{position:sticky;top:calc(var(--barra-h) + 20px);align-self:start;display:grid;gap:10px;min-width:0}
+.aj-previa .leyenda{margin-bottom:2px}
+.aj-previa .marco{overflow:hidden;display:flex;justify-content:center;padding:14px 0 18px}
+.aj-previa .hoja{min-height:16cm}
+@media (max-width:1099px){.ajustes-in{grid-template-columns:minmax(0,1fr)}.aj-previa{position:static;order:-1}.aj-previa .marco{max-height:380px;align-items:flex-start;-webkit-mask-image:linear-gradient(#000 78%,transparent);mask-image:linear-gradient(#000 78%,transparent)}}
+.segmento{display:inline-flex;border:1px solid var(--regla-fuerte);border-radius:6px;padding:3px;gap:3px;flex-wrap:wrap}
+.segmento label{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:14px;font-weight:600;color:var(--tinta-2)}
+.segmento input{position:absolute;opacity:0;pointer-events:none}
+.segmento label:has(input:checked){background:var(--sello-tenue);color:var(--tinta)}
+.segmento label:has(input:focus-visible){outline:2px solid var(--sello)}
+.disenos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.diseno{border:1px solid var(--regla-fuerte);border-radius:var(--r);padding:10px;cursor:pointer;display:grid;gap:8px;background:var(--superficie);position:relative}
+.diseno input{position:absolute;opacity:0;pointer-events:none}
+.diseno:has(input:checked){border-color:var(--sello);box-shadow:0 0 0 1px var(--sello)}
+.diseno:has(input:focus-visible){outline:2px solid var(--sello);outline-offset:2px}
+.diseno span{font-size:13px;font-weight:600}
+.mini{height:54px;background:#fff;border:1px solid #e3e1ea;border-radius:2px;padding:6px 7px;display:grid;gap:3px;align-content:start}
+.mini i{display:block;height:3px;background:#c9c6d3;border-radius:1px}
+.mini .n{height:5px;background:#1f3a68;width:48%}
+.mini .r{height:0;border-top:2px double #1f3a68;background:none}
+.mini.c{justify-items:center}
+.mini.l{grid-template-columns:14px 1fr;column-gap:6px}
+.mini.l .logo{grid-row:1/3;width:14px;height:14px;border-radius:50%;background:#c9c6d3}
+.mini.l .n,.mini.l .s{justify-self:end}
+.mini.l .r{grid-column:1/-1;border-top:1.5px solid #1f3a68}
+.mini.s{grid-template-columns:1fr 1fr}
+.mini.s .der{justify-self:end;width:70%}
+.mini.s .r{grid-column:1/-1;border-top:1px solid #aaa}
+@media (max-width:480px){.disenos{grid-template-columns:1fr}}
+.colores{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.color{width:30px;height:30px;border-radius:50%;border:2px solid var(--superficie);box-shadow:0 0 0 1px var(--regla-fuerte);cursor:pointer;padding:0}
+.color[aria-pressed="true"]{box-shadow:0 0 0 2px var(--sello)}
+.color:focus-visible{outline:2px solid var(--sello);outline-offset:3px}
+.colores input[type=color]{width:42px;height:32px;border:1px solid var(--regla-fuerte);border-radius:var(--r);background:var(--superficie);padding:2px;cursor:pointer}
+.archivo{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.archivo .previa-img{height:52px;max-width:180px;object-fit:contain;background:#fff;border:1px solid var(--regla);border-radius:4px;padding:4px}
+.archivo input[type=file]{position:absolute;width:1px;height:1px;opacity:0}
+.plantilla-info{display:grid;gap:6px;font-size:13.5px;border-left:3px solid var(--regla-fuerte);padding:4px 0 4px 12px;color:var(--tinta-2)}
+.plantilla-info strong{color:var(--tinta)}
+.ficha{font-size:13.5px}
+
+/* ---------- historial ---------- */
+.hist-in{max-width:980px;margin:0 auto;padding-block:24px 80px;display:grid;gap:18px}
+.hist-cab{display:flex;gap:12px 20px;align-items:flex-end;flex-wrap:wrap}
+.hist-cab .tit{flex:1 1 260px}
+.hist-cab h1{font-size:24px;font-weight:750;font-stretch:112%;margin:0 0 2px}
+.hist-cab p{margin:0;color:var(--tinta-2)}
+.hist-cab input{flex:0 1 320px}
+.hist-lista{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.hist-item{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:4px 16px;align-items:center;background:var(--superficie);border:1px solid var(--regla);border-radius:var(--r);padding:12px 14px}
+.hist-item .f{font-family:var(--f-maq);font-size:12.5px;color:var(--tinta-2);font-variant-numeric:tabular-nums}
+.hist-item .t{font-weight:650;min-width:0;overflow-wrap:anywhere}
+.hist-item .tp{display:block;font-weight:500;font-size:13px;color:var(--tinta-2)}
+.hist-item .acc{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:640px){.hist-item{grid-template-columns:minmax(0,1fr)}.hist-item .acc{justify-content:flex-start}}
+
+/* ---------- avisos ---------- */
+#toasts{position:fixed;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px));bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:50;display:grid;gap:8px;max-width:min(420px,calc(100vw - 32px))}
+.toast{background:var(--tinta);color:var(--superficie);padding:10px 14px;border-radius:var(--r);font-size:14px;box-shadow:var(--sombra-flota);transition:opacity .3s,transform .3s}
+.toast.ok{border-left:4px solid var(--ok)}
+.toast.error{border-left:4px solid var(--error)}
+.toast.sale{opacity:0;transform:translateY(6px)}
+.copia-manual{display:grid;gap:8px}
+.copia-manual textarea{min-height:200px;font-size:13px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+
+<header class="barra" id="barra">
+  <div class="barra-in gutter">
+    <a class="sello" href="#redactar" aria-label="El Memorialista, inicio"><b>EL MEMORIALISTA</b><small id="selloFecha">Recibido</small></a>
+    <nav class="pestanas" role="tablist" aria-label="Secciones">
+      <button role="tab" id="tab-redactar" data-vista="redactar" aria-selected="true" aria-controls="vista-redactar">Redactar</button>
+      <button role="tab" id="tab-membrete" data-vista="membrete" aria-selected="false" aria-controls="vista-membrete">Membrete y estilo</button>
+      <button role="tab" id="tab-historial" data-vista="historial" aria-selected="false" aria-controls="vista-historial">Historial</button>
+    </nav>
+    <button class="perfil-chip pendiente" id="perfilChip" type="button"><span class="ini" aria-hidden="true">?</span><span class="txt">Configura tu membrete</span></button>
+  </div>
+</header>
+
+<main>
+  <section id="vista-redactar" class="vista redactar" role="tabpanel" aria-labelledby="tab-redactar">
+    <div class="col-form">
+      <div class="form-in gutter">
+        <div id="zonaTipo"></div>
+        <form id="formCaso" class="form-caso" novalidate autocomplete="off"></form>
+        <div class="acciones-form" id="accionesForm" hidden>
+          <button class="btn primario grande" id="btnRedactar" type="button">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 13.5c2.6-.6 5.2-3 7.4-6.9L12.6 3l-3.5 2.4C5.2 7.6 2.9 10.3 2.5 13.5zM2.5 13.5 6 10"/></svg>
+            Redactar escrito con IA
+          </button>
+          <p class="nota" id="notaRedactar">Google Gemini redacta en tiempo real con tus hechos, tu membrete y tu estilo.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-hoja" id="colHoja">
+      <div class="hoja-barra gutter" id="hojaBarra">
+        <div class="hb-fila">
+          <div class="hb-estado" id="hbEstado" role="status"><span class="punto" aria-hidden="true"></span><span id="hbTexto">Ejemplo de escrito</span></div>
+          <button class="btn chico" id="btnDetener" type="button" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/></svg>Detener</button>
+          <button class="btn chico fantasma" id="btnAjustar" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M10.8 2.7l2.5 2.5L6 12.5l-3.2.7.7-3.2z"/></svg>Ajustar con IA</button>
+          <button class="btn chico fantasma" id="btnRegenerar" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3.2h-3.2"/></svg>Regenerar</button>
+          <button class="btn chico fantasma" id="btnCopiar" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="1.2"/><path d="M10.5 5V3.2c0-.7-.5-1.2-1.2-1.2H3.2C2.5 2 2 2.5 2 3.2v6.1c0 .7.5 1.2 1.2 1.2H5"/></svg>Copiar</button>
+          <button class="btn chico" id="btnWord" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg>Word</button>
+          <button class="btn chico" id="btnPdf" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg>PDF</button>
+        </div>
+        <div class="verif" id="verif" hidden></div>
+        <div class="panel-verif" id="panelVerif" hidden></div>
+        <div class="ajuste" id="ajuste" hidden>
+          <label class="etq" for="ajusteTexto"><strong>¿Qué quieres cambiar?</strong></label>
+          <div class="ajuste-fila">
+            <input type="text" id="ajusteTexto" placeholder="Ej.: agrega como prueba el contrato de arrendamiento del 3 de marzo">
+            <button class="btn primario" id="ajusteAplicar" type="button">Aplicar</button>
+            <button class="btn fantasma" id="ajusteCerrar" type="button">Cerrar</button>
+          </div>
+          <div class="sugerencias" id="ajusteSugerencias"></div>
+        </div>
+        <div class="edicion" id="edicion" hidden aria-label="Formato del texto">
+          <button class="btn chico" type="button" data-cmd="bold" title="Negrilla"><b>N</b></button>
+          <button class="btn chico" type="button" data-cmd="italic" title="Cursiva"><i>K</i></button>
+          <button class="btn chico" type="button" data-cmd="underline" title="Subrayado"><u>S</u></button>
+          <span class="sep" aria-hidden="true"></span>
+          <button class="btn chico" type="button" data-bloque="p">Párrafo</button>
+          <button class="btn chico" type="button" data-bloque="h2">Capítulo</button>
+          <button class="btn chico" type="button" data-bloque="h3">Subtítulo</button>
+          <button class="btn chico" type="button" data-bloque="quote">Cita</button>
+          <button class="btn chico" type="button" data-bloque="ref">Referencia</button>
+          <button class="btn chico fantasma" type="button" id="btnDeshacerAjuste" hidden>Volver a la versión anterior</button>
+        </div>
+      </div>
+      <div class="mesa-hoja gutter" id="mesaHoja">
+        <article class="hoja" id="hoja" aria-label="Vista previa del escrito">
+          <div class="sello-ejemplo" id="selloEjemplo" aria-hidden="true"><b>EJEMPLO</b><small>así se verá tu escrito</small></div>
+          <header class="membrete" id="membrete"></header>
+          <div class="cuerpo" id="cuerpo"></div>
+          <footer class="pie" id="pie"></footer>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="vista-membrete" class="vista ajustes" role="tabpanel" aria-labelledby="tab-membrete" hidden>
+    <div class="ajustes-in gutter">
+      <div class="aj-form" id="ajForm">
+        <header class="aj-cab">
+          <h1>Membrete y estilo</h1>
+          <p>Tus datos profesionales, tu membrete y tu forma de escribir. Se guardan en tu navegador y se aplican a cada escrito que redactes.</p>
+          <span class="guardado maq" id="estadoGuardado" role="status"></span>
+        </header>
+
+        <section class="aj-sec" aria-labelledby="s-ident">
+          <h2 class="leyenda" id="s-ident"><span>Identidad profesional</span></h2>
+          <div class="rejilla">
+            <div class="campo ancho"><label for="p_nombre">Nombre completo</label><input id="p_nombre" type="text" data-path="abogado.nombre" autocomplete="name" placeholder="Laura Mejía Restrepo"></div>
+            <div class="campo"><label for="p_genero">Cómo te nombra el escrito</label><select id="p_genero" data-path="abogado.genero"><option value="">Abogado(a)</option><option value="f">Abogada · la suscrita</option><option value="m">Abogado · el suscrito</option></select></div>
+            <div class="campo"><label for="p_tp">Tarjeta profesional No.</label><input id="p_tp" type="text" class="maq" data-path="abogado.tp" placeholder="123.456"></div>
+            <div class="campo"><label for="p_cedula">Cédula de ciudadanía</label><input id="p_cedula" type="text" class="maq" data-path="abogado.cedula" placeholder="1.020.304.050"></div>
+            <div class="campo"><label for="p_cedulaLugar">Expedida en</label><input id="p_cedulaLugar" type="text" data-path="abogado.cedulaLugar" placeholder="Bogotá D.C."></div>
+            <div class="campo"><label for="p_correo">Correo inscrito en el SIRNA</label><input id="p_correo" type="email" data-path="abogado.correo" autocomplete="email" placeholder="laura@mejiaabogados.co"></div>
+            <div class="campo"><label for="p_telefono">Teléfono</label><input id="p_telefono" type="tel" data-path="abogado.telefono" autocomplete="tel" placeholder="310 000 0000"></div>
+            <div class="campo ancho"><label for="p_direccion">Dirección de notificaciones</label><input id="p_direccion" type="text" data-path="abogado.direccion" placeholder="Carrera 7 # 32-16, oficina 1204"></div>
+            <div class="campo"><label for="p_ciudad">Ciudad</label><input id="p_ciudad" type="text" data-path="abogado.ciudad" placeholder="Bogotá D.C."></div>
+          </div>
+        </section>
+
+        <section class="aj-sec" aria-labelledby="s-memb">
+          <h2 class="leyenda" id="s-memb"><span>Membrete</span></h2>
+          <div class="segmento" role="radiogroup" aria-label="Origen del membrete">
+            <label><input type="radio" name="m_modo" id="m_modo_diseno" value="diseno" data-path="membrete.modo">Diseñarlo aquí</label>
+            <label><input type="radio" name="m_modo" id="m_modo_plantilla" value="plantilla" data-path="membrete.modo">Usar mi plantilla de Word</label>
+          </div>
+          <div id="bloqueDiseno" class="grupo">
+            <div class="campo"><span class="etq">Diseño</span>
+              <div class="disenos" role="radiogroup" aria-label="Diseño del membrete">
+                <label class="diseno"><input type="radio" name="m_diseno" id="m_diseno_c" value="centrado" data-path="membrete.diseno"><div class="mini c" aria-hidden="true"><i class="n"></i><i style="width:60%"></i><i class="r" style="width:100%"></i></div><span>Clásico centrado</span></label>
+                <label class="diseno"><input type="radio" name="m_diseno" id="m_diseno_l" value="lateral" data-path="membrete.diseno"><div class="mini l" aria-hidden="true"><i class="logo"></i><i class="n"></i><i class="s" style="width:62%"></i><i class="r"></i></div><span>Logo a la izquierda</span></label>
+                <label class="diseno"><input type="radio" name="m_diseno" id="m_diseno_s" value="sobrio" data-path="membrete.diseno"><div class="mini s" aria-hidden="true"><i class="n" style="width:80%"></i><i class="der"></i><i style="width:60%"></i><i class="der" style="width:50%"></i><i class="r"></i></div><span>Sobrio, sin logo</span></label>
+              </div>
+            </div>
+            <div class="campo"><span class="etq">Logo</span>
+              <div class="archivo">
+                <img id="logoPrevia" class="previa-img" alt="Logo actual" hidden>
+                <label class="btn chico" for="logoArchivo">Subir logo</label>
+                <input type="file" id="logoArchivo" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+                <button class="btn chico fantasma" type="button" id="logoQuitar" hidden>Quitar</button>
+              </div>
+              <p class="ayuda">PNG con fondo transparente funciona mejor. Se ajusta automáticamente.</p>
+            </div>
+            <div class="rejilla">
+              <div class="campo ancho"><label for="m_titulo">Nombre en el membrete</label><input id="m_titulo" type="text" data-path="membrete.titulo" placeholder="Si lo dejas vacío, se usa tu nombre completo"></div>
+              <div class="campo ancho"><label for="m_subtitulo">Línea bajo el nombre</label><input id="m_subtitulo" type="text" data-path="membrete.subtitulo" placeholder="Abogada · Especialista en Derecho Administrativo"></div>
+              <div class="campo"><label for="m_web">Sitio web (opcional)</label><input id="m_web" type="text" data-path="membrete.web" placeholder="mejiaabogados.co"></div>
+            </div>
+            <div class="campo"><span class="etq">Color</span>
+              <div class="colores" id="colores"></div>
+            </div>
+            <label class="check"><input type="checkbox" id="m_linea" data-path="membrete.linea">Línea decorativa bajo el membrete y sobre el pie de página</label>
+          </div>
+          <div id="bloquePlantilla" class="grupo" hidden>
+            <p class="ayuda">Sube el .docx o .dotx que ya usas con tu membrete. Al exportar a Word, el escrito se inserta en tu plantilla y su encabezado y pie de página se conservan tal cual. Si la plantilla tiene un párrafo con el texto <span class="maq">{{CONTENIDO}}</span>, el escrito va exactamente ahí.</p>
+            <div class="archivo">
+              <label class="btn chico" for="plantillaArchivo">Subir plantilla de Word</label>
+              <input type="file" id="plantillaArchivo" accept=".docx,.dotx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.wordprocessingml.template">
+              <button class="btn chico fantasma" type="button" id="plantillaQuitar" hidden>Quitar plantilla</button>
+            </div>
+            <div class="plantilla-info" id="plantillaInfo" hidden></div>
+            <label class="check"><input type="checkbox" id="f_fuentePlantilla" data-path="formato.fuentePlantilla">Usar la fuente y el tamaño de letra de mi plantilla</label>
+          </div>
+          <label class="check"><input type="checkbox" id="m_numeracion" data-path="membrete.numeracion">Numerar las páginas (Página 1 de 3)</label>
+        </section>
+
+        <section class="aj-sec" aria-labelledby="s-formato">
+          <h2 class="leyenda" id="s-formato"><span>Formato del documento</span></h2>
+          <p class="ayuda" id="notaFormatoPlantilla" hidden>Con tu plantilla, el papel y las márgenes los define la plantilla.</p>
+          <div class="rejilla">
+            <div class="campo"><label for="f_papel">Papel</label><select id="f_papel" data-path="formato.papel"><option value="carta">Carta (21,59 × 27,94 cm)</option><option value="oficio">Oficio (21,59 × 33 cm)</option><option value="a4">A4 (21 × 29,7 cm)</option></select></div>
+            <div class="campo"><label for="f_margenes">Márgenes</label><select id="f_margenes" data-path="formato.margenes"><option value="amplio">Amplias · izq. y sup. 3 cm</option><option value="normal">Normales · 2,5 cm</option><option value="estrecho">Estrechas · 2 cm</option></select></div>
+            <div class="campo"><label for="f_fuente">Fuente</label><select id="f_fuente" data-path="formato.fuente"><option>Arial</option><option>Times New Roman</option><option>Calibri</option><option>Cambria</option><option>Georgia</option><option>Garamond</option></select></div>
+            <div class="campo"><label for="f_tamano">Tamaño de letra</label><select id="f_tamano" data-path="formato.tamano" data-num="1"><option value="11">11 pt</option><option value="12">12 pt</option><option value="13">13 pt</option></select></div>
+            <div class="campo"><label for="f_interlineado">Interlineado</label><select id="f_interlineado" data-path="formato.interlineado" data-num="1"><option value="1">Sencillo</option><option value="1.15">1,15</option><option value="1.5">1,5</option><option value="2">Doble</option></select></div>
+            <div class="campo"><label for="f_espacio">Espacio entre párrafos</label><select id="f_espacio" data-path="formato.espacio"><option value="ninguno">Ninguno</option><option value="normal">Normal (8 pt)</option><option value="amplio">Amplio (12 pt)</option></select></div>
+            <div class="campo"><label for="f_alineacion">Alineación del texto</label><select id="f_alineacion" data-path="formato.alineacion"><option value="justificado">Justificado</option><option value="izquierda">A la izquierda</option></select></div>
+            <div class="campo"><label for="f_titulos">Títulos de capítulo</label><select id="f_titulos" data-path="formato.titulos"><option value="centrados">Centrados</option><option value="izquierda">A la izquierda</option></select></div>
+            <div class="campo"><label for="f_firmaAlin">Firma</label><select id="f_firmaAlin" data-path="formato.firmaAlin"><option value="izquierda">A la izquierda</option><option value="centro">Centrada</option></select></div>
+          </div>
+          <div class="grupo" style="gap:10px">
+            <label class="check"><input type="checkbox" id="f_mayus" data-path="formato.mayus">Títulos en mayúsculas</label>
+            <label class="check"><input type="checkbox" id="f_sangria" data-path="formato.sangria">Sangría en la primera línea de cada párrafo</label>
+            <label class="check"><input type="checkbox" id="f_refSangria" data-path="formato.refSangria">Bloque de referencia desplazado a la derecha</label>
+            <label class="check"><input type="checkbox" id="f_citaCursiva" data-path="formato.citaCursiva">Citas textuales de normas en cursiva</label>
+            <label class="check"><input type="checkbox" id="f_firmaContacto" data-path="formato.firmaContacto">Correo y teléfono bajo la firma</label>
+          </div>
+          <div class="campo"><span class="etq">Firma digitalizada (opcional)</span>
+            <div class="archivo">
+              <img id="firmaPrevia" class="previa-img" alt="Firma actual" hidden>
+              <label class="btn chico" for="firmaArchivo">Subir firma</label>
+              <input type="file" id="firmaArchivo" accept="image/png,image/jpeg,image/webp">
+              <button class="btn chico fantasma" type="button" id="firmaQuitar" hidden>Quitar</button>
+            </div>
+            <label class="check"><input type="checkbox" id="firmaFondo" checked>Quitar el fondo blanco al subirla (para firmas escaneadas)</label>
+          </div>
+        </section>
+
+        <section class="aj-sec" aria-labelledby="s-estilo">
+          <h2 class="leyenda" id="s-estilo"><span>Estilo de redacción</span></h2>
+          <p class="ayuda">Lo que marques aquí se respeta en cada escrito. Deja “Automático” donde prefieras que se siga tu muestra o la práctica usual.</p>
+          <div class="rejilla">
+            <div class="campo"><label for="e_tratamiento">Tratamiento al despacho</label><select id="e_tratamiento" data-path="estilo.tratamiento"><option value="auto">Automático</option><option value="Señor(a) Juez">Señor(a) Juez</option><option value="Su Señoría">Su Señoría</option><option value="Honorable Magistrado(a)">Honorable Magistrado(a)</option><option value="Respetado(a) señor(a) Juez">Respetado(a) señor(a) Juez</option></select></div>
+            <div class="campo"><label for="e_persona">Persona gramatical</label><select id="e_persona" data-path="estilo.persona"><option value="auto">Automático</option><option value="primera">Primera persona (“me permito”)</option><option value="tercera">Tercera persona (“el suscrito apoderado”)</option></select></div>
+            <div class="campo"><label for="e_numHechos">Numeración de hechos</label><select id="e_numHechos" data-path="estilo.numHechos"><option value="auto">Automático</option><option value="ordinal">PRIMERO, SEGUNDO…</option><option value="numero">1, 2, 3…</option><option value="hecho">Hecho 1, Hecho 2…</option></select></div>
+            <div class="campo"><label for="e_numPret">Numeración de pretensiones</label><select id="e_numPret" data-path="estilo.numPretensiones"><option value="auto">Automático</option><option value="ordinal">PRIMERA, SEGUNDA…</option><option value="numero">1, 2, 3…</option></select></div>
+            <div class="campo"><label for="e_tono">Tono</label><select id="e_tono" data-path="estilo.tono"><option value="sobrio">Sobrio y técnico</option><option value="contundente">Firme y contundente</option><option value="sencillo">Claro y sencillo</option></select></div>
+            <div class="campo"><label for="e_lenguaje">Lenguaje</label><select id="e_lenguaje" data-path="estilo.lenguaje"><option value="auto">Automático</option><option value="claro">Moderno, sin latinismos innecesarios</option><option value="tradicional">Forense tradicional</option></select></div>
+            <div class="campo"><label for="e_fecha">Lugar y fecha</label><select id="e_fecha" data-path="estilo.fecha"><option value="arriba">Al inicio del escrito</option><option value="final">Al final, antes de la firma</option><option value="no">No incluir</option></select></div>
+            <div class="campo"><label for="e_extension">Extensión por defecto</label><select id="e_extension" data-path="estilo.extension"><option value="concisa">Concisa</option><option value="estandar">Estándar</option><option value="extensa">Extensa y exhaustiva</option></select></div>
+            <div class="campo ancho"><label for="e_cierre">Fórmula de despedida</label><input id="e_cierre" type="text" data-path="estilo.cierre" placeholder="Del señor Juez, con todo respeto,"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="e_esd" data-path="estilo.esd">Usar “E. S. D.” en el destinatario de los escritos judiciales</label>
+          <div class="campo">
+            <label for="e_muestra">Muestra de tu estilo</label>
+            <p class="ayuda">Pega un escrito tuyo (o súbelo en .docx o .txt). Se imitan tus fórmulas, el orden de tus capítulos y tu nivel de formalidad; nunca sus hechos ni sus datos.</p>
+            <textarea id="e_muestra" data-path="estilo.muestra" rows="6" maxlength="20000" placeholder="Pega aquí una demanda, tutela o memorial que hayas escrito…"></textarea>
+            <div class="archivo">
+              <label class="btn chico" for="muestraArchivo">Subir escrito</label>
+              <input type="file" id="muestraArchivo" accept=".docx,.txt,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+              <button class="btn chico primario" type="button" id="btnAnalizar">Analizar mi estilo</button>
+              <span class="ayuda" id="analizarEstado" role="status"></span>
+            </div>
+          </div>
+          <div class="campo">
+            <label for="e_ficha">Ficha de estilo</label>
+            <p class="ayuda">Resumen de tu forma de escribir. Se genera al analizar tu muestra con Google Gemini y puedes corregirla a mano.</p>
+            <textarea id="e_ficha" class="ficha" data-path="estilo.ficha" rows="7" placeholder="Aún no hay ficha. Pega una muestra y pulsa “Analizar mi estilo”."></textarea>
+          </div>
+        </section>
+
+        <section class="aj-sec" aria-labelledby="s-ia">
+          <h2 class="leyenda" id="s-ia"><span>Motor de Inteligencia Artificial (Google Gemini)</span></h2>
+          <div class="segmento" role="radiogroup" aria-label="Calidad de redacción">
+            <label><input type="radio" name="ia_calidad" id="ia_complex" value="complex" data-path="ia.calidad">Máxima profundidad jurídica (preciso)</label>
+            <label><input type="radio" name="ia_calidad" id="ia_default" value="default" data-path="ia.calidad" checked>Equilibrada (más veloz)</label>
+          </div>
+          <div class="rejilla">
+            <div class="campo"><label for="ia_smmlv">Salario mínimo mensual vigente</label><input id="ia_smmlv" type="number" min="0" step="1" class="maq" data-path="ia.smmlv" data-num="1"><p class="ayuda">Sirve para clasificar cuantías. Valor 2026: $1.750.905.</p></div>
+          </div>
+          <p class="ayuda" id="notaAlmacen">El motor de IA está conectado al servidor central mediante Google Gemini. Tus datos de membrete e historial se conservan de forma privada en tu navegador.</p>
+        </section>
+      </div>
+      <aside class="aj-previa" aria-label="Vista previa del membrete">
+        <h2 class="leyenda"><span>Vista previa</span></h2>
+        <div class="marco"><article class="hoja" id="hojaPrevia"><header class="membrete" id="membretePrevia"></header><div class="cuerpo" id="cuerpoPrevia"></div><footer class="pie" id="piePrevia"></footer></article></div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="vista-historial" class="vista historial" role="tabpanel" aria-labelledby="tab-historial" hidden>
+    <div class="hist-in gutter">
+      <header class="hist-cab">
+        <div class="tit"><h1>Historial</h1><p id="histResumen">Cada escrito que redactes se guarda aquí automáticamente.</p></div>
+        <input type="search" id="histBuscar" placeholder="Buscar por cliente, tipo o asunto" aria-label="Buscar en el historial">
+      </header>
+      <ol class="hist-lista" id="histLista"></ol>
+      <div class="vacio" id="histVacio" hidden><strong>Todavía no hay escritos</strong>Elige un tipo de documento en Redactar, llena los datos del caso y pulsa “Redactar escrito con IA”. Cada versión se guarda aquí.</div>
+    </div>
+  </section>
+</main>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   Utilidades
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k === 'html') el.innerHTML = v;
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+    else if (k === 'dataset') Object.assign(el.dataset, v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) el.append(k instanceof Node ? k : String(k));
+  return el;
+}
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const fechaLarga = (d = new Date()) => `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
+const dos = n => String(n).padStart(2, '0');
+const fechaCorta = ms => { const d = new Date(ms); return `${dos(d.getDate())}/${dos(d.getMonth() + 1)}/${d.getFullYear()}`; };
+const horaCorta = ms => { const d = new Date(ms); return `${dos(d.getHours())}:${dos(d.getMinutes())}`; };
+const pesos = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-CO');
+const clon = o => JSON.parse(JSON.stringify(o));
+const espera = ms => new Promise(r => setTimeout(r, ms));
+function debounce(fn, ms) {
+  let t;
+  const f = (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  f.ya = (...a) => { clearTimeout(t); return fn(...a); };
+  f.cancelar = () => clearTimeout(t);
+  return f;
+}
+const lsGet = k => { try { const v = localStorage.getItem('memorialista:' + k); return v ? JSON.parse(v) : null; } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem('memorialista:' + k, JSON.stringify(v)); return true; } catch { return false; } };
+const lsDel = k => { try { localStorage.removeItem('memorialista:' + k); } catch { /* sin almacenamiento */ } };
+function getPath(o, p) { return p.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }
+function setPath(o, p, v) { const ks = p.split('.'); let a = o; ks.slice(0, -1).forEach(k => { if (a[k] == null || typeof a[k] !== 'object') a[k] = {}; a = a[k]; }); a[ks[ks.length - 1]] = v; }
+function mezclar(base, extra) {
+  if (Array.isArray(base)) return Array.isArray(extra) ? extra : base;
+  if (base && typeof base === 'object') {
+    const out = { ...base };
+    if (extra && typeof extra === 'object') for (const k of Object.keys(extra)) out[k] = (k in base && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) ? mezclar(base[k], extra[k]) : extra[k];
+    return out;
+  }
+  return extra === undefined ? base : extra;
+}
+function toast(msg, tipo = 'info', ms = 4500) {
+  const t = h('div', { class: 'toast ' + tipo, role: tipo === 'error' ? 'alert' : 'status' }, msg);
+  $('#toasts').append(t);
+  setTimeout(() => { t.classList.add('sale'); setTimeout(() => t.remove(), 320); }, ms);
+}
+const cargados = {};
+function cargarScript(url) {
+  if (!cargados[url]) cargados[url] = new Promise((ok, mal) => {
+    const s = document.createElement('script');
+    s.src = url; s.async = true;
+    s.onload = () => ok();
+    s.onerror = () => { delete cargados[url]; mal(new Error('No se pudo cargar ' + url)); };
+    document.head.append(s);
+  });
+  return cargados[url];
+}
+const LIBS = {
+  jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+  pdfmake: 'https://cdn.jsdelivr.net/npm/pdfmake@0.3.11/build/pdfmake.min.js',
+  times: 'https://cdn.jsdelivr.net/npm/pdfmake@0.3.11/build/standard-fonts/Times.js',
+  helvetica: 'https://cdn.jsdelivr.net/npm/pdfmake@0.3.11/build/standard-fonts/Helvetica.js',
+};
+const cargarJSZip = () => cargarScript(LIBS.jszip);
+async function cargarPdfMake() {
+  await cargarScript(LIBS.pdfmake);
+  await Promise.all([cargarScript(LIBS.times), cargarScript(LIBS.helvetica)]);
+  try { window.pdfMake.setUrlAccessPolicy && window.pdfMake.setUrlAccessPolicy(() => false); } catch { /* opcional */ }
+}
+
+/* =========================================================
+   Constantes de formato
+   ========================================================= */
+const PAPEL = { carta: { w: 21.59, h: 27.94, n: 'Carta' }, oficio: { w: 21.59, h: 33.02, n: 'Oficio' }, a4: { w: 21.0, h: 29.7, n: 'A4' } };
+const MARGENES = { amplio: { sup: 3, inf: 2.5, izq: 3, der: 2.5 }, normal: { sup: 2.5, inf: 2.5, izq: 2.5, der: 2.5 }, estrecho: { sup: 2, inf: 2, izq: 2, der: 2 } };
+const FUENTES = {
+  'Arial': { web: 'Arimo', pdf: 'Helvetica', css: '"Arimo", Arial, "Helvetica Neue", sans-serif' },
+  'Times New Roman': { web: 'Tinos', pdf: 'Times', css: '"Tinos", "Times New Roman", Times, serif' },
+  'Calibri': { web: 'Carlito', pdf: 'Helvetica', css: '"Carlito", Calibri, Arial, sans-serif' },
+  'Cambria': { web: 'Caladea', pdf: 'Times', css: '"Caladea", Cambria, Georgia, serif' },
+  'Georgia': { web: 'Gelasio', pdf: 'Times', css: '"Gelasio", Georgia, serif' },
+  'Garamond': { web: 'EB Garamond', pdf: 'Times', css: '"EB Garamond", Garamond, Georgia, serif' },
+};
+const ESPACIO = { ninguno: 0, normal: 8, amplio: 12 };
+const COLORES = [['#1a1a1a', 'Tinta negra'], ['#1f3a68', 'Azul notarial'], ['#6d1f2f', 'Vinotinto'], ['#1f4d3a', 'Verde toga'], ['#3f4650', 'Gris pizarra'], ['#4a32a6', 'Violeta sello']];
+const PERFIL_BASE = {
+  v: 1,
+  abogado: { nombre: '', genero: '', cedula: '', cedulaLugar: '', tp: '', correo: '', telefono: '', direccion: '', ciudad: '' },
+  membrete: { modo: 'diseno', diseno: 'centrado', titulo: '', subtitulo: '', color: '#1f3a68', linea: true, web: '', numeracion: true },
+  formato: { papel: 'carta', margenes: 'amplio', fuente: 'Arial', tamano: 12, interlineado: 1.5, espacio: 'normal', alineacion: 'justificado', titulos: 'centrados', mayus: true, sangria: false, refSangria: false, citaCursiva: true, firmaAlin: 'izquierda', firmaContacto: true, fuentePlantilla: true },
+  estilo: { tratamiento: 'auto', persona: 'auto', numHechos: 'auto', numPretensiones: 'auto', tono: 'sobrio', lenguaje: 'auto', fecha: 'arriba', esd: true, cierre: '', extension: 'estandar', ficha: '', muestra: '' },
+  ia: { calidad: 'default', smmlv: 1750905 },
+  plantilla: null,
+};
+
+/* =========================================================
+   Catálogo de escritos
+   ========================================================= */
+const AYUDA_HECHOS = 'Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos.';
+const DESP = {
+  tutela: ['Juez Civil Municipal de Bogotá D.C. (Reparto)', 'Juez Penal Municipal de Medellín con Función de Control de Garantías (Reparto)', 'Juez Laboral del Circuito de Cali (Reparto)', 'Juez de la República (Reparto)'],
+  civil: ['Juez Civil Municipal de Bogotá D.C. (Reparto)', 'Juez Civil del Circuito de Medellín (Reparto)', 'Juez de Pequeñas Causas y Competencia Múltiple de Cali (Reparto)'],
+  familia: ['Juez de Familia de Bogotá D.C. (Reparto)', 'Juez Promiscuo de Familia de Zipaquirá (Reparto)'],
+  laboral: ['Juez Laboral Municipal de Bogotá D.C. (Reparto)', 'Juez Laboral del Circuito de Barranquilla (Reparto)'],
+  admin: ['Juez Administrativo del Circuito de Bogotá D.C. (Reparto)', 'Tribunal Administrativo de Antioquia (Reparto)'],
+  penal: ['Fiscalía General de la Nación, Fiscal Seccional (Reparto)', 'Fiscalía General de la Nación, Fiscal Local (Reparto)'],
+  conciliacion: ['Procuraduría Judicial para Asuntos Administrativos (Reparto)', 'Centro de Conciliación de la Cámara de Comercio de Bogotá', 'Comisaría de Familia de Suba', 'Notaría 20 del Círculo de Bogotá'],
+  disciplinario: ['Procuraduría General de la Nación', 'Personería de Bogotá D.C.', 'Comisión Seccional de Disciplina Judicial de Antioquia'],
+  entidad: ['Señores Administradora Colombiana de Pensiones, Colpensiones', 'Señores Alcaldía de Medellín, Secretaría de Movilidad', 'Señores Banco de Ejemplo S.A., Servicio al Cliente'],
+};
+const C = {
+  dest: (ph, sug, l = 'Juez o despacho', ayuda) => ({ k: 'destinatario', l, t: 'texto', req: true, ph, sug, ayuda }),
+  ciudad: () => ({ k: 'ciudad', l: 'Ciudad', t: 'texto', ph: 'Bogotá D.C.', def: '@ciudad', ayuda: 'Donde se radica el escrito.' }),
+  radicado: req => ({ k: 'radicado', l: 'Radicado del proceso', t: 'radicado', req: !!req, ph: '11001-40-03-012-2026-00345-00' }),
+  parte: (k, l, ph, req = true) => ({ k, l, t: 'area', rows: 3, req, ph }),
+  area: (k, l, ph, o = {}) => ({ k, l, t: 'area', rows: o.rows || 4, req: !!o.req, ph, ayuda: o.ayuda }),
+  texto: (k, l, ph, o = {}) => ({ k, l, t: 'texto', req: !!o.req, ph, ayuda: o.ayuda }),
+  select: (k, l, opciones, o = {}) => ({ k, l, t: 'select', opciones, req: !!o.req, def: o.def, ayuda: o.ayuda }),
+  chips: (k, l, opciones, o = {}) => ({ k, l, t: 'chips', opciones, req: !!o.req, ayuda: o.ayuda }),
+  check: (k, l, def = true) => ({ k, l, t: 'check', def }),
+  hechos: (ph, o = {}) => ({ k: 'hechos', l: o.l || 'Hechos', t: 'area', rows: o.rows || 8, req: o.req !== false, ph, ayuda: AYUDA_HECHOS }),
+  pruebas: ph => ({ k: 'pruebas', l: 'Pruebas y anexos', t: 'area', rows: 3, ph }),
+  notif: ph => ({ k: 'notificaciones', l: 'Direcciones de notificación', t: 'area', rows: 2, ph: ph || 'Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste.' }),
+};
+const PH_PERSONA = 'Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono.';
+const PH_ENTIDAD = 'Entidad o persona, NIT si lo conoces, representante legal y correo de notificaciones judiciales.';
+const JURIS_PROC = [['civil', 'Civil, comercial o familia (CGP)'], ['laboral', 'Laboral (Ley 2452 de 2025)'], ['admin', 'Contencioso administrativo (CPACA)'], ['penal', 'Penal (Ley 906 de 2004)']];
+
+const TIPOS_LISTA = [
+  {
+    id: 'tutela', nombre: 'Acción de tutela', area: 'Constitucional', norma: 'Art. 86 C.P. · D. 2591/1991', rolFirma: 'de la parte accionante', rolCliente: 'la parte accionante',
+    desc: 'Protección inmediata de derechos fundamentales.',
+    grupos: [
+      { n: 'Despacho', campos: [C.dest('Juez Civil Municipal de Bogotá D.C. (Reparto)', DESP.tutela, 'Juez', 'Si no sabes el despacho, escribe “Juez de la República (Reparto)”.'), C.ciudad()] },
+      { n: 'Partes', campos: [
+        C.parte('cliente', 'Accionante', PH_PERSONA + '\nSi actúa por un menor o como agente oficioso, indícalo.'),
+        C.parte('contraparte', 'Accionado(s)', PH_ENTIDAD),
+        C.area('vinculados', 'Terceros a vincular (opcional)', 'Ej.: Superintendencia Nacional de Salud; ADRES.', { rows: 2 }),
+      ] },
+      { n: 'El caso', campos: [
+        C.chips('derechos', 'Derechos fundamentales vulnerados', ['Salud', 'Vida digna', 'Seguridad social', 'Mínimo vital', 'Petición', 'Debido proceso', 'Igualdad', 'Trabajo', 'Estabilidad laboral reforzada', 'Educación', 'Vivienda digna', 'Hábeas data', 'Intimidad', 'Buen nombre', 'Dignidad humana', 'Acceso a la administración de justicia', 'Unidad familiar', 'Libre desarrollo de la personalidad'], { req: true }),
+        C.hechos('Ej.: 2/09 el médico le ordenó el medicamento X. 9/09 la EPS lo negó por falta de autorización del comité técnico. Desde entonces no recibe el tratamiento…'),
+        C.area('procedencia', 'Procedencia: subsidiariedad e inmediatez', 'Ej.: Pasaron 6 semanas desde la negativa; no hay otro medio igual de eficaz porque el tratamiento es continuo; es adulta mayor.', { rows: 3, ayuda: 'Por qué la tutela es el medio adecuado y cuánto tiempo ha pasado desde la vulneración.' }),
+        C.area('pretensiones', 'Lo que se pide al juez', 'Ej.: Ordenar a la EPS entregar el medicamento en 48 horas y garantizar el tratamiento integral.', { req: true }),
+        C.area('medida', 'Medida provisional (opcional)', 'Ej.: Entrega inmediata del medicamento mientras se decide, porque suspenderlo agrava la enfermedad.', { rows: 2 }),
+      ] },
+      { n: 'Pruebas y notificaciones', campos: [
+        C.pruebas('Ej.: Fórmula médica del 2/09/2026; respuesta de la EPS del 9/09/2026; cédula de la accionante; poder.'),
+        C.check('juramento', 'Manifestar bajo juramento que no se ha presentado otra tutela por los mismos hechos (art. 37, D. 2591 de 1991)', true),
+        C.notif('Accionante: dirección y correo. Accionado: correo de notificaciones judiciales.'),
+      ] },
+    ],
+    guia: `Fundamento: artículo 86 de la Constitución, Decreto 2591 de 1991 y Decreto 306 de 1992. Reparto: Decreto 1069 de 2015, modificado por el Decreto 333 de 2021. La tutela es informal y no requiere abogado; no le apliques las cargas de admisión de la demanda del artículo 6 de la Ley 2213 de 2022 (sentencia C-522 de 2023).
+Estructura: lugar y fecha; destinatario (Juez … (Reparto)) y, si aplica, E. S. D.; bloque de referencia (Referencia: Acción de tutela; Accionante; Accionado; Derechos invocados); párrafo de presentación con identificación de quien actúa y la calidad en que lo hace; HECHOS (numerados y cronológicos, con fechas); DERECHOS FUNDAMENTALES VULNERADOS (cada derecho y cómo se vulnera); PROCEDENCIA DE LA ACCIÓN (legitimación por activa y por pasiva; subsidiariedad: inexistencia de otro medio idóneo y eficaz o perjuicio irremediable; inmediatez); FUNDAMENTOS DE DERECHO; MEDIDA PROVISIONAL solo si se pide (art. 7 del Decreto 2591 de 1991: necesidad y urgencia); PRETENSIONES (órdenes concretas y verificables, con plazo, normalmente 48 horas); PRUEBAS (enumeradas; pide que se oficie al accionado por los documentos que estén en su poder); JURAMENTO (art. 37 del Decreto 2591 de 1991); ANEXOS; NOTIFICACIONES.
+Si el accionado es un particular, explica por qué procede la tutela en su contra (art. 42 del Decreto 2591 de 1991: servicio público, subordinación o indefensión).`,
+    ejemplo: {
+      destinatario: 'Juez Civil Municipal de Bogotá D.C. (Reparto)', ciudad: 'Bogotá D.C.',
+      cliente: 'María Fernanda López Rincón, C.C. 52.123.456 de Bogotá, 63 años, domiciliada en Bogotá, Calle 45 # 13-20, maria.lopez@correo.com, 310 555 0101.',
+      contraparte: 'EPS Salud Ejemplo S.A.S., NIT 900.123.456-7, notificaciones judiciales: notificaciones@epsejemplo.com',
+      derechos: ['Salud', 'Vida digna', 'Seguridad social'],
+      hechos: '- afiliada al régimen contributivo de la EPS desde 2015\n- 2/09/2026 el reumatólogo le diagnosticó artritis reumatoide y le ordenó tofacitinib 5 mg cada 12 horas por 3 meses\n- 9/09/2026 la EPS negó la entrega: dijo que requiere autorización del comité técnico, que no ha resuelto\n- sin el medicamento tiene dolor e inflamación y no puede trabajar (es costurera independiente)\n- presentó queja ante la EPS el 15/09/2026 y no le han respondido',
+      procedencia: 'Han pasado 6 semanas desde la negativa. Es adulta mayor, sujeto de especial protección, y el tratamiento es continuo; no hay otro medio igual de eficaz.',
+      pretensiones: 'Que se ordene a la EPS entregar el medicamento en 48 horas y garantizar el tratamiento integral para la artritis reumatoide.',
+      pruebas: 'Fórmula médica del 2/09/2026; respuesta de la EPS del 9/09/2026; queja del 15/09/2026; cédula; poder.',
+      juramento: true,
+      notificaciones: 'Accionante: Calle 45 # 13-20, Bogotá; maria.lopez@correo.com. EPS: notificaciones@epsejemplo.com',
+    },
+  },
+  {
+    id: 'peticion', nombre: 'Derecho de petición', area: 'Peticiones y actuaciones administrativas', norma: 'Art. 23 C.P. · Ley 1755/2015', rolFirma: 'del peticionario', rolCliente: 'el peticionario', juris: 'ninguna',
+    desc: 'Solicitud respetuosa a una entidad pública o a un particular.',
+    grupos: [
+      { n: 'Destinatario', campos: [C.dest('Administradora Colombiana de Pensiones, Colpensiones', DESP.entidad, 'Entidad o empresa destinataria', 'Incluye la dependencia si la conoces.'), C.texto('dir_destinatario', 'Dirección o correo de radicación', 'Ej.: notificacionesjudiciales@entidad.gov.co'), C.ciudad()] },
+      { n: 'Peticionario', campos: [C.parte('cliente', 'Peticionario(a)', PH_PERSONA)] },
+      { n: 'La petición', campos: [
+        C.select('modalidad', 'Modalidad', [['particular', 'Interés particular · 15 días'], ['documentos', 'Información o copias · 10 días'], ['consulta', 'Consulta · 30 días'], ['general', 'Interés general · 15 días'], ['privado', 'Ante una empresa privada · 15 días']], { def: 'particular' }),
+        C.hechos('Ej.: Radiqué la solicitud de pensión de vejez el 3/03/2026 con el número…', { req: false, l: 'Contexto y hechos' }),
+        C.area('pretensiones', 'Lo que se solicita', 'Ej.: Que se informe el estado de la solicitud y se expida copia del expediente administrativo.', { req: true, rows: 4 }),
+        { k: 'anexos', l: 'Anexos', t: 'area', rows: 2, ph: 'Ej.: Cédula; constancia de radicación.' }, C.notif('Dirección física y correo donde recibirás la respuesta.'),
+      ] },
+    ],
+    guia: `Fundamento: artículo 23 de la Constitución; Ley 1437 de 2011 (CPACA), arts. 13 y siguientes, sustituidos por la Ley 1755 de 2015. Términos: 15 días hábiles por regla general; 10 días para documentos; 30 días para consultas.`,
+    ejemplo: {
+      destinatario: 'Fondo de Pensiones Ejemplo S.A., Dirección de Prestaciones Económicas', dir_destinatario: 'servicioalcliente@pensionesejemplo.com', ciudad: 'Bogotá D.C.',
+      cliente: 'Jorge Iván Restrepo Gómez, C.C. 79.456.123 de Bogotá, domiciliado en Bogotá, Carrera 30 # 45-10, jorge.restrepo@correo.com, 311 555 0202.',
+      modalidad: 'particular',
+      hechos: 'radicó solicitud de pensión de vejez el 3/03/2026 (radicado 2026-PV-00123). Han pasado más de 7 meses sin respuesta de fondo. Llamó a la línea dos veces y le dijeron que está en estudio.',
+      pretensiones: '1) que resuelvan de fondo la solicitud de pensión; 2) que le informen en qué etapa está y qué documentos faltan; 3) copia completa del expediente administrativo.',
+      anexos: 'Cédula; constancia de radicación del 3/03/2026.',
+      notificaciones: 'Carrera 30 # 45-10, Bogotá; jorge.restrepo@correo.com',
+    },
+  },
+  {
+    id: 'demanda_verbal', nombre: 'Demanda declarativa (verbal o verbal sumario)', area: 'Civil y comercial', norma: 'Arts. 82 y ss., 368 y 390 CGP', rolFirma: 'de la parte demandante', rolCliente: 'la parte demandante',
+    desc: 'Responsabilidad civil, restitución de inmueble, resolución de contrato, pertenencia y demás procesos declarativos.',
+    grupos: [
+      { n: 'Despacho', campos: [C.dest('Juez Civil Municipal de Bogotá D.C. (Reparto)', DESP.civil), C.ciudad()] },
+      { n: 'Partes', campos: [C.parte('cliente', 'Demandante', PH_PERSONA), C.parte('contraparte', 'Demandado(s)', PH_PERSONA + ' Si es empresa: NIT y representante legal. Indica cómo obtuviste su correo.')] },
+      { n: 'El caso', campos: [
+        C.texto('asunto', 'Pretensión principal', 'Ej.: Responsabilidad civil extracontractual por accidente de tránsito', { req: true }),
+        C.hechos('Ej.: El 4/05/2026 el vehículo de placa ABC123 conducido por el demandado chocó…'),
+        C.area('pretensiones', 'Pretensiones', 'Ej.: Declarar responsable al demandado y condenarlo a pagar daño emergente de $8.500.000 y lucro cesante de $3.000.000.', { req: true }),
+        C.texto('cuantia', 'Valor estimado de las pretensiones', 'Ej.: $11.500.000'),
+        C.area('juramento_estimatorio', 'Juramento estimatorio (art. 206 CGP)', 'Concepto por concepto, con su valor.', { rows: 3 }),
+        C.select('conciliacion', 'Conciliación previa', [['agotada', 'Se agotó: adjunto constancia de no acuerdo'], ['cautelares', 'No se exige: pido medidas cautelares'], ['no_exige', 'No se exige por el tipo de asunto']], { def: 'agotada' }),
+      ] },
+      { n: 'Pruebas y notificaciones', campos: [C.pruebas('Documentales; testigos; dictamen pericial; interrogatorio de parte.'), C.notif()] },
+    ],
+    guia: `Requisitos de la demanda: art. 82 del CGP. Ley 2213 de 2022: canales digitales. Conciliación extrajudicial (Ley 2220 de 2022). Cuantía (art. 25 CGP).`,
+  },
+  {
+    id: 'demanda_ejecutiva', nombre: 'Demanda ejecutiva', area: 'Civil y comercial', norma: 'Arts. 422 y ss. CGP', rolFirma: 'de la parte ejecutante', rolCliente: 'la parte ejecutante',
+    desc: 'Cobro judicial de una obligación clara, expresa y exigible: pagarés, letras, facturas, contratos.',
+    grupos: [
+      { n: 'Despacho', campos: [C.dest('Juez Civil Municipal de Bogotá D.C. (Reparto)', DESP.civil), C.ciudad()] },
+      { n: 'Partes', campos: [C.parte('cliente', 'Ejecutante (acreedor)', PH_PERSONA), C.parte('contraparte', 'Ejecutado(s) (deudor)', PH_PERSONA)] },
+      { n: 'La obligación', campos: [
+        C.area('titulo', 'Título ejecutivo', 'Ej.: Pagaré No. 001 suscrito el 10/01/2026 por $20.000.000, con vencimiento el 10/07/2026.', { rows: 3, req: true }),
+        C.area('valores', 'Valores adeudados', 'Ej.: Capital $20.000.000; intereses moratorios a la tasa máxima legal.', { rows: 3, req: true }),
+        C.hechos('Ej.: El deudor no pagó en la fecha de vencimiento…', { req: false }),
+        C.area('medidas', 'Medidas cautelares', 'Ej.: Embargo y secuestro de cuentas bancarias y bienes.', { rows: 3 }),
+      ] },
+      { n: 'Pruebas y notificaciones', campos: [C.pruebas('Ej.: Pagaré original; certificado de existencia.'), C.notif()] },
+    ],
+    guia: `Fundamento: CGP arts. 422 y ss., 430 (mandamiento de pago), 599 (medidas cautelares).`,
+  },
+  {
+    id: 'poder', nombre: 'Poder especial', area: 'Procesos en curso', norma: 'Arts. 74 a 77 CGP · Art. 5 Ley 2213/2022', rolFirma: '', rolCliente: 'el poderdante', juris: 'ninguna', firma: 'poder', breve: true,
+    desc: 'Mandato para representar a tu cliente en un proceso o trámite judicial o administrativo.',
+    grupos: [
+      { n: 'Destinatario', campos: [C.dest('Juez Civil Municipal de Bogotá D.C. (Reparto)', [...DESP.civil, ...DESP.admin], 'Juez o entidad ante quien se presenta'), C.radicado(false), C.ciudad()] },
+      { n: 'Poderdante', campos: [C.parte('cliente', 'Poderdante', PH_PERSONA)] },
+      { n: 'El encargo', campos: [
+        C.area('asunto', 'Para qué se otorga', 'Ej.: Iniciar y llevar hasta su terminación proceso verbal...', { rows: 3, req: true }),
+        C.parte('contraparte', 'Contra quién (si aplica)', 'Nombre e identificación.', false),
+        C.chips('facultades', 'Facultades expresas', ['Recibir', 'Conciliar', 'Transigir', 'Desistir', 'Sustituir', 'Reasumir', 'Renunciar', 'Allanarse', 'Interponer recursos', 'Presentar acción de tutela']),
+      ] },
+    ],
+    guia: `Fundamento: arts. 73 a 77 del CGP y art. 5 de la Ley 2213 de 2022 (poderes por mensaje de datos sin firma manuscrita ni presentación personal).`,
+  },
+  {
+    id: 'memorial', nombre: 'Memorial o solicitud al despacho', area: 'Procesos en curso', norma: 'CGP', rolFirma: 'de la parte que represento', rolCliente: 'la parte que represento', juris: 'ninguna', breve: true,
+    desc: 'Impulso procesal, copias, aplazamientos, desistimientos, renuncia o sustitución de poder.',
+    grupos: [
+      { n: 'Proceso', campos: [C.dest('Juez Doce Civil Municipal de Bogotá D.C.', [...DESP.civil, ...DESP.laboral, ...DESP.admin], 'Despacho'), C.radicado(true), C.texto('proceso', 'Clase de proceso', 'Ej.: Ejecutivo singular'), C.ciudad()] },
+      { n: 'Partes', campos: [C.parte('cliente', 'Parte que represento', 'Nombre y calidad.'), C.parte('contraparte', 'Contraparte', 'Nombre y calidad.', false)] },
+      { n: 'La solicitud', campos: [
+        C.select('asunto_memorial', 'Asunto', [['impulso', 'Impulso procesal'], ['copias', 'Acceso al expediente o copias'], ['aplazamiento', 'Aplazamiento de audiencia'], ['medida', 'Solicitud de medida cautelar'], ['aportar', 'Aportar documentos o pruebas'], ['otro', 'Otro']], { def: 'impulso' }),
+        C.area('solicitud', 'Qué solicitas y por qué', 'Ej.: Han pasado 4 meses desde la radicación de la demanda sin auto admisorio; solicito darle trámite.', { rows: 5, req: true }),
+      ] },
+    ],
+    guia: `Escrito breve y directo al despacho judicial que conoce del proceso.`,
+  },
+  {
+    id: 'otro', nombre: 'Otro escrito', area: 'Otro', norma: 'Tú lo describes', rolFirma: 'de la parte que represento', rolCliente: 'la parte que represento',
+    desc: 'Describe el documento que necesitas y Gemini lo redactará con tu membrete y tu estilo.',
+    grupos: [
+      { n: 'El documento', campos: [C.texto('tipo_libre', '¿Qué documento necesitas?', 'Ej.: Solicitud de amparo de pobreza; habeas data ante central de riesgo', { req: true }), C.dest('Juez, entidad o persona destinataria', null, 'Destinatario'), C.radicado(false), C.ciudad()] },
+      { n: 'Partes', campos: [C.parte('cliente', 'Tu cliente', PH_PERSONA), C.parte('contraparte', 'Contraparte (si aplica)', PH_ENTIDAD, false)] },
+      { n: 'El caso', campos: [C.hechos('Todo lo que el documento debe contar.'), C.area('pretensiones', 'Lo que se pide o se pacta', '', { rows: 4 })] },
+    ],
+    guia: `Identifica el tipo de escrito y aplica la estructura y normas colombianas vigentes correspondientes.`,
+  },
+];
+const TIPOS = Object.fromEntries(TIPOS_LISTA.map(t => [t.id, t]));
+const AREAS = ['Constitucional', 'Peticiones y actuaciones administrativas', 'Civil y comercial', 'Procesos en curso', 'Otro'];
+
+function grupoRedaccion(tipo) {
+  const campos = [
+    { k: 'fundamentos', l: 'Normas o jurisprudencia que quieres citar', t: 'area', rows: 2, ph: 'Opcional. Ej.: Sentencia T-760 de 2008; art. 49 de la Constitución.' },
+    { k: '_extension', l: 'Extensión', t: 'select', opciones: [['concisa', 'Concisa'], ['estandar', 'Estándar'], ['extensa', 'Extensa y exhaustiva']], def: tipo.breve ? 'concisa' : '@extension' },
+    { k: '_juris', l: 'Jurisprudencia', t: 'select', opciones: [['sugerir', 'Sugerir sentencias, marcadas para verificar'], ['usuario', 'Solo la que yo indique'], ['ninguna', 'No citar jurisprudencia']], def: tipo.juris || 'sugerir' },
+  ];
+  if (tipo.firma !== 'poder') campos.push({ k: '_firma', l: 'Quién firma', t: 'select', opciones: [['apoderado', 'Yo, como apoderado(a)'], ['propio', 'Yo, en nombre propio'], ['cliente', 'Mi cliente, en nombre propio']], def: tipo.firma || 'apoderado' });
+  campos.push({ k: '_membrete', l: 'Incluir mi membrete en este escrito', t: 'check', def: true });
+  campos.push({ k: '_notas', l: 'Indicaciones adicionales', t: 'area', rows: 2, ph: 'Ej.: Enfatiza que la accionante es adulta mayor.' });
+  return { n: 'Redacción', campos };
+}
+
+function contextoNormativo() {
+  return [
+    'Ley 2213 de 2022: virtualidad judicial permanente en Colombia (mensajes de datos, poderes por correo electrónico, audiencias virtuales).',
+    'Ley 2452 de 2025: nuevo Código Procesal del Trabajo y de la Seguridad Social para Colombia.',
+    'Ley 2220 de 2022: Estatuto de Conciliación en Colombia.',
+    `Salario mínimo mensual legal vigente: ${pesos(state.perfil.ia.smmlv || 1750905)}.`,
+    'Si citas una sentencia o artículo sin certeza absoluta, marca [VERIFICAR] después de la cita.',
+  ];
+}
+
+const EJEMPLO_TEXTO = `Bogotá D.C., ${fechaLarga()}
+
+Señor
+JUEZ CIVIL MUNICIPAL DE BOGOTÁ D.C. (REPARTO)
+E. S. D.
+
+| **Referencia:** Acción de tutela
+| **Accionante:** María Fernanda López Rincón
+| **Accionada:** EPS Salud Ejemplo S.A.S.
+| **Derechos invocados:** Salud, vida digna y seguridad social
+
+**@NOMBRE@**, mayor de edad, identificad@O@ con la cédula de ciudadanía No. @CEDULA@, abogad@O@ en ejercicio con Tarjeta Profesional No. @TP@ del Consejo Superior de la Judicatura, en calidad de apoderad@O@ de la señora **MARÍA FERNANDA LÓPEZ RINCÓN**, según el poder que anexo, respetuosamente presento **ACCIÓN DE TUTELA** contra **EPS SALUD EJEMPLO S.A.S.**, con fundamento en el artículo 86 de la Constitución Política y el Decreto 2591 de 1991, por los siguientes:
+
+## Hechos
+
+**PRIMERO.** La señora López Rincón, de 63 años, está afiliada al régimen contributivo de la EPS accionada desde 2015.
+
+**SEGUNDO.** El 2 de septiembre de 2026 su médico tratante le diagnosticó artritis reumatoide y le ordenó tofacitinib de 5 mg cada doce horas por tres meses.
+
+**TERCERO.** El 9 de septiembre de 2026 la EPS negó la entrega con el argumento de que el medicamento requería autorización del comité técnico, trámite que a la fecha no ha resuelto.
+
+## Derechos fundamentales vulnerados
+
+La negativa de la EPS vulnera los derechos fundamentales a la salud, a la vida digna y a la seguridad social. Los trámites administrativos internos no pueden obstaculizar la entrega de tratamientos médicos prescritos (Sentencia T-760 de 2008 [VERIFICAR]).
+
+## Pretensiones
+
+**PRIMERA.** Tutelar los derechos fundamentales a la salud y a la vida digna de María Fernanda López Rincón.
+
+**SEGUNDA.** Ordenar a EPS Salud Ejemplo S.A.S. la entrega inmediata del medicamento en un plazo no mayor a cuarenta y ocho (48) horas.
+
+## Pruebas
+
+1. Fórmula médica del 2 de septiembre de 2026.
+2. Copia de la cédula de ciudadanía y poder.
+
+## Juramento
+
+Bajo la gravedad del juramento manifiesto que no se ha presentado otra acción de tutela por los mismos hechos.
+
+Del señor Juez, con todo respeto,
+
+[[FIRMA: Apoderad@O@ de la parte accionante]]`;
+
+/* =========================================================
+   Estado
+   ========================================================= */
+const state = {
+  vista: 'redactar',
+  perfil: clon(PERFIL_BASE),
+  tipo: null,
+  datos: {},
+  texto: '',
+  ejemplo: true,
+  docId: null,
+  creado: null,
+  prompt: '',
+  prevTexto: null,
+  generando: false,
+  ctl: null,
+  plantilla: null,
+  catalogoAbierto: true,
+};
+const IMG = { logo: null, firma: null };
+const CAP = { sample: true, downloads: true, listo: true };
+
+const Almacen = {
+  remoto() { return false; },
+  async leer(k) { return lsGet('doc:' + k); },
+  async escribir(k, data) { lsSet('doc:' + k, data); },
+  async borrar(k) { lsDel('doc:' + k); },
+  async listarHist() {
+    return (lsGet('hist') || []).slice().sort((a, b) => (b.actualizado || 0) - (a.actualizado || 0));
+  },
+  async guardarHist(id, data) {
+    const lista = (lsGet('hist') || []).filter(x => x.id !== id);
+    lista.push({ id, ...data });
+    lsSet('hist', lista.slice(-60));
+  },
+  async borrarHist(id) {
+    lsSet('hist', (lsGet('hist') || []).filter(x => x.id !== id));
+  }
+};
+
+/* Formato y marcas */
+function limpiarSalida(t) {
+  let s = String(t || '').replace(/\r\n?/g, '\n');
+  s = s.replace(/^\s*```[a-zA-Z]*\s*\n/, '').replace(/\n```\s*$/, '');
+  const m = /^(?:aquí|a continuación|claro|por supuesto)[^\n]*:\s*\n\s*\n/i.exec(s);
+  if (m) s = s.slice(m[0].length);
+  return s;
+}
+function parseDoc(texto) {
+  const lineas = limpiarSalida(texto).split('\n');
+  const bloques = [];
+  let cur = null;
+  const cerrar = () => { if (cur) { bloques.push(cur); cur = null; } };
+  for (const bruta of lineas) {
+    const l = bruta.replace(/\s+$/, '');
+    if (!l.trim()) { cerrar(); continue; }
+    let m;
+    if ((m = /^\s*\[\[\s*FIRMA(?:\s*:\s*([^\]]*?))?\s*\]\]\s*$/i.exec(l))) { cerrar(); bloques.push({ t: 'firma', rol: (m[1] || '').trim() }); continue; }
+    if ((m = /^(#{1,3})\s+(.+)$/.exec(l))) { cerrar(); bloques.push({ t: 'h' + m[1].length, lines: [m[2].replace(/\s+#+\s*$/, '')] }); continue; }
+    if ((m = /^\s*>\s?(.*)$/.exec(l))) { if (!cur || cur.t !== 'quote') { cerrar(); cur = { t: 'quote', lines: [] }; } cur.lines.push(m[1]); continue; }
+    if ((m = /^\s*\|\s?(.*)$/.exec(l))) { if (!cur || cur.t !== 'ref') { cerrar(); cur = { t: 'ref', lines: [] }; } cur.lines.push(m[1]); continue; }
+    if ((m = /^\s*[-•*]\s+(.*)$/.exec(l)) && !/^\s*\*\*/.test(l)) { cerrar(); cur = { t: 'li', lines: [m[1]] }; continue; }
+    if (cur && (cur.t === 'quote' || cur.t === 'ref')) cerrar();
+    if (!cur) cur = { t: 'p', lines: [] };
+    cur.lines.push(l.replace(/^\s+/, ''));
+  }
+  cerrar();
+  for (const b of bloques) {
+    if (b.t === 'p' && b.lines.length === 1) {
+      const m = /^\*\*([^*]{2,80})\*\*:?$/.exec(b.lines[0].trim());
+      if (m && m[1] === m[1].toLocaleUpperCase('es-CO') && /[A-ZÁÉÍÓÚÑ]/.test(m[1]) && !/[.;,]$/.test(m[1])) { b.t = 'h2'; b.lines = [m[1]]; }
+    }
+  }
+  return bloques;
+}
+function parseInline(s) {
+  const runs = [];
+  let b = false, i = false, u = false, last = 0, m;
+  const re = /(_{3,}|\*\*|__|\*|\[(?:COMPLETAR|VERIFICAR)(?::[^\]]*)?\])/g;
+  while ((m = re.exec(s))) {
+    if (m.index > last) runs.push({ text: s.slice(last, m.index), b, i, u });
+    const tok = m[1];
+    if (/^_{3,}$/.test(tok)) runs.push({ text: tok, b, i, u });
+    else if (tok === '**') b = !b;
+    else if (tok === '__') u = !u;
+    else if (tok === '*') i = !i;
+    else runs.push({ text: tok, b, i, u, mk: tok.startsWith('[COMPLETAR') ? 'c' : 'v' });
+    last = re.lastIndex;
+  }
+  if (last < s.length) runs.push({ text: s.slice(last), b, i, u });
+  return runs.filter(r => r.text);
+}
+function textoPlano(dsl) {
+  const out = [];
+  for (const b of parseDoc(dsl)) {
+    if (b.t === 'firma') { out.push(firmaLineas(b.rol).join('\n')); continue; }
+    const lines = b.lines.map(l => parseInline(l).map(r => r.text).join(''));
+    if (b.t === 'li') out.push('• ' + lines.join('\n'));
+    else if (b.t === 'h1' || b.t === 'h2') out.push(state.perfil.formato.mayus ? lines.join(' ').toLocaleUpperCase('es-CO') : lines.join(' '));
+    else out.push(lines.join('\n'));
+  }
+  return out.join('\n\n');
+}
+function quitarVerificar(dsl) { return dsl.replace(/[ \t]*\[VERIFICAR(?::[^\]]*)?\]/g, ''); }
+
+/* Vista previa y membrete */
+function generoAb() { const g = state.perfil.abogado.genero; return g === 'f' ? 'a' : g === 'm' ? 'o' : 'o(a)'; }
+function firmaLineas(rol) {
+  const ab = state.perfil.abogado, f = state.perfil.formato;
+  const L = ['_______________________________', (ab.nombre || '[COMPLETAR: nombre del abogado]').toLocaleUpperCase('es-CO')];
+  if (ab.cedula) L.push(`C.C. No. ${ab.cedula}${ab.cedulaLugar ? ' de ' + ab.cedulaLugar : ''}`);
+  if (ab.tp) L.push(`T.P. No. ${ab.tp} del C. S. de la J.`);
+  if (rol) L.push(rol);
+  if (f.firmaContacto) { const c = [ab.correo, ab.telefono && 'Tel. ' + ab.telefono].filter(Boolean).join(' · '); if (c) L.push(c); }
+  return L;
+}
+function firmaHtml(rol) {
+  const ab = state.perfil.abogado, f = state.perfil.formato;
+  const ph = t => `<span class="ph">${esc(t)}</span>`;
+  const L = ['_______________________________'];
+  L.push(ab.nombre ? `<strong>${esc(ab.nombre.toLocaleUpperCase('es-CO'))}</strong>` : ph('NOMBRE DEL ABOGADO'));
+  L.push(ab.cedula ? `C.C. No. ${esc(ab.cedula)}${ab.cedulaLugar ? ' de ' + esc(ab.cedulaLugar) : ''}` : ph('C.C. No. —'));
+  L.push(ab.tp ? `T.P. No. ${esc(ab.tp)} del C. S. de la J.` : ph('T.P. No. — del C. S. de la J.'));
+  if (rol) L.push(esc(rol));
+  if (f.firmaContacto) { const c = [ab.correo, ab.telefono && 'Tel. ' + ab.telefono].filter(Boolean).map(esc).join(' · '); if (c) L.push(c); }
+  const img = IMG.firma ? `<img class="firma-img" src="${IMG.firma.dataUrl}" alt="">` : '<div class="firma-espacio"></div>';
+  return `<div data-b="firma" data-rol="${esc(rol)}" contenteditable="false" class="firma${f.firmaAlin === 'centro' ? ' centro' : ''}">${img}${L.join('<br>')}</div>`;
+}
+function inlineHtml(linea) {
+  return parseInline(linea).map(r => {
+    let t = esc(r.text);
+    if (r.mk) t = `<mark class="mk-${r.mk}">${t}</mark>`;
+    if (r.u) t = `<u>${t}</u>`;
+    if (r.i) t = `<em>${t}</em>`;
+    if (r.b) t = `<strong>${t}</strong>`;
+    return t;
+  }).join('');
+}
+function cuerpoHtml(bloques) {
+  return bloques.map(b => {
+    if (b.t === 'firma') return firmaHtml(b.rol);
+    const multi = b.t === 'p' && b.lines.length > 1;
+    const inner = b.lines.map(inlineHtml).join('<br>');
+    return `<p data-b="${b.t}"${multi ? ' class="multi"' : ''}>${inner || '<br>'}</p>`;
+  }).join('');
+}
+function pieTexto() {
+  const ab = state.perfil.abogado, m = state.perfil.membrete;
+  const dirCiudad = [ab.direccion, ab.ciudad].filter(Boolean);
+  if (m.diseno === 'centrado') return [...dirCiudad, ab.telefono && 'Tel. ' + ab.telefono, ab.correo, m.web].filter(Boolean).join('  ·  ');
+  if (m.diseno === 'sobrio') return [m.web].filter(Boolean).join('');
+  return [...dirCiudad, m.web].filter(Boolean).join('  ·  ');
+}
+function contactoCabecera() {
+  const ab = state.perfil.abogado;
+  return [ab.telefono && 'Tel. ' + ab.telefono, ab.correo].filter(Boolean).join('  ·  ');
+}
+function usaPlantilla() { return state.perfil.membrete.modo === 'plantilla' && !!(state.plantilla && state.plantilla.info); }
+function membreteHtml() {
+  const p = state.perfil, m = p.membrete, ab = p.abogado;
+  const nombre = (m.titulo || ab.nombre || '').trim();
+  const nom = nombre ? esc(nombre) : '<span class="memb-vacio">Nombre del abogado</span>';
+  const sub = m.subtitulo ? esc(m.subtitulo) : (nombre ? '' : '<span class="memb-vacio">Abogado(a) · Especialidad</span>');
+  const logo = IMG.logo ? `<img class="memb-logo" src="${IMG.logo.dataUrl}" alt="">` : '';
+  const linea = m.linea ? '<div class="memb-linea"></div>' : '';
+  const contacto = esc(contactoCabecera());
+  if (m.diseno === 'lateral') {
+    return `<div class="memb-lateral${logo ? '' : ' sin-logo'}">${logo}<div class="memb-texto"><div class="memb-nombre">${nom}</div>${sub ? `<div class="memb-sub">${sub}</div>` : ''}${contacto ? `<div class="memb-contacto">${contacto}</div>` : ''}</div>${linea}</div>`;
+  }
+  if (m.diseno === 'sobrio') {
+    const dir = esc([ab.direccion, ab.ciudad].filter(Boolean).join(', '));
+    return `<div class="memb-sobrio"><div class="memb-nombre">${nom}</div><div class="memb-contacto der">${contacto}</div><div class="memb-sub">${sub}</div><div class="memb-contacto der">${dir}</div><div class="memb-linea"></div></div>`;
+  }
+  return `<div class="memb-centrado">${logo}<div class="memb-nombre">${nom}</div>${sub ? `<div class="memb-sub">${sub}</div>` : ''}${linea}</div>`;
+}
+function pieHtml(conMembrete, paginas) {
+  const m = state.perfil.membrete;
+  let s = '';
+  if (conMembrete) {
+    const t = pieTexto();
+    if (t || !state.perfil.abogado.nombre) s += `${m.linea ? '<div class="pie-linea"></div>' : ''}<div>${t ? esc(t) : '<span class="memb-vacio">Dirección · Ciudad · Teléfono · Correo</span>'}</div>`;
+  }
+  if (m.numeracion) s += `<div class="pie-pag">Página 1 de ${paginas || 1}</div>`;
+  return s;
+}
+
+function medidas() {
+  const f = state.perfil.formato;
+  return { papel: PAPEL[f.papel] || PAPEL.carta, mg: MARGENES[f.margenes] || MARGENES.amplio };
+}
+function fuenteEfectiva() {
+  const f = state.perfil.formato;
+  return { nombre: f.fuente, tam: f.tamano, conocida: FUENTES[f.fuente] || FUENTES.Arial };
+}
+let fuenteCargada = 'Arimo';
+function cargarFuenteHoja(web) {
+  if (!web || web === fuenteCargada) return;
+  fuenteCargada = web;
+  $('#fuenteHojaCss').href = `https://fonts.googleapis.com/css2?family=${web.replace(/ /g, '+')}:ital,wght@0,400;0,700;1,400;1,700&display=swap`;
+}
+function aplicarFormato(hoja) {
+  const p = state.perfil, f = p.formato;
+  const { papel, mg } = medidas();
+  const fu = fuenteEfectiva();
+  if (fu.conocida) cargarFuenteHoja(fu.conocida.web);
+  const css = fu.conocida ? fu.conocida.css : `"${fu.nombre}", Arial, sans-serif`;
+  const s = hoja.style;
+  s.setProperty('--hoja-ancho', papel.w + 'cm');
+  s.setProperty('--hoja-alto', papel.h + 'cm');
+  s.setProperty('--m-sup', mg.sup + 'cm'); s.setProperty('--m-inf', mg.inf + 'cm');
+  s.setProperty('--m-izq', mg.izq + 'cm'); s.setProperty('--m-der', mg.der + 'cm');
+  s.setProperty('--hoja-fuente', css);
+  s.setProperty('--hoja-tam', fu.tam + 'pt');
+  s.setProperty('--hoja-int', String(Math.round(Number(f.interlineado) * 1.15 * 1000) / 1000));
+  s.setProperty('--hoja-esp', (ESPACIO[f.espacio] ?? 8) + 'pt');
+  s.setProperty('--hoja-alin', f.alineacion === 'izquierda' ? 'left' : 'justify');
+  s.setProperty('--hoja-tit-alin', f.titulos === 'izquierda' ? 'left' : 'center');
+  s.setProperty('--hoja-sangria', f.sangria ? '1.25cm' : '0cm');
+  s.setProperty('--ref-sangria', f.refSangria ? ((papel.w - mg.izq - mg.der) / 2).toFixed(2) + 'cm' : '0cm');
+  s.setProperty('--cita-estilo', f.citaCursiva ? 'italic' : 'normal');
+  s.setProperty('--memb-color', p.membrete.color || '#1f3a68');
+  hoja.classList.toggle('mayus', !!f.mayus);
+}
+function ajustarZoom() {
+  const hoja = $('#hoja'), mesa = $('#mesaHoja');
+  if (!hoja || !mesa || mesa.offsetParent === null) return;
+  const cs = getComputedStyle(mesa);
+  const disponible = mesa.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const anchoPx = medidas().papel.w * 37.795;
+  if (disponible < 560) { hoja.classList.add('lectura'); hoja.style.zoom = ''; return; }
+  hoja.classList.remove('lectura');
+  hoja.style.zoom = String(Math.min(1, Math.max(0.3, disponible / anchoPx)));
+}
+function estimarPaginas() {
+  const hoja = $('#hoja'), cuerpo = $('#cuerpo');
+  if (!hoja || hoja.classList.contains('lectura')) return 1;
+  const { papel, mg } = medidas();
+  const z = parseFloat(hoja.style.zoom) || 1;
+  const util = (papel.h - mg.sup - mg.inf) * 37.795;
+  const alto = cuerpo.getBoundingClientRect().height / (z || 1);
+  return Math.max(1, Math.ceil(alto / util));
+}
+function textoEjemplo() {
+  const ab = state.perfil.abogado;
+  const g = generoAb();
+  return EJEMPLO_TEXTO
+    .replace(/@NOMBRE@/g, ab.nombre ? ab.nombre.toLocaleUpperCase('es-CO') : '[COMPLETAR: nombre del abogado]')
+    .replace(/@CEDULA@/g, ab.cedula ? ab.cedula + (ab.cedulaLugar ? ' de ' + ab.cedulaLugar : '') : '[COMPLETAR: cédula]')
+    .replace(/@TP@/g, ab.tp || '[COMPLETAR: número]')
+    .replace(/@O@/g, g === 'o(a)' ? 'o(a)' : g);
+}
+function conMembreteDoc() { return state.ejemplo ? true : state.datos._membrete !== false; }
+function renderMembreteHoja() {
+  const hoja = $('#hoja');
+  const con = conMembreteDoc();
+  $('#membrete').innerHTML = con ? membreteHtml() : '';
+  hoja.classList.toggle('sin-membrete', !con);
+  $('#pie').innerHTML = pieHtml(con, estimarPaginas());
+}
+function renderHoja({ escribiendo = false } = {}) {
+  const hoja = $('#hoja'), cuerpo = $('#cuerpo');
+  aplicarFormato(hoja);
+  $('#selloEjemplo').hidden = !state.ejemplo;
+  const texto = state.ejemplo ? textoEjemplo() : state.texto;
+  cuerpo.innerHTML = cuerpoHtml(parseDoc(texto));
+  cuerpo.classList.toggle('escribiendo', escribiendo);
+  cuerpo.contentEditable = (!state.ejemplo && !state.generando) ? 'true' : 'false';
+  renderMembreteHoja();
+  ajustarZoom();
+  $('#pie').innerHTML = pieHtml(conMembreteDoc(), estimarPaginas());
+  actualizarVerificacion();
+}
+function refrescarFirmas() {
+  $$('#cuerpo [data-b="firma"]').forEach(el => { const t = document.createElement('div'); t.innerHTML = firmaHtml(el.dataset.rol || ''); el.replaceWith(t.firstChild); });
+}
+
+function serializarCuerpo() {
+  const out = [];
+  for (const el of $('#cuerpo').children) {
+    const t = el.dataset.b || 'p';
+    if (t === 'firma') { out.push(el.dataset.rol ? `[[FIRMA: ${el.dataset.rol}]]` : '[[FIRMA]]'); continue; }
+    const lines = el.innerText.split('\n');
+    if (!lines.join('').trim()) continue;
+    const pre = { h1: '# ', h2: '## ', h3: '### ', quote: '> ', ref: '| ' }[t];
+    if (t === 'h1' || t === 'h2' || t === 'h3') out.push(pre + lines.join(' ').trim());
+    else if (t === 'quote' || t === 'ref') out.push(lines.map(l => pre + l).join('\n'));
+    else if (t === 'li') out.push('- ' + lines.join('\n'));
+    else out.push(lines.join('\n'));
+  }
+  return out.join('\n\n');
+}
+
+/* Verificación */
+let panelAbierto = false;
+function recogerMarcas() {
+  const cuerpo = $('#cuerpo');
+  const items = [];
+  const walker = document.createTreeWalker(cuerpo, NodeFilter.SHOW_TEXT);
+  const re = /\[(COMPLETAR|VERIFICAR)(?::\s*([^\]]*))?\]/g;
+  let n;
+  while ((n = walker.nextNode())) {
+    let m; re.lastIndex = 0;
+    while ((m = re.exec(n.nodeValue))) {
+      items.push({ tipo: m[1] === 'COMPLETAR' ? 'c' : 'v', detalle: (m[2] || '').trim(), nodo: n, off: m.index, bloque: n.parentElement.closest('#cuerpo > *') });
+    }
+  }
+  return items;
+}
+function actualizarVerificacion() {
+  const verif = $('#verif'), panel = $('#panelVerif');
+  if (state.ejemplo || state.generando || !state.texto) { verif.hidden = true; panel.hidden = true; return; }
+  const items = recogerMarcas();
+  const nc = items.filter(i => i.tipo === 'c').length, nv = items.filter(i => i.tipo === 'v').length;
+  verif.replaceChildren();
+  if (!nc && !nv) verif.append(h('span', { class: 'vchip ok' }, '✓ Sin datos por completar'));
+  if (nc) verif.append(h('button', { class: 'vchip c', type: 'button', onclick: alternarPanel }, `${nc} por completar`));
+  if (nv) verif.append(h('button', { class: 'vchip v', type: 'button', onclick: alternarPanel }, `${nv} citas a verificar`));
+  verif.hidden = false;
+  if (!panelAbierto) panel.hidden = true;
+}
+function alternarPanel() { panelAbierto = !panelAbierto; $('#panelVerif').hidden = !panelAbierto; }
+
+/* Prompt */
+function construirPrompt() {
+  const tipo = TIPOS[state.tipo];
+  const p = state.perfil, ab = p.abogado, d = state.datos;
+  const L = [];
+  L.push('Eres un abogado litigante colombiano de élite. Redactas memoriales, demandas y tutelas impecables y listas para radicar ante los juzgados y entidades de Colombia.');
+  L.push('');
+  L.push(`FECHA: ${fechaLarga()}.`);
+  L.push(`TIPO DE ESCRITO: ${tipo.nombre}`);
+  L.push('');
+  L.push('MARCO NORMATIVO VIGENTE EN COLOMBIA:');
+  contextoNormativo().forEach(x => L.push('- ' + x));
+  L.push('');
+  L.push('GUÍA ESPECÍFICA:');
+  L.push(tipo.guia);
+  L.push('');
+  L.push('DATOS DEL ABOGADO:');
+  if (ab.nombre) {
+    L.push(`- Nombre: ${ab.nombre}`);
+    L.push(`- Tarjeta Profesional: ${ab.tp || '[COMPLETAR]'}`);
+    L.push(`- Cédula: ${ab.cedula || '[COMPLETAR]'}`);
+  }
+  L.push('');
+  L.push('DATOS DEL CASO SUMINISTRADOS:');
+  for (const c of camposTipo(tipo)) {
+    const v = d[c.k];
+    if (v != null && v !== '') L.push(`- ${c.l}: ${Array.isArray(v) ? v.join(', ') : v}`);
+  }
+  L.push('');
+  L.push('FORMATO OBLIGATORIO:');
+  L.push('- Párrafos con doble salto de línea.');
+  L.push('- Capítulos principales con "## ". Subcapítulos con "### ".');
+  L.push('- Hechos numerados ordenados cronológicamente.');
+  L.push('- Negrilla con **texto**, cursiva con *texto*.');
+  L.push('- Marca con [COMPLETAR: dato] lo que falte y con [VERIFICAR] si citas jurisprudencia sugerida.');
+  L.push('- Termina con [[FIRMA]] en una línea sola.');
+  return L.join('\n');
+}
+function camposTipo(tipo) { return [...tipo.grupos.flatMap(g => g.campos), ...grupoRedaccion(tipo).campos]; }
+
+/* =========================================================
+   Redacción con Google Gemini (Vía API Streaming)
+   ========================================================= */
+let reloj = null;
+function iniciarReloj(base) {
+  const t0 = Date.now();
+  clearInterval(reloj);
+  const pintar = () => { const s = Math.floor((Date.now() - t0) / 1000); estadoHoja('vivo', `${base} ${Math.floor(s / 60)}:${dos(s % 60)}`); };
+  pintar(); reloj = setInterval(pintar, 1000);
+}
+function pararReloj() { clearInterval(reloj); reloj = null; }
+function estadoHoja(clase, texto) {
+  const e = $('#hbEstado');
+  e.className = 'hb-estado ' + (clase || '');
+  $('#hbTexto').textContent = texto;
+}
+
+async function redactar(modo = 'nuevo', instruccion = '') {
+  if (state.generando) return;
+  state.generando = true;
+  state.ejemplo = false;
+  state.ctl = new AbortController();
+  const ctl = state.ctl;
+
+  if (modo === 'ajuste') {
+    state.prevTexto = state.texto;
+  } else {
+    if (modo === 'regenerar' && state.texto) state.prevTexto = state.texto;
+    state.prompt = construirPrompt();
+  }
+
+  ponerControles();
+  $('#selloEjemplo').hidden = true;
+  const cuerpo = $('#cuerpo');
+  cuerpo.contentEditable = 'false';
+  cuerpo.innerHTML = `<p class="esperando">Conectando con Google Gemini y redactando escrito en tiempo real…</p>`;
+  renderMembreteHoja();
+  iniciarReloj('Redactando con Gemini…');
+
+  const pintar = t => {
+    cuerpo.innerHTML = cuerpoHtml(parseDoc(t));
+    cuerpo.classList.add('escribiendo');
+    cuerpo.scrollTop = cuerpo.scrollHeight;
+  };
+
+  let acumulado = '';
+  try {
+    const res = await fetch('/api/redactar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: state.prompt || construirPrompt(),
+        modo: modo,
+        instruccion: instruccion,
+        texto_previo: state.prevTexto || state.texto,
+        calidad: state.perfil.ia.calidad
+      }),
+      signal: ctl.signal
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Error en el servidor' }));
+      throw new Error(err.detail || 'Error en la conexión');
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      acumulado += chunk;
+      pintar(acumulado);
+    }
+
+    terminarRedaccion(acumulado, modo, null, false);
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      terminarRedaccion(acumulado, modo, 'Redacción detenida.', true);
+    } else {
+      terminarRedaccion(acumulado, modo, null, true);
+      toast(e.message || 'Error al conectar con Gemini.', 'error', 7000);
+    }
+  }
+}
+
+function terminarRedaccion(texto, modo, aviso, fallo = false) {
+  pararReloj();
+  state.generando = false;
+  state.ctl = null;
+  const limpio = limpiarSalida(texto || '').trim();
+  if (!limpio) {
+    if (state.prevTexto) state.texto = state.prevTexto;
+    if (!state.texto) state.ejemplo = true;
+    renderHoja();
+    ponerControles();
+    estadoHoja(state.texto ? 'listo' : '', state.texto ? 'Se conservó versión' : 'Ejemplo de escrito');
+    return;
+  }
+  state.texto = limpio;
+  state.ejemplo = false;
+  renderHoja();
+  ponerControles();
+  $('#btnDeshacerAjuste').hidden = !state.prevTexto;
+  guardarBorrador();
+  guardarEnHistorial().then(ok => {
+    estadoHoja(fallo ? 'error' : 'listo', (fallo ? 'Incompleto · ' : 'Listo · ') + horaCorta(Date.now()));
+  });
+  if (aviso) toast(aviso, 'info', 5000);
+  else if (!fallo) toast('Escrito redactado exitosamente con Gemini.', 'ok');
+}
+
+function detener() { if (state.ctl) state.ctl.abort(); }
+
+/* Análisis de estilo con Gemini */
+async function analizarEstilo() {
+  const muestra = state.perfil.estilo.muestra.trim();
+  const est = $('#analizarEstado');
+  if (muestra.length < 100) { est.textContent = 'Pega un memorial o escrito de muestra.'; return; }
+  const btn = $('#btnAnalizar'); btn.disabled = true; est.textContent = 'Analizando con Gemini…';
+  try {
+    const res = await fetch('/api/analizar-estilo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ muestra })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al analizar');
+    state.perfil.estilo.ficha = data.ficha;
+    $('#e_ficha').value = data.ficha;
+    guardarPerfil();
+    est.textContent = 'Listo. Ficha de estilo generada.';
+    toast('Ficha de estilo generada con Gemini.', 'ok');
+  } catch (e) {
+    est.textContent = e.message || 'Error al analizar estilo.';
+    toast(e.message, 'error');
+  } finally { btn.disabled = false; }
+}
+
+/* =========================================================
+   Exportación Nativa (Word & PDF)
+   ========================================================= */
+function ponerControles() {
+  const hay = !!state.texto && !state.ejemplo;
+  const g = state.generando;
+  $('#btnDetener').hidden = !g;
+  $('#btnAjustar').disabled = !hay || g;
+  $('#btnRegenerar').disabled = !hay || g || !state.tipo;
+  $('#btnCopiar').disabled = !hay || g;
+  $('#btnWord').disabled = !hay || g;
+  $('#btnPdf').disabled = !hay || g;
+  $('#btnRedactar').disabled = g;
+  $('#edicion').hidden = !hay || g;
+  if (!hay || g) $('#ajuste').hidden = true;
+  $('#btnDeshacerAjuste').hidden = !state.prevTexto || g;
+}
+
+function nombreArchivo(ext) {
+  const t = TIPOS[state.tipo];
+  const base = t ? (t.id === 'otro' && state.datos.tipo_libre ? state.datos.tipo_libre : t.nombre) : 'Escrito';
+  const cli = String(state.datos.cliente || '').split(',')[0].trim().slice(0, 40);
+  const d = new Date();
+  return `${base}${cli ? ' - ' + cli : ''} - ${d.getFullYear()}-${dos(d.getMonth()+1)}-${dos(d.getDate())}.${ext}`.replace(/[\\/:*?"<>|]+/g, '_');
+}
+
+async function guardarArchivo(nombre, blob) {
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Descargado: ' + nombre, 'ok');
+    return true;
+  } catch (e) {
+    toast('No se pudo descargar el archivo.', 'error');
+    return false;
+  }
+}
+
+async function pedirExportacion(tipo) {
+  if (tipo === 'docx') {
+    const blob = new Blob([textoPlano(state.texto)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    await guardarArchivo(nombreArchivo('txt'), blob);
+  } else {
+    window.print();
+  }
+}
+
+function copiarTexto() {
+  const t = textoPlano(state.texto);
+  navigator.clipboard.writeText(t).then(() => toast('Texto copiado al portapapeles.', 'ok'));
+}
+
+/* =========================================================
+   Formulario, UI e Inicialización
+   ========================================================= */
+function elegirTipo(id) {
+  state.tipo = id;
+  state.catalogoAbierto = false;
+  renderZonaTipo();
+  renderFormulario();
+  $('#accionesForm').hidden = false;
+}
+function renderZonaTipo() {
+  const zona = $('#zonaTipo');
+  zona.replaceChildren();
+  if (!state.tipo || state.catalogoAbierto) {
+    zona.append(h('div', { class: 'intro' }, h('h1', {}, '¿Qué documento necesitas redactar?'), h('p', {}, 'Elige el tipo de escrito. Google Gemini lo redactará siguiendo la legislación colombiana vigente.')));
+    const lista = h('div', { class: 'catalogo' });
+    for (const t of TIPOS_LISTA) {
+      lista.append(h('button', { class: 'cat-item', type: 'button', onclick: () => elegirTipo(t.id) }, h('span', { class: 'n' }, t.nombre), h('span', { class: 'nm' }, t.norma), h('span', { class: 'd' }, t.desc)));
+    }
+    zona.append(lista);
+    $('#formCaso').hidden = true;
+    $('#accionesForm').hidden = true;
+    return;
+  }
+  const t = TIPOS[state.tipo];
+  zona.append(h('div', { class: 'tipo-actual' },
+    h('span', { class: 'eyebrow' }, t.area),
+    h('h2', {}, t.nombre),
+    h('button', { class: 'btn chico', type: 'button', onclick: () => { state.catalogoAbierto = true; renderZonaTipo(); } }, 'Cambiar'),
+    h('span', { class: 'nm' }, t.norma),
+    h('p', { class: 'd' }, t.desc)));
+  if (t.ejemplo) zona.append(h('div', { class: 'fila-ejemplo' }, h('button', { class: 'btn chico fantasma', type: 'button', onclick: llenarEjemplo }, 'Llenar caso de ejemplo')));
+  $('#formCaso').hidden = false;
+}
+function llenarEjemplo() {
+  const t = TIPOS[state.tipo];
+  if (!t || !t.ejemplo) return;
+  state.datos = { ...t.ejemplo };
+  renderFormulario();
+  toast('Datos de ejemplo cargados.', 'info');
+}
+function renderFormulario() {
+  const form = $('#formCaso');
+  form.replaceChildren();
+  const tipo = TIPOS[state.tipo];
+  if (!tipo) return;
+  for (const g of [...tipo.grupos, grupoRedaccion(tipo)]) {
+    const sec = h('section', { class: 'grupo' }, h('h3', { class: 'leyenda' }, h('span', {}, g.n)));
+    for (const c of g.campos) sec.append(renderCampo(c));
+    form.append(sec);
+  }
+}
+function renderCampo(c) {
+  const id = 'f_' + c.k;
+  const v = state.datos[c.k] ?? '';
+  const wrap = h('div', { class: 'campo' });
+  wrap.append(h('label', { for: id }, c.l));
+  let inp;
+  if (c.t === 'area') {
+    inp = h('textarea', { id, rows: c.rows || 3, placeholder: c.ph || '' });
+    inp.value = v;
+    inp.oninput = () => { state.datos[c.k] = inp.value; guardarBorrador(); };
+  } else if (c.t === 'select') {
+    inp = h('select', { id });
+    for (const [val, txt] of c.opciones) { const o = h('option', { value: val }, txt); if (val === v) o.selected = true; inp.append(o); }
+    inp.onchange = () => { state.datos[c.k] = inp.value; guardarBorrador(); };
+  } else {
+    inp = h('input', { type: 'text', id, placeholder: c.ph || '' });
+    inp.value = v;
+    inp.oninput = () => { state.datos[c.k] = inp.value; guardarBorrador(); };
+  }
+  wrap.append(inp);
+  return wrap;
+}
+function validarFormulario() {
+  if (!state.tipo) return false;
+  return true;
+}
+function guardarBorrador() { lsSet('borrador', { tipo: state.tipo, datos: state.datos, texto: state.texto }); }
+async function guardarEnHistorial() {
+  if (!state.texto || state.ejemplo) return false;
+  const id = 'd_' + Date.now();
+  await Almacen.guardarHist(id, { id, tipo: state.tipo, titulo: TIPOS[state.tipo]?.nombre || 'Escrito', texto: state.texto, actualizado: Date.now() });
+  return true;
+}
+async function renderHistorial() {
+  const lista = $('#histLista');
+  const items = await Almacen.listarHist();
+  lista.replaceChildren();
+  $('#histVacio').hidden = items.length > 0;
+  for (const x of items) {
+    lista.append(h('li', { class: 'hist-item' },
+      h('span', { class: 'f' }, fechaCorta(x.actualizado)),
+      h('span', { class: 't' }, x.titulo),
+      h('button', { class: 'btn chico primario', onclick: () => { state.texto = x.texto; state.ejemplo = false; irVista('redactar'); renderHoja(); } }, 'Abrir')));
+  }
+}
+
+function irVista(v) {
+  state.vista = v;
+  for (const b of $$('.pestanas button')) b.setAttribute('aria-selected', String(b.dataset.vista === v));
+  for (const s of ['redactar', 'membrete', 'historial']) $('#vista-' + s).hidden = s !== v;
+  if (v === 'historial') renderHistorial();
+  if (v === 'redactar') renderHoja();
+}
+
+function guardarPerfil() { lsSet('perfil', state.perfil); }
+function cargarAjustesEnFormulario() {
+  const p = lsGet('perfil');
+  if (p) state.perfil = mezclar(state.perfil, p);
+  for (const el of $$('#ajForm [data-path]')) {
+    const v = getPath(state.perfil, el.dataset.path);
+    if (el.type === 'checkbox') el.checked = !!v;
+    else el.value = v ?? '';
+    el.oninput = el.onchange = () => { setPath(state.perfil, el.dataset.path, el.value); guardarPerfil(); };
+  }
+}
+
+function iniciar() {
+  const d = new Date();
+  $('#selloFecha').textContent = `Recibido · ${dos(d.getDate())} ${MESES[d.getMonth()].slice(0, 3).toUpperCase()} ${d.getFullYear()}`;
+  for (const b of $$('.pestanas button')) b.onclick = () => irVista(b.dataset.vista);
+  $('#btnRedactar').onclick = () => { if (validarFormulario()) redactar('nuevo'); };
+  $('#btnRegenerar').onclick = () => { if (validarFormulario()) redactar('regenerar'); };
+  $('#btnDetener').onclick = detener;
+  $('#btnCopiar').onclick = copiarTexto;
+  $('#btnWord').onclick = () => pedirExportacion('docx');
+  $('#btnPdf').onclick = () => pedirExportacion('pdf');
+  $('#btnAjustar').onclick = () => { $('#ajuste').hidden = !$('#ajuste').hidden; };
+  $('#ajusteAplicar').onclick = () => { const t = $('#ajusteTexto').value.trim(); if (t) { $('#ajuste').hidden = true; redactar('ajuste', t); } };
+  $('#ajusteCerrar').onclick = () => { $('#ajuste').hidden = true; };
+  $('#btnAnalizar').onclick = analizarEstilo;
+
+  cargarAjustesEnFormulario();
+  renderZonaTipo();
+  renderHoja();
+  ponerControles();
+
+  // Verificar estado del backend de Gemini
+  fetch('/api/health')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.gemini_configured) {
+        toast('Aviso: Agrega tu GEMINI_API_KEY en el archivo .env del servidor para redactar.', 'info', 7000);
+      }
+    })
+    .catch(() => {});
+}
+iniciar();
+</script>
+</body></html>

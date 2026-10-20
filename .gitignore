@@ -1,0 +1,17 @@
+# Entornos virtuales
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Variables de entorno secretas
+.env
+
+# Logs y base de datos
+*.log
+*.sqlite3
+.DS_Store
