@@ -22,6 +22,10 @@ class Settings(BaseSettings):
         "gemini-1.5-flash,gemini-2.0-flash,gemini-1.5-pro,gemini-3.8-flash"
     )
 
+    # Groq Fallback (120B Reasoning Model)
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+
     class Config:
         env_file = ".env"
         extra = "allow"
