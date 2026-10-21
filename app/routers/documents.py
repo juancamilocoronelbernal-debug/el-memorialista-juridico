@@ -20,6 +20,7 @@ from app.services.prompt import (
     obtener_tipo,
     validar_datos_tipo,
 )
+from app.services.verificador_citas import verificar_citas
 
 router = APIRouter(prefix="/api", tags=["Documentos"])
 
@@ -84,6 +85,10 @@ class RedactarRequest(BaseModel):
 
 class AnalizarEstiloRequest(BaseModel):
     muestra: str = Field(..., min_length=20, max_length=20_000)
+
+
+class VerificarCitasRequest(BaseModel):
+    texto: str = Field(..., min_length=1, max_length=500_000)
 
 
 @router.get("/health")
@@ -166,6 +171,13 @@ async def analizar_estilo(req: AnalizarEstiloRequest, request: Request):
     if not resultado.get("ok"):
         raise HTTPException(status_code=502, detail=resultado.get("error", "No se pudo analizar la muestra."))
     return resultado
+
+
+@router.post("/verificar-citas")
+async def endpoint_verificar_citas(req: VerificarCitasRequest, request: Request):
+    verificar_acceso(request)
+    limitador.verificar(request, "citas")
+    return await verificar_citas(req.texto)
 
 
 def _linea(evento: Evento) -> str:

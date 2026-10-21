@@ -85,6 +85,14 @@ ETIQUETAS_ESTILO = {
     "rasgos": "Rasgos",
 }
 ESQUEMA_ESTILO = {"type": "OBJECT", "properties": {clave: {"type": "STRING"} for clave in ETIQUETAS_ESTILO}}
+ESQUEMA_PERTINENCIA = {
+    "type": "OBJECT",
+    "properties": {
+        "respalda": {"type": "STRING", "enum": ["si", "parcial", "no"]},
+        "fragmento": {"type": "STRING"},
+    },
+    "required": ["respalda", "fragmento"],
+}
 PROMPT_ESTILO = (
     "Analiza el estilo de redacción del siguiente escrito jurídico de un abogado colombiano para que otro "
     "redactor pueda imitarlo fielmente. Responde ÚNICAMENTE con un objeto JSON válido con estas claves y "
@@ -317,11 +325,12 @@ class GeminiService:
 
     async def cerrar(self) -> None:
         if self.http is not None:
-            await self.http.aclose()
+            with contextlib.suppress(BaseException):
+                await self.http.aclose()
             self.http = None
 
     async def _cliente(self) -> httpx.AsyncClient:
-        if self.http is None:
+        if self.http is None or self.http.is_closed:
             await self.iniciar()
         return self.http
 
@@ -762,14 +771,37 @@ class GeminiService:
                 break
         return {"ok": False, "error": "No se pudo generar la ficha de estilo. Intenta de nuevo en unos minutos.", "ficha": ""}
 
-    async def _completar_json(self, motor: Motor, prompt: str, degradado: bool) -> str:
+    # ------------------------------------------------------------------ evaluación de pertinencia
+    async def evaluar_pertinencia_json(self, prompt: str) -> Optional[dict]:
+        candidatos = []
+        if self.s.GEMINI_API_KEY.strip():
+            candidatos.append(Motor("gemini", "gemini-3.5-flash-lite"))
+        candidatos.extend(self.candidatos("default"))
+
+        for motor in candidatos:
+            for degradado in (False, True):
+                try:
+                    texto = await self._completar_json(motor, prompt, degradado, esquema=ESQUEMA_PERTINENCIA)
+                except Exception as exc:  # noqa: BLE001
+                    error = exc if isinstance(exc, ErrorIA) else _convertir_excepcion(exc)
+                    log.debug("Evaluación de pertinencia con %s/%s falló (%s).", motor.proveedor, motor.modelo, error.codigo)
+                    if error.parametros and not degradado:
+                        continue
+                    break
+                datos = extraer_json(texto)
+                if datos and "respalda" in datos:
+                    return datos
+                break
+        return None
+
+    async def _completar_json(self, motor: Motor, prompt: str, degradado: bool, esquema: Optional[dict] = None) -> str:
         s = self.s
         cliente = await self._cliente()
         if motor.proveedor == "gemini":
             config = {"maxOutputTokens": 8192}
             if not degradado:
                 config["responseMimeType"] = "application/json"
-                config["responseSchema"] = ESQUEMA_ESTILO
+                config["responseSchema"] = esquema or ESQUEMA_ESTILO
             payload = {"contents": [{"role": "user", "parts": [{"text": prompt}]}], "generationConfig": config}
             respuesta = await cliente.post(
                 f"{s.GEMINI_API_BASE.rstrip('/')}/v1beta/models/{motor.modelo}:generateContent",

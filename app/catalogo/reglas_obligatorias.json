@@ -11,6 +11,7 @@
     "3. Cita solo normas colombianas que existan y estén vigentes. Si dudas del número de un artículo o de su vigencia, escribe [VERIFICAR] inmediatamente después de la cita.",
     {
       "id": "jurisprudencia",
+      "verificables": "4. Jurisprudencia: además de la que indique el abogado, puedes citar hasta {nSent} pronunciamientos de la Corte Constitucional, la Corte Suprema de Justicia o el Consejo de Estado que conozcas con certeza y que sean pertinentes; el sistema verificará automáticamente su existencia en relatoría oficial. Nunca inventes números de sentencia, radicados, fechas ni magistrados ponentes.",
       "sugerir": "4. Jurisprudencia: además de la que indique el abogado, puedes citar hasta {nSent} pronunciamientos de la Corte Constitucional, la Corte Suprema de Justicia o el Consejo de Estado que conozcas con certeza y que sean pertinentes; prefiere sentencias de unificación y precedentes muy reconocidos. Escribe [VERIFICAR] inmediatamente después de cada sentencia que cites y que no haya suministrado el abogado. Nunca inventes números de sentencia, radicados, fechas ni magistrados ponentes.",
       "usuario": "4. Jurisprudencia: cita únicamente la que indicó el abogado en los datos del caso; no agregues otras sentencias.",
       "ninguna": "4. Jurisprudencia: no cites sentencias. Funda el escrito en la Constitución, la ley y los hechos."

@@ -122,11 +122,12 @@ def grupo_redaccion_para_tipo(tipo: dict[str, Any]) -> dict[str, Any]:
             "l": "Jurisprudencia",
             "t": "select",
             "opciones": [
+                ["verificables", "Solo citas verificables"],
                 ["sugerir", "Sugerir sentencias, marcadas para verificar"],
                 ["usuario", "Solo la que yo indique"],
                 ["ninguna", "No citar jurisprudencia"]
             ],
-            "def": tipo.get("juris") or "sugerir"
+            "def": tipo.get("juris") or "verificables"
         }
     ]
     if tipo.get("firma") != "poder":
@@ -398,7 +399,9 @@ def construir_prompt(
     L.append("1. Usa únicamente los hechos, nombres, cifras, fechas y documentos que aparecen en los datos del caso. No inventes nada. Si falta un dato necesario, escribe en su lugar [COMPLETAR: descripción breve del dato].")
     L.append("2. Puedes ordenar, depurar y redactar con lenguaje jurídico los hechos y las pretensiones, sin alterar su sentido ni agregar hechos nuevos.")
     L.append("3. Cita solo normas colombianas que existan y estén vigentes. Si dudas del número de un artículo o de su vigencia, escribe [VERIFICAR] inmediatamente después de la cita.")
-    if juris == "sugerir":
+    if juris == "verificables":
+        L.append(f"4. Jurisprudencia: además de la que indique el abogado, puedes citar hasta {n_sent} pronunciamientos de la Corte Constitucional, la Corte Suprema de Justicia o el Consejo de Estado que conozcas con certeza y que sean pertinentes; el sistema verificará automáticamente su existencia en relatoría oficial. Nunca inventes números de sentencia, radicados, fechas ni magistrados ponentes.")
+    elif juris == "sugerir":
         L.append(f"4. Jurisprudencia: además de la que indique el abogado, puedes citar hasta {n_sent} pronunciamientos de la Corte Constitucional, la Corte Suprema de Justicia o el Consejo de Estado que conozcas con certeza y que sean pertinentes; prefiere sentencias de unificación y precedentes muy reconocidos. Escribe [VERIFICAR] inmediatamente después de cada sentencia que cites y que no haya suministrado el abogado. Nunca inventes números de sentencia, radicados, fechas ni magistrados ponentes.")
     elif juris == "usuario":
         L.append("4. Jurisprudencia: cita únicamente la que indicó el abogado en los datos del caso; no agregues otras sentencias.")

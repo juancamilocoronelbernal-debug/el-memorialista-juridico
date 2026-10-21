@@ -194,6 +194,13 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .vchip.v{background:var(--chip-v);color:var(--chip-v-tinta)}
 .vchip.ok{background:transparent;color:var(--ok);cursor:default;font-weight:600;padding-left:0}
 .vchip:focus-visible{outline:2px solid var(--sello);outline-offset:1px}
+.vchip.verde{background:#dcfce7;color:#166534}
+.vchip.amarillo{background:#fef9c3;color:#854d0e}
+.vchip.rojo{background:#fee2e2;color:#991b1b}
+.cita-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700}
+.cita-badge.verde{background:#dcfce7;color:#166534}
+.cita-badge.amarillo{background:#fef9c3;color:#854d0e}
+.cita-badge.rojo{background:#fee2e2;color:#991b1b}
 .panel-verif{background:var(--superficie);border:1px solid var(--regla);border-radius:var(--r);padding:12px 14px;display:grid;gap:10px;max-height:32vh;overflow:auto}
 .panel-verif h3{margin:0;font-size:13px;font-family:var(--f-maq);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2)}
 .panel-verif ol{margin:0;padding-left:20px;display:grid;gap:8px}
@@ -713,7 +720,7 @@ function grupoRedaccion(tipo) {
   const baseCampos = gr.campos || [
     { k: 'fundamentos', l: 'Normas o jurisprudencia que quieres citar', t: 'area', rows: 2, ph: 'Opcional. Ej.: Sentencia T-760 de 2008; art. 49 de la Constitución.' },
     { k: '_extension', l: 'Extensión', t: 'select', opciones: [['concisa', 'Concisa'], ['estandar', 'Estándar'], ['extensa', 'Extensa y exhaustiva']] },
-    { k: '_juris', l: 'Jurisprudencia', t: 'select', opciones: [['sugerir', 'Sugerir sentencias, marcadas para verificar'], ['usuario', 'Solo la que yo indique'], ['ninguna', 'No citar jurisprudencia']] },
+    { k: '_juris', l: 'Jurisprudencia', t: 'select', opciones: [['verificables', 'Solo citas verificables'], ['sugerir', 'Sugerir sentencias, marcadas para verificar'], ['usuario', 'Solo la que yo indique'], ['ninguna', 'No citar jurisprudencia']] },
     { k: '_firma', l: 'Quién firma', t: 'select', opciones: [['apoderado', 'Yo, como apoderado(a)'], ['propio', 'Yo, en nombre propio'], ['cliente', 'Mi cliente, en nombre propio']] },
     { k: '_membrete', l: 'Incluir mi membrete en este escrito', t: 'check', def: true },
     { k: '_notas', l: 'Indicaciones adicionales', t: 'area', rows: 2, ph: 'Ej.: Enfatiza que la accionante es adulta mayor; no menciones el nombre del médico.' },
@@ -723,7 +730,7 @@ function grupoRedaccion(tipo) {
     if (c.k === '_firma' && tipo && tipo.firma === 'poder') continue;
     const cl = { ...c };
     if (cl.k === '_extension') cl.def = (tipo && tipo.breve) ? 'concisa' : '@extension';
-    if (cl.k === '_juris') cl.def = (tipo && tipo.juris) || 'sugerir';
+    if (cl.k === '_juris') cl.def = (tipo && tipo.juris) || 'verificables';
     if (cl.k === '_firma') cl.def = (tipo && tipo.firma) || 'apoderado';
     campos.push(cl);
   }
@@ -806,6 +813,8 @@ const state = {
   ctl: null,
   plantilla: null,
   catalogoAbierto: true,
+  citasVerificadas: [],
+  verificandoCitas: false,
 };
 const IMG = { logo: null, firma: null };
 const CAP = { sample: true, db: null, user: null, downloads: true, permissions: null, uid: null, listo: true };
@@ -1256,6 +1265,7 @@ function serializarCuerpo() {
    Verificación: datos por completar y citas por verificar
    ========================================================= */
 let panelAbierto = false;
+
 function recogerMarcas() {
   const cuerpo = $('#cuerpo');
   const items = [];
@@ -1272,6 +1282,7 @@ function recogerMarcas() {
   }
   return items;
 }
+
 function textoPrevio(bloque, nodo, off) {
   if (!bloque) return '';
   const r = document.createRange();
@@ -1279,52 +1290,128 @@ function textoPrevio(bloque, nodo, off) {
   try { r.setEnd(nodo, off); } catch { return ''; }
   return r.toString().replace(/\[(?:COMPLETAR|VERIFICAR)[^\]]*\]/g, '').replace(/\s+/g, ' ').trim();
 }
-const RE_SENT = /\b(?:sentencias?\s+)?((?:SU|T|C|A)\s?[-–]\s?\d{1,4}[A-Z]?\s*(?:de|del|\/)\s*(?:19|20)?\d{2})\b/gi;
-function enlaceBusqueda(texto) {
-  const m = [...texto.matchAll(RE_SENT)].pop();
-  if (m) return { etiqueta: 'Sentencia ' + m[1].replace(/\s+/g, ' ').replace(/\s?[-–]\s?/, '-'), url: 'https://www.google.com/search?q=' + encodeURIComponent('sentencia ' + m[1] + ' site:corteconstitucional.gov.co') };
-  const frag = texto.split(/[.;:]/).pop().trim().slice(-90);
-  return { etiqueta: null, url: 'https://www.google.com/search?q=' + encodeURIComponent(frag + ' Colombia') };
+
+async function verificarCitasDocumento() {
+  if (state.ejemplo || state.generando || !state.texto || state.verificandoCitas) return;
+  state.verificandoCitas = true;
+  actualizarVerificacion();
+  try {
+    const res = await apiFetch('/api/verificar-citas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto: state.texto })
+    });
+    if (!res.ok) throw new Error('Error al verificar citas');
+    const data = await res.json();
+    state.citasVerificadas = data.citas || [];
+
+    // Requerimiento 6: Si la opción es "Solo citas verificables", marca con [VERIFICAR] las citas en rojo
+    const citasRojas = state.citasVerificadas.filter(c => c.color === 'rojo');
+    if (citasRojas.length && (state.datos._juris === 'verificables' || !state.datos._juris)) {
+      let modificado = state.texto;
+      let huboCambio = false;
+      for (const cr of citasRojas) {
+        const orig = cr.texto_original;
+        if (orig && modificado.includes(orig) && !modificado.includes(orig + ' [VERIFICAR]')) {
+          modificado = modificado.replaceAll(orig, orig + ' [VERIFICAR]');
+          huboCambio = true;
+        }
+      }
+      if (huboCambio) {
+        state.texto = modificado;
+        renderHoja();
+        guardarBorrador();
+      }
+    }
+  } catch (err) {
+    console.error('Error al verificar citas:', err);
+  } finally {
+    state.verificandoCitas = false;
+    actualizarVerificacion();
+  }
 }
+
 function actualizarVerificacion() {
   const verif = $('#verif'), panel = $('#panelVerif');
   if (state.ejemplo || state.generando || !state.texto) { verif.hidden = true; panel.hidden = true; return; }
   const items = recogerMarcas();
   const nc = items.filter(i => i.tipo === 'c').length, nv = items.filter(i => i.tipo === 'v').length;
   verif.replaceChildren();
-  if (!nc && !nv) verif.append(h('span', { class: 'vchip ok' }, '✓ Sin datos por completar ni citas marcadas'));
+
+  if (state.verificandoCitas) {
+    verif.append(h('span', { class: 'vchip amarillo' }, '⏳ Verificando citas en fuentes oficiales…'));
+  } else if (state.citasVerificadas && state.citasVerificadas.length) {
+    const nVerdes = state.citasVerificadas.filter(c => c.color === 'verde').length;
+    const nAmarillas = state.citasVerificadas.filter(c => c.color === 'amarillo').length;
+    const nRojas = state.citasVerificadas.filter(c => c.color === 'rojo').length;
+
+    if (nRojas) verif.append(h('button', { class: 'vchip rojo', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `✗ ${nRojas} ${nRojas === 1 ? 'cita no encontrada' : 'citas no encontradas'}`));
+    if (nAmarillas) verif.append(h('button', { class: 'vchip amarillo', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `⚠ ${nAmarillas} ${nAmarillas === 1 ? 'cita por verificar' : 'citas por verificar'}`));
+    if (nVerdes) verif.append(h('button', { class: 'vchip verde', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `✓ ${nVerdes} ${nVerdes === 1 ? 'cita verificada' : 'citas verificadas'}`));
+  }
+
   if (nc) verif.append(h('button', { class: 'vchip c', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `${nc} ${nc === 1 ? 'dato' : 'datos'} por completar`));
-  if (nv) verif.append(h('button', { class: 'vchip v', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `${nv} ${nv === 1 ? 'cita' : 'citas'} por verificar`));
+  if (nv && (!state.citasVerificadas || !state.citasVerificadas.length)) verif.append(h('button', { class: 'vchip v', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `${nv} ${nv === 1 ? 'cita' : 'citas'} por verificar`));
+
+  if (!verif.children.length) verif.append(h('span', { class: 'vchip ok' }, '✓ Sin datos pendientes'));
   verif.hidden = false;
-  if (panelAbierto && (nc || nv)) pintarPanel(items); else panel.hidden = true;
+  if (panelAbierto) pintarPanel(items); else panel.hidden = true;
 }
+
 function alternarPanel() { panelAbierto = !panelAbierto; actualizarVerificacion(); }
+
 function pintarPanel(items) {
   const panel = $('#panelVerif');
   panel.replaceChildren();
-  const grupo = (titulo, lista, conEnlace) => {
-    if (!lista.length) return;
-    panel.append(h('h3', {}, titulo));
-    const ol = h('ol');
-    lista.forEach(it => {
-      const li = h('li');
-      if (it.tipo === 'c') li.append(h('strong', {}, it.detalle || 'Dato faltante'));
-      else {
-        const enl = enlaceBusqueda(it.previo);
-        li.append(h('strong', {}, enl.etiqueta || '…' + it.previo.slice(-70)));
-        li.append(h('span', { class: 'acc' }, h('a', { href: enl.url, target: '_blank', rel: 'noopener' }, 'Buscar fuente ↗')));
+
+  // 1. Citas verificadas oficialmente
+  if (state.citasVerificadas && state.citasVerificadas.length) {
+    panel.append(h('h3', {}, 'Citas y jurisprudencia verificadas'));
+    const ol = h('ol', { style: 'padding-left: 20px; margin-bottom: 16px;' });
+    state.citasVerificadas.forEach(c => {
+      const li = h('li', { style: 'margin-bottom: 10px; line-height: 1.4;' });
+      const badgeClase = c.color === 'verde' ? 'verde' : c.color === 'rojo' ? 'rojo' : 'amarillo';
+      const badgeTexto = c.color === 'verde' ? '✓ Existe y respalda' : c.color === 'rojo' ? '✗ No encontrada' : '⚠ Respaldo parcial / sin verificar';
+      li.append(
+        h('div', { style: 'display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px;' },
+          h('strong', {}, c.nombre || c.texto_original),
+          h('span', { class: `cita-badge ${badgeClase}` }, badgeTexto)
+        )
+      );
+      if (c.url) {
+        li.append(h('div', { style: 'font-size: 12px; margin-bottom: 2px;' },
+          h('a', { href: c.url, target: '_blank', rel: 'noopener noreferrer', style: 'color: var(--azul, #2563eb); text-decoration: underline;' }, 'Ver documento oficial ↗')
+        ));
       }
-      li.append(h('span', { class: 'acc' }, h('button', { class: 'enlace', type: 'button', onclick: () => irAMarca(it) }, 'Ver en el texto')));
-      if (it.tipo === 'c' && it.previo) li.append(h('div', { class: 'ctx' }, '…' + it.previo.slice(-80)));
+      if (c.pertinencia && c.pertinencia.fragmento) {
+        li.append(h('div', { class: 'ctx', style: 'font-size: 12px; color: var(--color-texto-suave, #555); font-style: italic; background: rgba(0,0,0,0.03); padding: 4px 6px; border-radius: 4px; margin-top: 2px;' },
+          `«${c.pertinencia.fragmento}»`
+        ));
+      }
       ol.append(li);
     });
     panel.append(ol);
-  };
-  grupo('Datos por completar', items.filter(i => i.tipo === 'c'));
-  grupo('Citas y normas por verificar', items.filter(i => i.tipo === 'v'));
-  panel.append(h('p', { class: 'nota' }, 'Confirma cada sentencia y cada artículo en la fuente oficial antes de radicar. Al exportar puedes quitar las marcas [VERIFICAR] ya revisadas; los datos por completar quedan resaltados en el archivo.'));
+  }
+
+  // 2. Datos por completar
+  const datosComp = items.filter(i => i.tipo === 'c');
+  if (datosComp.length) {
+    panel.append(h('h3', {}, 'Datos por completar'));
+    const ol = h('ol', { style: 'padding-left: 20px;' });
+    datosComp.forEach(it => {
+      const li = h('li', { style: 'margin-bottom: 6px;' });
+      li.append(h('strong', {}, it.detalle || 'Dato faltante'));
+      li.append(h('span', { class: 'acc', style: 'margin-left: 8px;' }, h('button', { class: 'enlace', type: 'button', onclick: () => irAMarca(it) }, 'Ver en el texto')));
+      if (it.previo) li.append(h('div', { class: 'ctx', style: 'font-size: 12px; color: #666;' }, '…' + it.previo.slice(-80)));
+      ol.append(li);
+    });
+    panel.append(ol);
+  }
+
+  panel.append(h('p', { class: 'nota', style: 'margin-top: 12px; font-size: 12px; color: #666;' }, 'Las citas en verde cuentan con registro oficial verificado en la relatoría o base de leyes. Las citas en rojo no fueron halladas y deben corregirse o eliminarse antes de radicar.'));
   panel.hidden = false;
 }
+
 function irAMarca(it) {
   const el = it.bloque || it.nodo.parentElement;
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2093,6 +2180,7 @@ function terminarRedaccion(texto, modo, aviso, fallo = false) {
   ponerControles();
   $('#btnDeshacerAjuste').hidden = !state.prevTexto;
   guardarBorrador();
+  verificarCitasDocumento();
   guardarEnHistorial().then(ok => {
     estadoHoja(fallo ? 'error' : 'listo', (fallo ? 'Incompleto · ' : 'Listo · ') + (ok ? 'guardado ' + horaCorta(Date.now()) : 'sin guardar'));
   });
@@ -2440,16 +2528,33 @@ function pedirExportacion(tipo) {
   sincronizarTexto();
   const marcas = recogerMarcas();
   const nv = marcas.filter(i => i.tipo === 'v').length, nc = marcas.filter(i => i.tipo === 'c').length;
-  if (!nv && !nc) { exportar(tipo, false); return; }
+  const citasRojas = (state.citasVerificadas || []).filter(c => c.color === 'rojo');
+
+  if (!nv && !nc && !citasRojas.length) { exportar(tipo, false); return; }
+
   const caja = $('#panelVerif');
-  caja.replaceChildren(
-    h('h3', {}, tipo === 'docx' ? 'Antes de exportar a Word' : 'Antes de exportar a PDF'),
-    nc ? h('p', { class: 'nota' }, `Quedan ${nc} ${nc === 1 ? 'dato' : 'datos'} por completar; saldrán resaltados en amarillo en el archivo.`) : null,
-    nv ? h('p', { class: 'nota' }, `Hay ${nv} ${nv === 1 ? 'cita marcada' : 'citas marcadas'} con [VERIFICAR].`) : null,
-    h('div', { class: 'ajuste-fila' },
-      nv ? h('button', { class: 'btn primario chico', type: 'button', onclick: () => { caja.hidden = true; exportar(tipo, true); } }, 'Ya las verifiqué: exportar sin marcas') : null,
-      h('button', { class: 'btn chico', type: 'button', onclick: () => { caja.hidden = true; exportar(tipo, false); } }, nv ? 'Exportar con las marcas' : 'Exportar'),
-      h('button', { class: 'btn chico fantasma', type: 'button', onclick: () => { caja.hidden = true; actualizarVerificacion(); } }, 'Cancelar')));
+  const contenido = [];
+  contenido.push(h('h3', {}, tipo === 'docx' ? 'Antes de exportar a Word' : 'Antes de exportar a PDF'));
+
+  if (citasRojas.length) {
+    contenido.push(h('div', { style: 'background: #fef2f2; border: 1px solid #f87171; border-radius: 6px; padding: 10px; margin-bottom: 10px;' },
+      h('p', { style: 'color: #991b1b; font-weight: 600; margin: 0 0 6px 0;' }, `⚠️ Advertencia: Hay ${citasRojas.length} ${citasRojas.length === 1 ? 'cita no encontrada' : 'citas no encontradas'} en las fuentes oficiales:`),
+      h('ul', { style: 'margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;' },
+        citasRojas.map(cr => h('li', {}, cr.nombre || cr.texto_original))
+      ),
+      h('p', { style: 'margin: 6px 0 0 0; color: #7f1d1d; font-size: 12px;' }, 'Exportar con citas inexistentes puede acarrear sanciones disciplinarias o el rechazo de pretensiones. ¿Deseas exportar de todos modos?')
+    ));
+  }
+
+  if (nc) contenido.push(h('p', { class: 'nota' }, `Quedan ${nc} ${nc === 1 ? 'dato' : 'datos'} por completar; saldrán resaltados en amarillo en el archivo.`));
+  if (nv && !citasRojas.length) contenido.push(h('p', { class: 'nota' }, `Hay ${nv} ${nv === 1 ? 'cita marcada' : 'citas marcadas'} con [VERIFICAR].`));
+
+  contenido.push(h('div', { class: 'ajuste-fila' },
+    h('button', { class: 'btn primario chico', type: 'button', onclick: () => { caja.hidden = true; exportar(tipo, false); } }, citasRojas.length ? 'Confirmar y exportar de todos modos' : (nv ? 'Exportar con las marcas' : 'Exportar')),
+    h('button', { class: 'btn chico fantasma', type: 'button', onclick: () => { caja.hidden = true; alternarPanel(); } }, 'Cancelar y revisar citas')
+  ));
+
+  caja.replaceChildren(...contenido);
   caja.hidden = false;
 }
 async function exportar(tipo, sinVerificar) {

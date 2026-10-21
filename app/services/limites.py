@@ -50,6 +50,11 @@ class Limitador:
                 ("r:global:d", 86400, s.LIMITE_DIA_GLOBAL,
                  "El servicio alcanzó su límite diario de redacciones. Intenta de nuevo mañana."),
             ]
+        if accion == "citas":
+            return [
+                (f"c:{ip}:h", 3600, max(100, s.LIMITE_ESTILO_HORA * 6),
+                 "Verificaste muchas citas seguidas. Espera unos {min} min."),
+            ]
         return [
             (f"e:{ip}:h", 3600, s.LIMITE_ESTILO_HORA,
              "Analizaste muchas muestras seguidas. Espera unos {min} min."),

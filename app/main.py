@@ -53,7 +53,8 @@ async def lifespan(app: FastAPI):
         for tarea in tareas:
             with contextlib.suppress(BaseException):
                 await tarea
-        await gemini_service.cerrar()
+        with contextlib.suppress(BaseException):
+            await gemini_service.cerrar()
 
 
 es_produccion = settings.ENVIRONMENT == "production"
