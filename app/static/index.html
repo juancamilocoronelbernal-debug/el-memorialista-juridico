@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="es-CO"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>El Memorialista</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -418,7 +418,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
         <article class="hoja" id="hoja" aria-label="Vista previa del escrito">
           <div class="sello-ejemplo" id="selloEjemplo" aria-hidden="true"><b>EJEMPLO</b><small>así se verá tu escrito</small></div>
           <header class="membrete" id="membrete"></header>
-          <div class="cuerpo" id="cuerpo"></div>
+          <div class="cuerpo" id="cuerpo" lang="es-CO" spellcheck="true"></div>
           <footer class="pie" id="pie"></footer>
         </article>
       </div>
@@ -2490,30 +2490,65 @@ function mensajeSample(e) {
     invalid_json: 'La respuesta no tuvo el formato esperado. Intenta de nuevo.',
   })[c] || 'Se interrumpió la conexión. Lo redactado hasta ahora se conservó y puedes reintentar.';
 }
-let reloj = null;
+let reloj = null, relojBase = '';
 function iniciarReloj(base) {
   const t0 = Date.now();
+  relojBase = base;
   clearInterval(reloj);
-  const pintar = () => { const s = Math.floor((Date.now() - t0) / 1000); estadoHoja('vivo', `${base} ${Math.floor(s / 60)}:${dos(s % 60)}`); };
+  const pintar = () => { const s = Math.floor((Date.now() - t0) / 1000); estadoHoja('vivo', `${relojBase} ${Math.floor(s / 60)}:${dos(s % 60)}`); };
   pintar(); reloj = setInterval(pintar, 1000);
 }
+function etiquetaReloj(base) { if (base) relojBase = base; }
 function pararReloj() { clearInterval(reloj); reloj = null; }
 function estadoHoja(clase, texto) {
   const e = $('#hbEstado');
   e.className = 'hb-estado ' + (clase || '');
   $('#hbTexto').textContent = texto;
 }
+/* ===== v2.2: lector del protocolo NDJSON, código de acceso y redacción ===== */
+function crearLectorNdjson(alEvento) {
+  let resto = '';
+  const procesar = linea => {
+    const l = linea.trim();
+    if (!l) return;
+    let ev;
+    try { ev = JSON.parse(l); } catch { return; }
+    alEvento(ev);
+  };
+  return {
+    empujar(fragmento) {
+      resto += fragmento;
+      let i;
+      while ((i = resto.indexOf('\n')) >= 0) { procesar(resto.slice(0, i)); resto = resto.slice(i + 1); }
+    },
+    cerrar() { procesar(resto); resto = ''; },
+  };
+}
+async function apiFetch(url, opciones = {}, segundoIntento = false) {
+  const codigo = lsGet('codigoAcceso') || '';
+  const headers = { ...(opciones.headers || {}) };
+  if (codigo) headers['X-Codigo-Acceso'] = codigo;
+  const res = await fetch(url, { ...opciones, headers });
+  if (res.status === 401) {
+    lsDel('codigoAcceso');
+    if (!segundoIntento) {
+      const nuevo = window.prompt('Esta versión de El Memorialista requiere un código de acceso. Escríbelo para continuar:', '');
+      if (nuevo && nuevo.trim()) { lsSet('codigoAcceso', nuevo.trim()); return apiFetch(url, opciones, true); }
+    }
+  }
+  return res;
+}
+const MARCA_INCOMPLETO = '[COMPLETAR: el escrito se interrumpió en este punto. Usa «Ajustar con IA» → «Continúa donde quedó» o «Regenerar» antes de radicar]';
 async function redactar(modo = 'nuevo', instruccion = '') {
   if (state.generando) return;
-  let input;
+  let textoPrevio = '';
   if (modo === 'ajuste') {
-    const actual = state.texto;
-    state.prevTexto = actual;
-    input = [{ role: 'user', content: state.prompt || construirPrompt() }, { role: 'assistant', content: actual }, { role: 'user', content: `AJUSTE PEDIDO POR EL ABOGADO: ${instruccion}\n\nAplica el ajuste al documento anterior y devuelve el documento COMPLETO actualizado, con el mismo formato de marcas. Conserva lo que el ajuste no pide cambiar. Sigue las reglas: no inventes hechos y usa [COMPLETAR] y [VERIFICAR] cuando corresponda. Escribe solo el documento.` }];
+    state.prevTexto = state.texto;
+    textoPrevio = state.texto;
+    if (!state.prompt) state.prompt = construirPrompt();
   } else {
     if (modo === 'regenerar' && state.texto) state.prevTexto = state.texto;
     state.prompt = construirPrompt();
-    input = state.prompt;
   }
   state.generando = true;
   state.ejemplo = false;
@@ -2529,44 +2564,50 @@ async function redactar(modo = 'nuevo', instruccion = '') {
   iniciarReloj(modo === 'ajuste' ? 'Ajustando…' : 'Redactando con IA…');
   if (matchMedia('(max-width: 999px)').matches) $('#colHoja').scrollIntoView({ behavior: 'smooth', block: 'start' });
   let acumulado = '';
-  const pintar = t => { cuerpo.innerHTML = cuerpoHtml(parseDoc(t)); cuerpo.classList.add('escribiendo'); };
+  let meta = null, errorServidor = null, terminado = false, pendiente = false;
+  const pintar = () => { pendiente = false; if (terminado) return; cuerpo.innerHTML = cuerpoHtml(parseDoc(acumulado)); cuerpo.classList.add('escribiendo'); };
+  const programar = () => { if (!pendiente) { pendiente = true; requestAnimationFrame(pintar); } };
+  const lector = crearLectorNdjson(ev => {
+    if (ev.t === 'delta' && ev.d) { acumulado += ev.d; programar(); }
+    else if (ev.t === 'aviso' && ev.mensaje) etiquetaReloj(ev.mensaje);
+    else if (ev.t === 'fin') meta = ev;
+    else if (ev.t === 'error') errorServidor = ev;
+  });
+  const cerrar = (aviso, fallo) => { terminado = true; terminarRedaccion(acumulado, modo, aviso, fallo); };
   try {
-    const res = await fetch('/api/redactar', {
+    const res = await apiFetch('/api/redactar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: state.prompt || construirPrompt(),
-        modo: modo,
-        instruccion: instruccion,
-        texto_previo: state.prevTexto || state.texto,
-        calidad: tier
-      }),
-      signal: ctl.signal
+      body: JSON.stringify({ prompt: state.prompt, modo, instruccion, texto_previo: textoPrevio, calidad: tier, protocolo: 'ndjson' }),
+      signal: ctl.signal,
     });
-
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'Error en el servidor' }));
-      throw new Error(err.detail || 'Error de conexión con la IA');
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `El servidor respondió ${res.status}. Intenta de nuevo.`);
     }
-
+    const esNdjson = (res.headers.get('content-type') || '').includes('ndjson');
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      acumulado += chunk;
-      pintar(acumulado);
+      const trozo = decoder.decode(value, { stream: true });
+      if (esNdjson) lector.empujar(trozo); else { acumulado += trozo; programar(); }
     }
-
-    terminarRedaccion(acumulado, modo, null, false);
-  } catch (e) {
-    if (e.name === 'AbortError') {
-      terminarRedaccion(acumulado, modo, 'Redacción detenida. Se conservó lo escrito.', true);
+    const cola = decoder.decode();
+    if (esNdjson) { if (cola) lector.empujar(cola); lector.cerrar(); } else acumulado += cola;
+    if (errorServidor && !acumulado.trim()) throw new Error(errorServidor.mensaje || 'No se pudo redactar el escrito.');
+    const incompleto = esNdjson && (!!errorServidor || !meta || !!meta.truncado);
+    if (incompleto && !acumulado.trim()) throw new Error('Se perdió la conexión con el servidor antes de recibir el escrito. Intenta de nuevo.');
+    if (incompleto) {
+      if (acumulado.trim() && !acumulado.includes(MARCA_INCOMPLETO)) acumulado = acumulado.replace(/\s+$/, '') + '\n\n' + MARCA_INCOMPLETO;
+      cerrar('El escrito quedó incompleto: el motor de IA se detuvo antes de terminar. Revisa el final antes de radicar.', true);
       return;
     }
-    terminarRedaccion(acumulado, modo, null, true);
+    cerrar(null, false);
+  } catch (e) {
+    if (e.name === 'AbortError') { cerrar('Redacción detenida. Se conservó lo escrito.', true); return; }
+    cerrar(null, true);
     toast(e.message || 'Error al conectar con la Inteligencia Artificial.', 'error', 7000);
   }
 }
@@ -2576,7 +2617,6 @@ function terminarRedaccion(texto, modo, aviso, fallo = false) {
   state.ctl = null;
   const limpio = limpiarSalida(texto || '').trim();
   if (!limpio) {
-    if (state.prevTexto) { state.texto = state.prevTexto; }
     if (!state.texto) state.ejemplo = true;
     renderHoja();
     ponerControles();
@@ -2585,7 +2625,7 @@ function terminarRedaccion(texto, modo, aviso, fallo = false) {
   }
   state.texto = limpio;
   state.ejemplo = false;
-  if (modo === 'nuevo' && !fallo) { state.docId = null; state.creado = null; }
+  if (modo === 'nuevo') { state.docId = null; state.creado = null; }
   renderHoja();
   ponerControles();
   $('#btnDeshacerAjuste').hidden = !state.prevTexto;
@@ -2605,7 +2645,7 @@ async function analizarEstilo() {
   if (muestra.length < 100) { est.textContent = 'Pega al menos un par de páginas de un escrito tuyo.'; return; }
   const btn = $('#btnAnalizar'); btn.disabled = true; est.textContent = 'Analizando tu estilo con IA…';
   try {
-    const res = await fetch('/api/analizar-estilo', {
+    const res = await apiFetch('/api/analizar-estilo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ muestra })
