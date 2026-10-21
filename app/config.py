@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     PORT: int = int(os.getenv("PORT", "8000"))
     DEBUG: bool = os.getenv("DEBUG", "True").lower() in ("true", "1")
+    RENDER_EXTERNAL_URL: str = os.getenv("RENDER_EXTERNAL_URL", "https://el-memorialista-juridico.onrender.com")
     
     # Google Gemini API
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
