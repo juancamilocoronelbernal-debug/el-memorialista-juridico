@@ -1,0 +1,158 @@
+{
+  "id": "alimentos",
+  "nombre": "Fijación de cuota alimentaria",
+  "area": "Familia",
+  "norma": "Art. 411 C.C. · Ley 1098/2006 · Art. 397 CGP",
+  "rolFirma": "de la parte demandante",
+  "rolCliente": "la parte demandante",
+  "desc": "Alimentos para hijos menores u otros alimentarios, con medidas para asegurar el pago.",
+  "grupos": [
+    {
+      "n": "Despacho",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez o despacho",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez de Familia de Bogotá D.C. (Reparto)",
+          "sug": [
+            "Juez de Familia de Bogotá D.C. (Reparto)",
+            "Juez Promiscuo de Familia de Zipaquirá (Reparto)"
+          ]
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Demandante (representante del menor)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "alimentarios",
+          "l": "Alimentario(s)",
+          "t": "area",
+          "rows": 2,
+          "req": true,
+          "ph": "Ej.: Tomás Pérez Gómez, 6 años, NUIP 1.012.345.678."
+        },
+        {
+          "k": "contraparte",
+          "l": "Demandado (alimentante)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono. Ocupación, ingresos y empleador si los conoces."
+        }
+      ]
+    },
+    {
+      "n": "El caso",
+      "campos": [
+        {
+          "k": "necesidades",
+          "l": "Gastos mensuales del alimentario",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Colegio $450.000; alimentación $600.000; salud y transporte $200.000."
+        },
+        {
+          "k": "capacidad",
+          "l": "Capacidad económica del demandado",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Trabaja como supervisor en la empresa X; gana alrededor de $4.000.000."
+        },
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Ej.: Desde marzo de 2026 el demandado dejó de aportar…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Pretensiones",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Cuota mensual de $1.000.000, reajustada cada año con el salario mínimo; mitad de gastos de educación y salud; cuotas extra en junio y diciembre."
+        },
+        {
+          "k": "conciliacion",
+          "l": "Conciliación previa",
+          "t": "select",
+          "opciones": [
+            [
+              "agotada",
+              "Se agotó: adjunto constancia"
+            ],
+            [
+              "cautelares",
+              "No se agotó: pido medidas cautelares"
+            ],
+            [
+              "nose",
+              "No sé / revísalo tú"
+            ]
+          ],
+          "req": false,
+          "def": "agotada"
+        },
+        {
+          "k": "medidas",
+          "l": "Medidas cautelares (opcional)",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Embargo del 30 % del salario; impedimento de salida del país."
+        }
+      ]
+    },
+    {
+      "n": "Pruebas y notificaciones",
+      "campos": [
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Registro civil de nacimiento; soportes de gastos; certificado laboral o solicitud de oficiar al empleador."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: arts. 411 y siguientes del Código Civil; Código de la Infancia y la Adolescencia (Ley 1098 de 2006), arts. 24 (derecho a los alimentos), 129 (fijación, alimentos provisionales, impedimento de salida del país y reporte) y 130 (medidas para el cumplimiento, como el embargo de hasta el 50 % del salario); art. 397 del CGP (alimentos, proceso verbal sumario, alimentos provisionales); Ley 2097 de 2021 (Registro de Deudores Alimentarios Morosos, REDAM). Verifica si se agotó la conciliación previa como requisito de procedibilidad (Ley 2220 de 2022) [VERIFICAR], sin perjuicio de que se pidan medidas cautelares. Competencia: juez del domicilio del menor.\nEstructura: destinatario; referencia (Proceso verbal sumario de fijación de cuota alimentaria; demandante en representación del menor; demandado); presentación; HECHOS (filiación, necesidades, capacidad del obligado, incumplimientos); PRETENSIONES (cuota mensual, reajuste anual con el incremento del salario mínimo, cuotas adicionales, gastos de educación, salud y vestuario, alimentos provisionales); FUNDAMENTOS DE DERECHO; PRUEBAS (pide oficiar al empleador, a la DIAN o a entidades financieras si no hay prueba de ingresos); MEDIDAS CAUTELARES; COMPETENCIA; ANEXOS; NOTIFICACIONES.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=22106",
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ]
+}

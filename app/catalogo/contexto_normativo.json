@@ -1,0 +1,73 @@
+[
+  {
+    "id": "ley_2213_2022",
+    "texto": "Ley 2213 de 2022: la virtualidad en los procesos judiciales es permanente (canal digital de partes, testigos y peritos; envío simultáneo de la demanda; notificación personal por mensaje de datos; poderes por mensaje de datos). Según la sentencia C-522 de 2023, las cargas de admisión del inciso 5 del artículo 6 no se aplican a la acción de tutela.",
+    "version": "2.2.1",
+    "fecha_revision": "2026-10-21",
+    "revisado_por": "Comité Jurídico El Memorialista",
+    "fuentes": [
+      "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=187425",
+      "https://www.corteconstitucional.gov.co/relatoria/2023/C-522-23.htm"
+    ]
+  },
+  {
+    "id": "ley_2452_2025",
+    "texto": "Ley 2452 de 2025: nuevo Código Procesal del Trabajo y de la Seguridad Social, aplicable a los procesos laborales iniciados desde el 6 de abril de 2026; los iniciados antes siguen con el Decreto-Ley 2158 de 1948. Los antiguos jueces de pequeñas causas laborales pasaron a ser jueces laborales municipales.",
+    "version": "2.2.1",
+    "fecha_revision": "2026-10-21",
+    "revisado_por": "Comité Jurídico El Memorialista",
+    "fuentes": [
+      "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=254181"
+    ]
+  },
+  {
+    "id": "ley_2466_2025",
+    "texto": "Ley 2466 de 2025: reforma laboral que modificó el Código Sustantivo del Trabajo; algunas medidas son de aplicación gradual.",
+    "version": "2.2.1",
+    "fecha_revision": "2026-10-21",
+    "revisado_por": "Comité Jurídico El Memorialista",
+    "fuentes": [
+      "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=258414"
+    ]
+  },
+  {
+    "id": "ley_2220_2022",
+    "texto": "Ley 2220 de 2022: Estatuto de Conciliación, vigente desde el 30 de diciembre de 2022. En asuntos laborales la conciliación no es requisito de procedibilidad.",
+    "version": "2.2.1",
+    "fecha_revision": "2026-10-21",
+    "revisado_por": "Comité Jurídico El Memorialista",
+    "fuentes": [
+      "https://www.suin-juriscol.gov.co/viewDocument.asp?ruta=Leyes/30044670"
+    ]
+  },
+  {
+    "id": "ley_2442_2024",
+    "texto": "Ley 2442 de 2024: agregó al artículo 154 del Código Civil la causal de divorcio por la sola voluntad de cualquiera de los cónyuges.",
+    "version": "2.2.1",
+    "fecha_revision": "2026-10-21",
+    "revisado_por": "Comité Jurídico El Memorialista",
+    "fuentes": [
+      "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=250873"
+    ]
+  },
+  {
+    "id": "smmlv_2026",
+    "plantilla": "Salario mínimo mensual legal vigente en 2026: {smmlv} (dato configurado por el abogado).",
+    "version": "2.2.1",
+    "fecha_revision": "2026-10-21",
+    "revisado_por": "Comité Jurídico El Memorialista",
+    "fuentes": [
+      "https://www.mintrabajo.gov.co/"
+    ]
+  },
+  {
+    "id": "regla_procesal_reciente",
+    "texto": "Si una regla procesal cambió recientemente y no tienes certeza del artículo exacto, describe la regla sin número de artículo o marca [VERIFICAR].",
+    "version": "2.2.1",
+    "fecha_revision": "2026-10-21",
+    "revisado_por": "Comité Jurídico El Memorialista",
+    "fuentes": [
+      "https://www.ramajudicial.gov.co/"
+    ]
+  }
+]

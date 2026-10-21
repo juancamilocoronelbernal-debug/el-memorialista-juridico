@@ -1,0 +1,144 @@
+{
+  "id": "reparacion_directa",
+  "nombre": "Reparación directa",
+  "area": "Contencioso administrativo",
+  "norma": "Art. 90 C.P. · Art. 140 CPACA",
+  "rolFirma": "de la parte demandante",
+  "rolCliente": "la parte demandante",
+  "desc": "Daño antijurídico causado por una acción u omisión del Estado, dentro de los 2 años siguientes.",
+  "grupos": [
+    {
+      "n": "Despacho",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez o despacho",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Administrativo del Circuito de Medellín (Reparto)",
+          "sug": [
+            "Juez Administrativo del Circuito de Bogotá D.C. (Reparto)",
+            "Tribunal Administrativo de Antioquia (Reparto)"
+          ]
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Demandantes",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Víctima directa y familiares, con su parentesco e identificación. Ej.: Pedro Gómez (víctima); Ana Ruiz (esposa)…"
+        },
+        {
+          "k": "contraparte",
+          "l": "Entidades demandadas",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Nación, Ministerio de Defensa, Policía Nacional; Municipio de Medellín."
+        }
+      ]
+    },
+    {
+      "n": "El daño",
+      "campos": [
+        {
+          "k": "hecho_danoso",
+          "l": "Hecho, omisión u operación administrativa",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: El 14/03/2025 cayó en una excavación de la empresa de acueducto sin señalizar, en la Carrera 50 con Calle 10."
+        },
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Ej.: Fue llevado al hospital…; sufrió fractura de tibia…; estuvo incapacitado 120 días…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "perjuicios",
+          "l": "Perjuicios por demandante",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Pedro: daño emergente $5.000.000, lucro cesante $9.000.000, morales 50 smmlv, daño a la salud 30 smmlv. Ana: morales 50 smmlv."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Pretensiones (opcional)",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Si lo dejas vacío: declarar la responsabilidad y condenar al pago de los perjuicios indicados."
+        },
+        {
+          "k": "cuantia",
+          "l": "Estimación razonada de la cuantía",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: Pretensión mayor: $14.000.000 de perjuicios materiales"
+        },
+        {
+          "k": "conciliacion",
+          "l": "Conciliación prejudicial",
+          "t": "select",
+          "opciones": [
+            [
+              "agotada",
+              "Se agotó ante la Procuraduría (adjunto constancia)"
+            ],
+            [
+              "nose",
+              "No sé / revísalo tú"
+            ]
+          ],
+          "req": false,
+          "def": "agotada"
+        }
+      ]
+    },
+    {
+      "n": "Pruebas y notificaciones",
+      "campos": [
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Historia clínica, informes, registros civiles para el parentesco, testigos, dictamen de pérdida de capacidad laboral."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: art. 90 de la Constitución (responsabilidad patrimonial del Estado por el daño antijurídico que le sea imputable); art. 140 del CPACA (reparación directa); art. 164 num. 2 lit. i (caducidad: 2 años desde el día siguiente al de la acción u omisión causante del daño, o desde que el demandante tuvo o debió tener conocimiento, si fue posterior y prueba la imposibilidad de conocerlo antes); arts. 161 y 162 del CPACA (requisitos; conciliación prejudicial); Ley 2220 de 2022. Títulos de imputación desarrollados por el Consejo de Estado: falla del servicio, daño especial y riesgo excepcional. Los topes de perjuicios inmateriales (morales y daño a la salud) los unificó la Sección Tercera del Consejo de Estado en 2014 [VERIFICAR]; exprésalos en salarios mínimos.\nEstructura: destinatario; referencia (Medio de control de reparación directa; demandantes; demandados); presentación; PARTES (cada demandante con su calidad: víctima directa, cónyuge, hijo, padre, hermano); PRETENSIONES (declarar administrativa y patrimonialmente responsables a las entidades; condenar por cada demandante y cada perjuicio: materiales en pesos e inmateriales en smmlv); HECHOS; FUNDAMENTOS DE LA RESPONSABILIDAD (daño antijurídico, imputación y título de imputación); ESTIMACIÓN RAZONADA DE LA CUANTÍA; OPORTUNIDAD (caducidad); REQUISITO DE PROCEDIBILIDAD; PRUEBAS; ANEXOS; NOTIFICACIONES.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=42691"
+  ]
+}

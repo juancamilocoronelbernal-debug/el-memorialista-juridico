@@ -1,0 +1,127 @@
+{
+  "id": "popular",
+  "nombre": "Acción popular",
+  "area": "Constitucional",
+  "norma": "Art. 88 C.P. · Ley 472/1998",
+  "rolFirma": "de la parte actora",
+  "rolCliente": "el actor popular",
+  "desc": "Protección de derechos e intereses colectivos.",
+  "grupos": [
+    {
+      "n": "Despacho",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Administrativo del Circuito de Bogotá D.C. (Reparto)",
+          "sug": [
+            "Juez Administrativo del Circuito de Bogotá D.C. (Reparto)",
+            "Tribunal Administrativo de Antioquia (Reparto)"
+          ],
+          "ayuda": "Administrativo si el demandado es una autoridad o un particular con funciones administrativas; civil del circuito en los demás casos."
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Actor popular",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "contraparte",
+          "l": "Demandado(s)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Entidad o persona, NIT si lo conoces, representante legal y correo de notificaciones judiciales."
+        }
+      ]
+    },
+    {
+      "n": "El caso",
+      "campos": [
+        {
+          "k": "colectivos",
+          "l": "Derechos colectivos amenazados",
+          "t": "chips",
+          "opciones": [
+            "Goce de un ambiente sano",
+            "Moralidad administrativa",
+            "Goce del espacio público",
+            "Defensa del patrimonio público",
+            "Seguridad y salubridad públicas",
+            "Servicios públicos eficientes y oportunos",
+            "Prevención de desastres técnicamente previsibles",
+            "Derechos de los consumidores y usuarios",
+            "Acceso a la infraestructura de servicios",
+            "Realización de construcciones respetando las normas urbanísticas"
+          ],
+          "req": true
+        },
+        {
+          "k": "requisito",
+          "l": "Solicitud previa a la autoridad (art. 144 CPACA)",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Ej.: El 1/07/2026 pedí a la Alcaldía adoptar medidas; no respondió en 15 días.",
+          "ayuda": "Solo puede omitirse si hay inminente peligro de perjuicio irremediable, que debe sustentarse."
+        },
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Ej.: Desde marzo la quebrada recibe vertimientos de la empresa X…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Lo que se pide",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Ordenar el cierre de los vertimientos, la recuperación de la quebrada y medidas cautelares inmediatas."
+        },
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Ej.: Fotografías, informes técnicos, derechos de petición."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: artículo 88 de la Constitución; Ley 472 de 1998: art. 4 (derechos e intereses colectivos), art. 9 (procedencia), art. 18 (requisitos de la demanda: derecho o interés colectivo, hechos, pretensiones, responsable, pruebas, direcciones y datos del actor), art. 25 (medidas cautelares), arts. 15 y 16 (jurisdicción y competencia); artículo 144 del CPACA (requisito previo: solicitar a la autoridad o al particular que adopte las medidas; si no atiende en 15 días o se niega, se puede demandar; excepcionalmente se omite ante perjuicio irremediable inminente, que debe sustentarse). El incentivo económico fue derogado por la Ley 1425 de 2010: no lo pidas.\nEstructura: destinatario; referencia (Acción popular; actor; demandado); presentación; DERECHOS E INTERESES COLECTIVOS AMENAZADOS O VULNERADOS; HECHOS; REQUISITO DE PROCEDIBILIDAD; FUNDAMENTOS; PRETENSIONES (órdenes de hacer o no hacer); MEDIDAS CAUTELARES si se piden; PRUEBAS; NOTIFICACIONES.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=188"
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "id": "demanda_verbal",
+  "nombre": "Demanda declarativa (verbal o verbal sumario)",
+  "area": "Civil y comercial",
+  "norma": "Arts. 82 y ss., 368 y 390 CGP",
+  "rolFirma": "de la parte demandante",
+  "rolCliente": "la parte demandante",
+  "desc": "Responsabilidad civil, restitución de inmueble, resolución de contrato, pertenencia y demás procesos declarativos.",
+  "grupos": [
+    {
+      "n": "Despacho",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez o despacho",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+          "sug": [
+            "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+            "Juez Civil del Circuito de Medellín (Reparto)",
+            "Juez de Pequeñas Causas y Competencia Múltiple de Cali (Reparto)"
+          ]
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Demandante",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "contraparte",
+          "l": "Demandado(s)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono. Si es empresa: NIT y representante legal. Indica cómo obtuviste su correo."
+        }
+      ]
+    },
+    {
+      "n": "El caso",
+      "campos": [
+        {
+          "k": "asunto",
+          "l": "Pretensión principal",
+          "t": "texto",
+          "req": true,
+          "ph": "Ej.: Responsabilidad civil extracontractual por accidente de tránsito"
+        },
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Ej.: El 4/05/2026 el vehículo de placa ABC123 conducido por el demandado chocó…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Pretensiones",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Declarar responsable al demandado y condenarlo a pagar daño emergente de $8.500.000 y lucro cesante de $3.000.000."
+        },
+        {
+          "k": "cuantia",
+          "l": "Valor estimado de las pretensiones",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: $11.500.000"
+        },
+        {
+          "k": "juramento_estimatorio",
+          "l": "Juramento estimatorio (art. 206 CGP)",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Concepto por concepto, con su valor. Ej.: Reparación del vehículo $8.500.000 (factura); ingresos dejados de percibir $3.000.000."
+        },
+        {
+          "k": "conciliacion",
+          "l": "Conciliación previa",
+          "t": "select",
+          "opciones": [
+            [
+              "agotada",
+              "Se agotó: adjunto constancia de no acuerdo"
+            ],
+            [
+              "cautelares",
+              "No se exige: pido medidas cautelares"
+            ],
+            [
+              "no_exige",
+              "No se exige por el tipo de asunto"
+            ],
+            [
+              "nose",
+              "No sé / revísalo tú"
+            ]
+          ],
+          "req": false,
+          "def": "agotada"
+        },
+        {
+          "k": "medidas",
+          "l": "Medidas cautelares (opcional)",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Inscripción de la demanda en el folio de matrícula 50C-123456."
+        }
+      ]
+    },
+    {
+      "n": "Pruebas y notificaciones",
+      "campos": [
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Documentales; testigos (nombre, correo y qué hechos declaran); dictamen pericial; interrogatorio de parte."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste."
+        }
+      ]
+    }
+  ],
+  "guia": "Requisitos de la demanda: art. 82 del CGP (designación del juez; nombre, domicilio e identificación de las partes y sus representantes; lo que se pretenda, expresado con precisión y claridad; hechos determinados, clasificados y numerados; pruebas; juramento estimatorio cuando sea necesario; fundamentos de derecho; cuantía cuando se requiera para la competencia o el trámite; dirección física y electrónica de notificaciones), arts. 83 (requisitos adicionales), 84 (anexos), 88 (acumulación de pretensiones), 206 (juramento estimatorio, discriminando cada concepto) y 212 (en la petición de testimonios se indica nombre, domicilio o lugar de citación de cada testigo y se enuncian concretamente los hechos objeto de la prueba). Ley 2213 de 2022: art. 6 (indicar el canal digital de partes, testigos y peritos; enviar simultáneamente por medio electrónico copia de la demanda y anexos al demandado, salvo cuando se pidan medidas cautelares previas o se desconozca su dirección) y art. 8 (afirmación bajo juramento de que la dirección electrónica del demandado es la que utiliza, cómo se obtuvo y evidencias). Conciliación extrajudicial como requisito de procedibilidad en asuntos conciliables (Ley 2220 de 2022), salvo cuando se pidan medidas cautelares. Cuantía (art. 25 CGP): mínima hasta 40 smmlv, menor de más de 40 y hasta 150 smmlv, mayor de más de 150 smmlv; los de mínima cuantía se tramitan como verbal sumario en única instancia (arts. 17 y 390).\nEstructura: destinatario; referencia (Proceso verbal o verbal sumario de …; demandante; demandado); presentación (apoderado y poder); PARTES; PRETENSIONES (principales y, si hay, subsidiarias, numeradas); HECHOS; FUNDAMENTOS DE DERECHO; JURAMENTO ESTIMATORIO si se reclaman perjuicios, frutos o mejoras; CUANTÍA Y COMPETENCIA; PROCEDIMIENTO; REQUISITO DE PROCEDIBILIDAD; MEDIDAS CAUTELARES si se piden; PRUEBAS (documentales; testimoniales con el objeto de cada testimonio y su canal digital; interrogatorio; dictamen); ANEXOS; NOTIFICACIONES (con la manifestación bajo juramento del art. 8 de la Ley 2213 de 2022). Si el abogado indicó que la conciliación se agotó, anuncia la constancia en anexos; si se piden medidas cautelares, no anuncies el envío simultáneo de la demanda.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ]
+}

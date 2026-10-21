@@ -1,0 +1,169 @@
+{
+  "id": "memorial",
+  "nombre": "Memorial o solicitud al despacho",
+  "area": "Procesos en curso",
+  "norma": "CGP",
+  "rolFirma": "de la parte que represento",
+  "rolCliente": "la parte que represento",
+  "juris": "ninguna",
+  "breve": true,
+  "desc": "Impulso procesal, copias, aplazamientos, desistimientos, renuncia o sustitución de poder y otras solicitudes.",
+  "grupos": [
+    {
+      "n": "Proceso",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Despacho",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Doce Civil Municipal de Bogotá D.C.",
+          "sug": [
+            "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+            "Juez Civil del Circuito de Medellín (Reparto)",
+            "Juez de Pequeñas Causas y Competencia Múltiple de Cali (Reparto)",
+            "Juez Laboral Municipal de Bogotá D.C. (Reparto)",
+            "Juez Laboral del Circuito de Barranquilla (Reparto)",
+            "Juez Administrativo del Circuito de Bogotá D.C. (Reparto)",
+            "Tribunal Administrativo de Antioquia (Reparto)"
+          ]
+        },
+        {
+          "k": "radicado",
+          "l": "Radicado del proceso",
+          "t": "radicado",
+          "req": true,
+          "ph": "11001-40-03-012-2026-00345-00"
+        },
+        {
+          "k": "proceso",
+          "l": "Clase de proceso",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: Ejecutivo singular"
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Parte que represento",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre y calidad."
+        },
+        {
+          "k": "contraparte",
+          "l": "Contraparte",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Nombre y calidad."
+        }
+      ]
+    },
+    {
+      "n": "La solicitud",
+      "campos": [
+        {
+          "k": "asunto_memorial",
+          "l": "Asunto",
+          "t": "select",
+          "opciones": [
+            [
+              "impulso",
+              "Impulso procesal"
+            ],
+            [
+              "copias",
+              "Acceso al expediente o copias"
+            ],
+            [
+              "aplazamiento",
+              "Aplazamiento de audiencia"
+            ],
+            [
+              "medida",
+              "Solicitud de medida cautelar"
+            ],
+            [
+              "aportar",
+              "Aportar documentos o pruebas"
+            ],
+            [
+              "desistimiento",
+              "Desistimiento"
+            ],
+            [
+              "renuncia",
+              "Renuncia de poder (art. 76 CGP)"
+            ],
+            [
+              "sustitucion",
+              "Sustitución de poder (art. 75 CGP)"
+            ],
+            [
+              "pago",
+              "Terminación por pago (art. 461 CGP)"
+            ],
+            [
+              "titulos",
+              "Entrega de títulos judiciales"
+            ],
+            [
+              "aclaracion",
+              "Aclaración, corrección o adición de providencia"
+            ],
+            [
+              "otro",
+              "Otro"
+            ]
+          ],
+          "req": false,
+          "def": "impulso"
+        },
+        {
+          "k": "solicitud",
+          "l": "Qué solicitas y por qué",
+          "t": "area",
+          "rows": 5,
+          "req": true,
+          "ph": "Ej.: Han pasado 4 meses desde la radicación de la demanda sin auto admisorio; solicito darle trámite."
+        },
+        {
+          "k": "hechos",
+          "l": "Antecedentes (opcional)",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Fechas y actuaciones relevantes."
+        },
+        {
+          "k": "anexos",
+          "l": "Anexos",
+          "t": "area",
+          "rows": 2,
+          "ph": "Ej.: Comunicación de la renuncia enviada al poderdante el 15/10/2026."
+        }
+      ]
+    }
+  ],
+  "guia": "Escrito breve y directo al despacho que conoce del proceso. Normas según el asunto: impulso (arts. 8 y 42 num. 1 del CGP); acceso al expediente y copias (art. 114 del CGP; Ley 2213 de 2022 para el expediente digital); aplazamiento (según la audiencia, p. ej. art. 372 del CGP) [VERIFICAR]; medidas cautelares (arts. 588 y siguientes del CGP); desistimiento (arts. 314 a 316 del CGP); renuncia de poder (art. 76 del CGP: no pone fin al poder sino 5 días después de presentado el memorial, acompañado de la comunicación enviada al poderdante); sustitución (art. 75 del CGP); terminación por pago (art. 461 del CGP); aclaración, corrección y adición (arts. 285 a 287 del CGP).\nEstructura: destinatario; referencia (proceso, radicado, partes); presentación (calidad en que se actúa); ASUNTO; SOLICITUD con su fundamento; ANEXOS si los hay. Sin capítulos innecesarios.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ]
+}

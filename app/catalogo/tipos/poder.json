@@ -1,0 +1,110 @@
+{
+  "id": "poder",
+  "nombre": "Poder especial",
+  "area": "Procesos en curso",
+  "norma": "Arts. 74 a 77 CGP · Art. 5 Ley 2213/2022",
+  "rolFirma": "",
+  "rolCliente": "el poderdante",
+  "juris": "ninguna",
+  "firma": "poder",
+  "breve": true,
+  "desc": "Mandato para representar a tu cliente en un proceso o trámite.",
+  "grupos": [
+    {
+      "n": "Destinatario",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez o entidad ante quien se presenta",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+          "sug": [
+            "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+            "Juez Civil del Circuito de Medellín (Reparto)",
+            "Juez de Pequeñas Causas y Competencia Múltiple de Cali (Reparto)",
+            "Juez Administrativo del Circuito de Bogotá D.C. (Reparto)",
+            "Tribunal Administrativo de Antioquia (Reparto)"
+          ]
+        },
+        {
+          "k": "radicado",
+          "l": "Radicado del proceso",
+          "t": "radicado",
+          "req": false,
+          "ph": "11001-40-03-012-2026-00345-00"
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Poderdante",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Poderdante",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono. Si es empresa: NIT, representante legal y correo inscrito en el registro mercantil."
+        }
+      ]
+    },
+    {
+      "n": "El encargo",
+      "campos": [
+        {
+          "k": "asunto",
+          "l": "Para qué se otorga",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Iniciar y llevar hasta su terminación proceso verbal de restitución de inmueble arrendado contra Pedro Gómez, respecto del apartamento de la Calle 10 # 20-30."
+        },
+        {
+          "k": "contraparte",
+          "l": "Contra quién (si aplica)",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Nombre e identificación."
+        },
+        {
+          "k": "facultades",
+          "l": "Facultades expresas",
+          "t": "chips",
+          "opciones": [
+            "Recibir",
+            "Conciliar",
+            "Transigir",
+            "Desistir",
+            "Sustituir",
+            "Reasumir",
+            "Renunciar",
+            "Allanarse",
+            "Interponer recursos",
+            "Tachar documentos de falsos",
+            "Cobrar y recibir títulos judiciales",
+            "Presentar acción de tutela"
+          ],
+          "req": false
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: arts. 73 a 77 del CGP (derecho de postulación; el poder especial puede conferirse por documento privado y los asuntos deben estar determinados y claramente identificados, art. 74; facultades del apoderado y actos que requieren autorización expresa, como recibir, allanarse o disponer del derecho en litigio, art. 77); art. 5 de la Ley 2213 de 2022 (el poder especial puede conferirse por mensaje de datos, sin firma manuscrita o digital, con la sola antefirma; se presume auténtico y no requiere presentación personal; debe indicar expresamente el correo del apoderado, que debe coincidir con el inscrito en el Registro Nacional de Abogados; los poderdantes inscritos en el registro mercantil lo remiten desde su correo de notificaciones judiciales).\nRedacta en primera persona del poderdante: “[Nombre], mayor de edad, identificado(a) con …, por medio del presente escrito confiero poder especial, amplio y suficiente a [abogado], identificado(a) con …, abogado(a) en ejercicio, portador(a) de la Tarjeta Profesional No. … del Consejo Superior de la Judicatura, con correo electrónico … inscrito en el Registro Nacional de Abogados, para que …”. Luego, las facultades del art. 77 del CGP y las expresas indicadas. Breve: una página. Sin capítulos de hechos ni fundamentos.\nEstructura: lugar y fecha; destinatario; referencia (Poder especial; asunto); texto del poder; facultades; bloque de firma del poderdante; “Acepto,”; firma del apoderado.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425",
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=187425"
+  ]
+}

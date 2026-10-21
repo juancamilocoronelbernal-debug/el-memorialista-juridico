@@ -1,0 +1,141 @@
+{
+  "id": "conciliacion",
+  "nombre": "Solicitud de conciliación extrajudicial",
+  "area": "Civil y comercial",
+  "norma": "Ley 2220/2022",
+  "rolFirma": "de la parte convocante",
+  "rolCliente": "la parte convocante",
+  "desc": "Ante centro de conciliación, notaría, Procuraduría o comisaría de familia.",
+  "grupos": [
+    {
+      "n": "Conciliador",
+      "campos": [
+        {
+          "k": "area_conc",
+          "l": "Materia",
+          "t": "select",
+          "opciones": [
+            [
+              "civil",
+              "Civil o comercial"
+            ],
+            [
+              "familia",
+              "Familia"
+            ],
+            [
+              "admin",
+              "Contencioso administrativa (Procuraduría)"
+            ],
+            [
+              "laboral",
+              "Laboral"
+            ]
+          ],
+          "req": false,
+          "def": "civil"
+        },
+        {
+          "k": "destinatario",
+          "l": "Centro o autoridad",
+          "t": "texto",
+          "req": true,
+          "ph": "Centro de Conciliación de la Cámara de Comercio de Bogotá",
+          "sug": [
+            "Procuraduría Judicial para Asuntos Administrativos (Reparto)",
+            "Centro de Conciliación de la Cámara de Comercio de Bogotá",
+            "Comisaría de Familia de Suba",
+            "Notaría 20 del Círculo de Bogotá"
+          ]
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Convocante",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "contraparte",
+          "l": "Convocado(s)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono. Incluye su correo para la citación."
+        }
+      ]
+    },
+    {
+      "n": "El conflicto",
+      "campos": [
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Ej.: El 1/02/2026 firmamos contrato de arrendamiento; el arrendatario no paga desde junio…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Pretensiones",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Que el convocado pague los cánones adeudados ($6.000.000) y restituya el inmueble."
+        },
+        {
+          "k": "cuantia",
+          "l": "Cuantía",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: $6.000.000"
+        },
+        {
+          "k": "admin_detalle",
+          "l": "Solo si es contencioso: medio de control, acto o hecho y fecha",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Nulidad y restablecimiento contra la Resolución 12 del 3/08/2026, notificada el 5/08/2026."
+        },
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": ""
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: Ley 2220 de 2022 (Estatuto de Conciliación), vigente desde el 30 de diciembre de 2022. La solicitud incluye: identificación de las partes y sus representantes con dirección física y electrónica; hechos; pretensiones; cuantía; relación de pruebas y anexos; y la manifestación de no haber presentado demanda ni otra solicitud de conciliación sobre los mismos aspectos [VERIFICAR artículo]. En lo contencioso administrativo se presenta ante la Procuraduría y debe precisar el medio de control que se ejercería, el acto o hecho, la estimación razonada de la cuantía y la fecha de notificación del acto o de ocurrencia del hecho. En asuntos laborales la conciliación no es requisito de procedibilidad. La presentación de la solicitud suspende la prescripción o la caducidad en los términos de la ley.\nEstructura: destinatario; referencia (Solicitud de conciliación extrajudicial en derecho; convocante; convocado); presentación; PARTES; HECHOS; PRETENSIONES; CUANTÍA; FUNDAMENTOS DE DERECHO (breves); PRUEBAS Y ANEXOS; MANIFESTACIONES; NOTIFICACIONES.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=189689"
+  ]
+}

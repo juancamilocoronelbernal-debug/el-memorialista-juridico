@@ -1,0 +1,129 @@
+{
+  "id": "laboral_demanda",
+  "nombre": "Demanda ordinaria laboral",
+  "area": "Laboral",
+  "norma": "Ley 2452/2025 · CST",
+  "rolFirma": "de la parte demandante",
+  "rolCliente": "la parte demandante",
+  "desc": "Reclamación de salarios, prestaciones, indemnizaciones o reintegro ante juez laboral.",
+  "grupos": [
+    {
+      "n": "Despacho",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Laboral del Circuito de Bogotá D.C. (Reparto)",
+          "sug": [
+            "Juez Laboral Municipal de Bogotá D.C. (Reparto)",
+            "Juez Laboral del Circuito de Barranquilla (Reparto)"
+          ],
+          "ayuda": "Laboral municipal hasta 40 smmlv; del circuito por encima de 40 smmlv o en estabilidad laboral reforzada."
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Demandante (trabajador)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "contraparte",
+          "l": "Demandado (empleador)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Razón social, NIT, representante legal, dirección y correo de notificaciones judiciales."
+        }
+      ]
+    },
+    {
+      "n": "La relación laboral",
+      "campos": [
+        {
+          "k": "relacion",
+          "l": "Datos de la relación laboral",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Contrato a término indefinido del 1/02/2021 al 30/06/2026; cargo: auxiliar de bodega; salario $2.100.000; despido sin justa causa por carta del 30/06/2026."
+        },
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Ej.: Trabajaba de lunes a sábado de 6 a. m. a 6 p. m.; nunca le pagaron horas extra; no le consignaron las cesantías de 2025…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Pretensiones",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Indemnización por despido sin justa causa; horas extra; sanción por no consignación de cesantías; indemnización moratoria; indexación; costas."
+        },
+        {
+          "k": "cuantia",
+          "l": "Cuantía estimada",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: $48.000.000"
+        },
+        {
+          "k": "reclamacion",
+          "l": "Reclamación previa (si el empleador es entidad pública)",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Reclamación radicada el 15/07/2026, sin respuesta."
+        }
+      ]
+    },
+    {
+      "n": "Pruebas y notificaciones",
+      "campos": [
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Contrato, desprendibles de pago, carta de despido; testigos (nombre, correo y objeto); documentos en poder del empleador que pides exhibir."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste."
+        }
+      ]
+    }
+  ],
+  "guia": "Régimen procesal: Ley 2452 de 2025 (nuevo Código Procesal del Trabajo y de la Seguridad Social), aplicable a los procesos iniciados desde el 6 de abril de 2026; los anteriores siguen con el Decreto-Ley 2158 de 1948. No cites números de artículo de la Ley 2452 de 2025 salvo que el abogado los dé; si los mencionas, márcalos [VERIFICAR].\nRequisitos de la demanda según la Ley 2452 de 2025: se presenta como mensaje de datos con sus anexos; nombre de las partes y de sus representantes; identificación (cédula; NIT para personas jurídicas); domicilio, dirección física y correo o canal digital de partes, apoderados, testigos y peritos (si se desconoce, se manifiesta bajo juramento); pretensiones precisas y separadas; hechos numerados; fundamentos de derecho; pruebas (aportar las que se tengan y señalar las que estén en poder del demandado); cuantía cuando defina la competencia (jueces laborales municipales hasta 40 smmlv; jueces del circuito por encima de 40 smmlv; estabilidad laboral reforzada: circuito). Anexos: copia del documento de identidad del demandante y pruebas. No se exige enviar copia simultánea de la demanda al demandado y la conciliación no es requisito de procedibilidad. Si el demandado es una entidad pública, indica si se agotó la reclamación de derechos.\nDerecho sustancial: Código Sustantivo del Trabajo con las modificaciones de la Ley 2466 de 2025; aplica la norma vigente en la fecha de los hechos y marca [VERIFICAR] cuando un cálculo dependa de la reforma (jornada, recargos, dominicales). Referencias usuales: art. 64 CST (despido sin justa causa), art. 65 CST (indemnización moratoria), art. 99 de la Ley 50 de 1990 (no consignación de cesantías), Ley 52 de 1975 (intereses a las cesantías), arts. 249 y siguientes (cesantías), 306 (prima de servicios) y 186 y siguientes (vacaciones) del CST.\nEstructura: destinatario; referencia (Demanda ordinaria laboral de primera instancia; demandante; demandado); presentación y poder; PARTES; HECHOS; PRETENSIONES (declarativas y de condena separadas, con indexación y costas); FUNDAMENTOS DE DERECHO; PRUEBAS (documentales, testimoniales con canal digital, interrogatorio de parte, exhibición de documentos en poder del demandado, inspección judicial); CUANTÍA Y COMPETENCIA; ANEXOS; NOTIFICACIONES (con la manifestación bajo juramento sobre el canal digital).",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=254181",
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=33104"
+  ]
+}

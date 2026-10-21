@@ -1,0 +1,164 @@
+{
+  "id": "contestacion",
+  "nombre": "Contestación de demanda",
+  "area": "Civil y comercial",
+  "norma": "Art. 96 CGP · Ley 2452/2025",
+  "rolFirma": "de la parte demandada",
+  "rolCliente": "la parte demandada",
+  "desc": "Pronunciamiento sobre hechos y pretensiones, excepciones y pruebas. Sirve para procesos civiles, laborales y administrativos.",
+  "grupos": [
+    {
+      "n": "Proceso",
+      "campos": [
+        {
+          "k": "jurisdiccion",
+          "l": "Jurisdicción",
+          "t": "select",
+          "opciones": [
+            [
+              "civil",
+              "Civil, comercial o familia (CGP)"
+            ],
+            [
+              "laboral",
+              "Laboral (Ley 2452 de 2025)"
+            ],
+            [
+              "admin",
+              "Contencioso administrativo (CPACA)"
+            ]
+          ],
+          "req": false,
+          "def": "civil"
+        },
+        {
+          "k": "destinatario",
+          "l": "Juez que conoce del proceso",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Doce Civil Municipal de Bogotá D.C.",
+          "sug": [
+            "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+            "Juez Civil del Circuito de Medellín (Reparto)",
+            "Juez de Pequeñas Causas y Competencia Múltiple de Cali (Reparto)"
+          ]
+        },
+        {
+          "k": "radicado",
+          "l": "Radicado del proceso",
+          "t": "radicado",
+          "req": true,
+          "ph": "11001-40-03-012-2026-00345-00"
+        },
+        {
+          "k": "proceso",
+          "l": "Clase de proceso",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: Verbal de responsabilidad civil contractual"
+        },
+        {
+          "k": "notificacion_fecha",
+          "l": "Fecha de notificación del auto admisorio",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: 1 de octubre de 2026"
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Demandado que representas",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "contraparte",
+          "l": "Demandante",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre e identificación."
+        }
+      ]
+    },
+    {
+      "n": "Contestación",
+      "campos": [
+        {
+          "k": "respuesta_hechos",
+          "l": "Respuesta a cada hecho",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Ej.:\n1. Es cierto.\n2. No es cierto: el contrato se terminó el 3/02 por mutuo acuerdo (acta).\n3. No me consta: no participé en esa reunión.",
+          "ayuda": "Usa la numeración de la demanda. Si niegas un hecho o no te consta, di por qué."
+        },
+        {
+          "k": "respuesta_pretensiones",
+          "l": "Posición frente a las pretensiones",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Me opongo a todas; la segunda carece de fundamento porque…"
+        },
+        {
+          "k": "excepciones",
+          "l": "Excepciones",
+          "t": "area",
+          "rows": 5,
+          "req": false,
+          "ph": "Ej.: Inexistencia de la obligación; pago; prescripción; cobro de lo no debido. Explica el fundamento de cada una."
+        },
+        {
+          "k": "objecion",
+          "l": "Objeción al juramento estimatorio (opcional)",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Los perjuicios están sobreestimados porque…"
+        }
+      ]
+    },
+    {
+      "n": "Pruebas y notificaciones",
+      "campos": [
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Documentales, testimonios (nombre, correo y objeto), interrogatorio, dictamen."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu dirección y el canal digital de tu cliente y el tuyo."
+        }
+      ]
+    }
+  ],
+  "guia": "Civil (CGP): traslado de 20 días en el verbal (art. 369) y de 10 días en el verbal sumario (art. 391). Contenido (art. 96): nombre del demandado y domicilio, y los de su representante o apoderado; pronunciamiento expreso y concreto sobre las pretensiones y sobre cada hecho, indicando si se admite, se niega o no le consta, con las razones precisas y unívocas de la negativa o de la falta de conocimiento (si no se dan, se presume cierto el hecho); excepciones de mérito con su fundamento; pruebas; dirección física y electrónica para notificaciones. Las excepciones previas (art. 100) van en escrito separado (art. 101). La objeción al juramento estimatorio especifica razonadamente la inexactitud (art. 206).\nLaboral: para procesos iniciados desde el 6 de abril de 2026 rige la Ley 2452 de 2025 (traslado de 10 días; pronunciarse sobre cada hecho dando las razones de la negativa o de por qué no le consta, so pena de tenerlo por probado; aportar los documentos y registros que el empleador deba llevar; excepciones previas en el mismo escrito; indicar correo y canal digital) [VERIFICAR artículos]; para procesos anteriores, art. 31 del Decreto-Ley 2158 de 1948.\nContencioso administrativo: traslado de 30 días (art. 172 CPACA) y contenido del art. 175 CPACA.\nEstructura: destinatario; referencia (proceso, radicado, demandante, demandado); presentación y oportunidad; PRONUNCIAMIENTO SOBRE LOS HECHOS (uno por uno, con la numeración de la demanda); PRONUNCIAMIENTO SOBRE LAS PRETENSIONES; EXCEPCIONES DE MÉRITO (cada una con nombre en mayúsculas y fundamento fáctico y jurídico); OBJECIÓN AL JURAMENTO ESTIMATORIO si aplica; FUNDAMENTOS DE DERECHO; PRUEBAS; ANEXOS; NOTIFICACIONES.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425",
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=254181"
+  ]
+}

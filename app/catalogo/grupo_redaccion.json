@@ -1,0 +1,85 @@
+{
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "nombre_grupo": "Redacción",
+  "campos": [
+    {
+      "k": "fundamentos",
+      "l": "Normas o jurisprudencia que quieres citar",
+      "t": "area",
+      "rows": 2,
+      "ph": "Opcional. Ej.: Sentencia T-760 de 2008; art. 49 de la Constitución."
+    },
+    {
+      "k": "_extension",
+      "l": "Extensión",
+      "t": "select",
+      "opciones": [
+        [
+          "concisa",
+          "Concisa"
+        ],
+        [
+          "estandar",
+          "Estándar"
+        ],
+        [
+          "extensa",
+          "Extensa y exhaustiva"
+        ]
+      ]
+    },
+    {
+      "k": "_juris",
+      "l": "Jurisprudencia",
+      "t": "select",
+      "opciones": [
+        [
+          "sugerir",
+          "Sugerir sentencias, marcadas para verificar"
+        ],
+        [
+          "usuario",
+          "Solo la que yo indique"
+        ],
+        [
+          "ninguna",
+          "No citar jurisprudencia"
+        ]
+      ]
+    },
+    {
+      "k": "_firma",
+      "l": "Quién firma",
+      "t": "select",
+      "opciones": [
+        [
+          "apoderado",
+          "Yo, como apoderado(a)"
+        ],
+        [
+          "propio",
+          "Yo, en nombre propio"
+        ],
+        [
+          "cliente",
+          "Mi cliente, en nombre propio"
+        ]
+      ]
+    },
+    {
+      "k": "_membrete",
+      "l": "Incluir mi membrete en este escrito",
+      "t": "check",
+      "def": true
+    },
+    {
+      "k": "_notas",
+      "l": "Indicaciones adicionales",
+      "t": "area",
+      "rows": 2,
+      "ph": "Ej.: Enfatiza que la accionante es adulta mayor; no menciones el nombre del médico."
+    }
+  ]
+}

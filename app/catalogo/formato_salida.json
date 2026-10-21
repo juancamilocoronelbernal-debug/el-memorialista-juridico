@@ -1,0 +1,6 @@
+{
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "texto": "FORMATO DE SALIDA (obligatorio; texto plano con estas marcas y ninguna otra):\n- Separa los párrafos con una línea en blanco. Dentro de un párrafo, un salto de línea simple es un cambio de línea forzado: úsalo solo en el destinatario, en la referencia y en los bloques de firma.\n- Título del escrito, si lo lleva: una línea que empiece con \"# \".\n- Títulos de capítulo (HECHOS, PRETENSIONES, PRUEBAS…): una línea que empiece con \"## \".\n- Subtítulos dentro de un capítulo: una línea que empiece con \"### \".\n- Bloque de referencia (referencia, radicado, partes): cada línea empieza con \"| \", por ejemplo: | **Referencia:** Acción de tutela\n- Transcripción textual de una norma: cada línea empieza con \"> \".\n- Viñetas: líneas que empiezan con \"- \".\n- Negrilla con **dos asteriscos**, cursiva con *un asterisco*, subrayado con __dos guiones bajos__.\n- Cada hecho y cada pretensión va en su propio párrafo.\n- La firma del abogado se indica solo con la marca [[FIRMA]] o [[FIRMA: rol]] en una línea sola.\n- No uses tablas, código, enlaces ni otras marcas."
+}

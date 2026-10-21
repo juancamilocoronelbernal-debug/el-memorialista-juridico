@@ -1,0 +1,147 @@
+{
+  "id": "divorcio",
+  "nombre": "Divorcio o cesación de efectos civiles",
+  "area": "Familia",
+  "norma": "Art. 154 C.C. · Art. 388 CGP · Ley 2442/2024",
+  "rolFirma": "de la parte demandante",
+  "rolCliente": "la parte demandante",
+  "desc": "Proceso contencioso ante juez de familia, incluido el divorcio por voluntad unilateral.",
+  "grupos": [
+    {
+      "n": "Despacho",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez o despacho",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez de Familia de Bogotá D.C. (Reparto)",
+          "sug": [
+            "Juez de Familia de Bogotá D.C. (Reparto)",
+            "Juez Promiscuo de Familia de Zipaquirá (Reparto)"
+          ]
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Demandante (cónyuge)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "contraparte",
+          "l": "Demandado (cónyuge)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        }
+      ]
+    },
+    {
+      "n": "El matrimonio",
+      "campos": [
+        {
+          "k": "matrimonio",
+          "l": "Datos del matrimonio",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Matrimonio religioso en la Parroquia San José de Bogotá el 12/06/2010, registrado en la Notaría 5, indicativo serial 0123456."
+        },
+        {
+          "k": "causales",
+          "l": "Causales (art. 154 C.C.)",
+          "t": "chips",
+          "opciones": [
+            "Sola voluntad de cualquiera de los cónyuges",
+            "Relaciones sexuales extramatrimoniales",
+            "Incumplimiento grave de los deberes de esposo o de padre",
+            "Ultrajes, trato cruel y maltratamientos de obra",
+            "Embriaguez habitual",
+            "Uso habitual de sustancias alucinógenas o estupefacientes",
+            "Enfermedad grave e incurable",
+            "Conducta tendiente a corromper o pervertir",
+            "Separación de cuerpos de más de dos años",
+            "Mutuo acuerdo"
+          ],
+          "req": true
+        },
+        {
+          "k": "hijos",
+          "l": "Hijos",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Nombres, fechas de nacimiento y propuesta de custodia, cuota alimentaria y visitas. Ej.: Sofía (8 años): custodia de la madre; cuota de $900.000 mensuales…"
+        },
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Ej.: Conviven separados desde enero de 2023; desde entonces el demandado no aporta para los gastos del hogar…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Pretensiones",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Decretar la cesación de efectos civiles del matrimonio religioso; disolver la sociedad conyugal; fijar custodia, alimentos y visitas; inscribir la sentencia."
+        },
+        {
+          "k": "bienes",
+          "l": "Bienes y deudas de la sociedad conyugal (opcional)",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Apartamento en Bogotá, matrícula 50C-112233; crédito hipotecario con el Banco X."
+        }
+      ]
+    },
+    {
+      "n": "Pruebas y notificaciones",
+      "campos": [
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Registro civil de matrimonio; registros civiles de nacimiento de los hijos; testigos (nombre, correo y objeto)."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: art. 154 del Código Civil (causales, modificado por la Ley 25 de 1992); la Ley 2442 de 2024 agregó como causal la sola voluntad de cualquiera de los cónyuges [VERIFICAR numeral] y, cuando hay hijos menores, exige proponer la forma en que cada padre contribuirá a su crianza, educación, alimentos y custodia, y el juez revisa de oficio la obligación alimentaria. Arts. 156 (oportunidad para alegar ciertas causales) [VERIFICAR], 160 (efectos del divorcio) y 1820 (disolución de la sociedad conyugal) del Código Civil; art. 388 del CGP (proceso verbal de divorcio y cesación de efectos civiles del matrimonio religioso, art. 152 C.C.); arts. 82 y siguientes del CGP; Ley 2213 de 2022 para canal digital y notificaciones. Si se invoca la causal de mutuo acuerdo, advierte que puede tramitarse ante notario o por jurisdicción voluntaria.\nEstructura: destinatario; referencia (Proceso verbal de divorcio o de cesación de efectos civiles de matrimonio religioso; demandante; demandado); presentación; HECHOS (matrimonio, hijos, bienes, hechos que configuran cada causal); PRETENSIONES (decretar el divorcio o la cesación; disolución y liquidación de la sociedad conyugal; custodia, alimentos y visitas de los hijos menores; inscripción en el registro civil; costas si aplica); FUNDAMENTOS DE DERECHO; PRUEBAS; COMPETENCIA Y PROCEDIMIENTO; ANEXOS; NOTIFICACIONES.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=250873",
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ]
+}

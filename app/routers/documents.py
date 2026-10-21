@@ -1,8 +1,8 @@
-"""El Memorialista · rutas de la API (v2.2)."""
+"""El Memorialista · rutas de la API (v2.2.1)."""
 import asyncio
 import contextlib
 import json
-from typing import AsyncIterator, Literal
+from typing import Any, AsyncIterator, Literal, Optional
 
 import anyio
 from fastapi import APIRouter, HTTPException, Request
@@ -12,6 +12,14 @@ from pydantic import BaseModel, Field
 from app.config import get_settings
 from app.services.gemini_service import Evento, gemini_service
 from app.services.limites import limitador, verificar_acceso
+from app.services.prompt import (
+    cargar_areas,
+    cargar_grupo_redaccion,
+    construir_prompt,
+    listar_tipos,
+    obtener_tipo,
+    validar_datos_tipo,
+)
 
 router = APIRouter(prefix="/api", tags=["Documentos"])
 
@@ -22,12 +30,55 @@ MARCA_INCOMPLETO = (
 )
 
 
+class PerfilAbogado(BaseModel):
+    nombre: str = ""
+    genero: Literal["f", "m", ""] = ""
+    cedula: str = ""
+    cedulaLugar: str = ""
+    tp: str = ""
+    correo: str = ""
+    telefono: str = ""
+    direccion: str = ""
+    ciudad: str = ""
+
+
+class PerfilEstilo(BaseModel):
+    tratamiento: str = "auto"
+    persona: str = "auto"
+    numHechos: str = "auto"
+    numPretensiones: str = "auto"
+    tono: str = "sobrio"
+    lenguaje: str = "auto"
+    fecha: str = "arriba"
+    esd: bool = True
+    cierre: str = ""
+    extension: str = "estandar"
+    ficha: str = ""
+    muestra: str = ""
+
+
+class PerfilIA(BaseModel):
+    calidad: Literal["default", "complex"] = "default"
+    smmlv: int = 1750905
+
+
+class PerfilPayload(BaseModel):
+    abogado: Optional[PerfilAbogado] = Field(default_factory=PerfilAbogado)
+    estilo: Optional[PerfilEstilo] = Field(default_factory=PerfilEstilo)
+    ia: Optional[PerfilIA] = Field(default_factory=PerfilIA)
+
+
 class RedactarRequest(BaseModel):
-    prompt: str = Field(..., min_length=20, max_length=150_000)
+    # En desarrollo/test se permite prompt para pruebas unitarias de compatibilidad;
+    # en producción se rechaza si viene definido.
+    prompt: Optional[str] = Field(None, max_length=150_000)
+    tipo: Optional[str] = None
+    datos: Optional[dict[str, Any]] = None
+    perfil: Optional[PerfilPayload] = None
     modo: Literal["nuevo", "regenerar", "ajuste", "continuar"] = "nuevo"
     instruccion: str = Field("", max_length=4_000)
     texto_previo: str = Field("", max_length=250_000)
-    calidad: Literal["default", "complex"] = "default"
+    calidad: Optional[Literal["default", "complex"]] = None
     protocolo: Literal["texto", "ndjson"] = "texto"
 
 
@@ -40,16 +91,67 @@ async def health_check():
     return {"status": "online", "app": "El Memorialista", "version": get_settings().VERSION, **gemini_service.estado()}
 
 
+@router.get("/catalogo")
+async def obtener_catalogo():
+    tipos = listar_tipos(incluir_guia=False)
+    areas = cargar_areas()
+    grupo_red = cargar_grupo_redaccion()
+    return {
+        "version": "2.2.1",
+        "fecha_revision": "21 de octubre de 2026",
+        "revisado_por": "Comité Jurídico El Memorialista",
+        "areas": areas,
+        "tipos": tipos,
+        "grupo_redaccion": grupo_red,
+    }
+
+
 @router.post("/redactar")
 async def redactar_documento(req: RedactarRequest, request: Request):
     verificar_acceso(request)
     limitador.verificar(request, "redactar")
+
+    settings = get_settings()
+
+    # 4) Con ENVIRONMENT=production, rechaza el campo "prompt" libre (400).
+    if settings.ENVIRONMENT == "production":
+        if req.prompt is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="En producción no se permite el campo 'prompt' libre. Debe enviar 'tipo', 'datos' y 'perfil'."
+            )
+        if not req.tipo or req.datos is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Faltan los campos requeridos 'tipo' y 'datos'."
+            )
+
+    if req.tipo:
+        tipo_meta = obtener_tipo(req.tipo)
+        if not tipo_meta:
+            raise HTTPException(status_code=404, detail=f"Tipo de documento '{req.tipo}' no encontrado.")
+        errores = validar_datos_tipo(tipo_meta, req.datos or {})
+        if errores:
+            raise HTTPException(status_code=422, detail="; ".join(errores))
+        perfil_dict = req.perfil.model_dump() if req.perfil else {}
+        prompt_final = construir_prompt(tipo_meta, req.datos or {}, perfil_dict)
+    elif req.prompt:
+        prompt_final = req.prompt
+    else:
+        raise HTTPException(status_code=400, detail="Debe proporcionar 'tipo' y 'datos' o un 'prompt'.")
+
+    calidad = req.calidad
+    if not calidad and req.perfil and req.perfil.ia:
+        calidad = req.perfil.ia.calidad
+    if not calidad:
+        calidad = "default"
+
     eventos = gemini_service.generar(
-        prompt=req.prompt,
+        prompt=prompt_final,
         modo=req.modo,
         instruccion=req.instruccion,
         texto_previo=req.texto_previo,
-        calidad=req.calidad,
+        calidad=calidad,
     )
     if req.protocolo == "ndjson":
         return StreamingResponse(_como_ndjson(eventos), media_type="application/x-ndjson", headers=SIN_CACHE)

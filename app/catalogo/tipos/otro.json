@@ -1,0 +1,110 @@
+{
+  "id": "otro",
+  "nombre": "Otro escrito",
+  "area": "Otro",
+  "norma": "Tú lo describes",
+  "rolFirma": "de la parte que represento",
+  "rolCliente": "la parte que represento",
+  "desc": "Describe el documento que necesitas y se redacta con tu membrete y tu estilo.",
+  "grupos": [
+    {
+      "n": "El documento",
+      "campos": [
+        {
+          "k": "tipo_libre",
+          "l": "¿Qué documento necesitas?",
+          "t": "texto",
+          "req": true,
+          "ph": "Ej.: Solicitud de amparo de pobreza; habeas data ante central de riesgo; contrato de transacción"
+        },
+        {
+          "k": "destinatario",
+          "l": "Destinatario",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez, entidad o persona destinataria",
+          "sug": null
+        },
+        {
+          "k": "radicado",
+          "l": "Radicado del proceso",
+          "t": "radicado",
+          "req": false,
+          "ph": "11001-40-03-012-2026-00345-00"
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Tu cliente",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "contraparte",
+          "l": "Contraparte (si aplica)",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Entidad o persona, NIT si lo conoces, representante legal y correo de notificaciones judiciales."
+        }
+      ]
+    },
+    {
+      "n": "El caso",
+      "campos": [
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Todo lo que el documento debe contar.",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Lo que se pide o se pacta",
+          "t": "area",
+          "rows": 4,
+          "req": false,
+          "ph": ""
+        },
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": ""
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste."
+        }
+      ]
+    }
+  ],
+  "guia": "Identifica el tipo de escrito descrito por el abogado y aplica la estructura y las normas colombianas vigentes que le correspondan. Si no estás seguro de un requisito, de un término o de un artículo, márcalo [VERIFICAR].",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.secretariasenado.gov.co/senado/basedoc/constitucion_politica_1991.html"
+  ]
+}

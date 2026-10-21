@@ -1,0 +1,108 @@
+{
+  "id": "impugnacion_tutela",
+  "nombre": "Impugnación de fallo de tutela",
+  "area": "Constitucional",
+  "norma": "Art. 31 D. 2591/1991",
+  "rolFirma": "de la parte impugnante",
+  "rolCliente": "la parte que impugna",
+  "desc": "Recurso contra la sentencia de primera instancia, dentro de los 3 días siguientes a su notificación.",
+  "grupos": [
+    {
+      "n": "Despacho",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez que dictó el fallo",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Quinto Civil Municipal de Bogotá D.C.",
+          "sug": [
+            "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+            "Juez Penal Municipal de Medellín con Función de Control de Garantías (Reparto)",
+            "Juez Laboral del Circuito de Cali (Reparto)",
+            "Juez de la República (Reparto)"
+          ]
+        },
+        {
+          "k": "radicado",
+          "l": "Radicado del proceso",
+          "t": "radicado",
+          "req": false,
+          "ph": "11001-40-03-012-2026-00345-00"
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Parte que impugna",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono. Indica si es accionante o accionado."
+        },
+        {
+          "k": "contraparte",
+          "l": "Contraparte",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Entidad o persona, NIT si lo conoces, representante legal y correo de notificaciones judiciales."
+        }
+      ]
+    },
+    {
+      "n": "El fallo",
+      "campos": [
+        {
+          "k": "fallo",
+          "l": "Fallo impugnado",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Sentencia del 10/10/2026 que negó la tutela por improcedente; notificada el 14/10/2026."
+        },
+        {
+          "k": "razones",
+          "l": "Razones de inconformidad",
+          "t": "area",
+          "rows": 7,
+          "req": true,
+          "ph": "Ej.: El juez dijo que había otro medio judicial, pero no valoró que la accionante es adulta mayor y el tratamiento es urgente…"
+        },
+        {
+          "k": "pretensiones",
+          "l": "Lo que se pide al superior",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Revocar el fallo y, en su lugar, amparar los derechos y ordenar la entrega del medicamento."
+        },
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Opcional: pruebas nuevas o documentos que el juez no valoró."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: artículos 31 y 32 del Decreto 2591 de 1991. Término: dentro de los 3 días siguientes a la notificación del fallo. Se presenta ante el juez de primera instancia, que lo remite al superior jerárquico.\nEstructura: destinatario (el juez que dictó el fallo); referencia (Impugnación de fallo de tutela; radicado; accionante; accionado); presentación y oportunidad (indica la fecha de notificación y que se presenta dentro del término); ANTECEDENTES (lo pedido y lo decidido, brevemente); RAZONES DE LA IMPUGNACIÓN (cargo por cargo: errores fácticos, probatorios o jurídicos del fallo, cada uno con su argumentación); SOLICITUD (revocar o modificar y, en su lugar, las órdenes concretas); PRUEBAS si hay; NOTIFICACIONES.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=2790"
+  ]
+}

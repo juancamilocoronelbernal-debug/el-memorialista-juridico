@@ -1,0 +1,182 @@
+{
+  "id": "tutela",
+  "nombre": "Acción de tutela",
+  "area": "Constitucional",
+  "norma": "Art. 86 C.P. · D. 2591/1991",
+  "rolFirma": "de la parte accionante",
+  "rolCliente": "la parte accionante",
+  "desc": "Protección inmediata de derechos fundamentales.",
+  "grupos": [
+    {
+      "n": "Despacho",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+          "sug": [
+            "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+            "Juez Penal Municipal de Medellín con Función de Control de Garantías (Reparto)",
+            "Juez Laboral del Circuito de Cali (Reparto)",
+            "Juez de la República (Reparto)"
+          ],
+          "ayuda": "Si no sabes el despacho, escribe “Juez de la República (Reparto)”."
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Accionante",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono.\nSi actúa por un menor o como agente oficioso, indícalo."
+        },
+        {
+          "k": "contraparte",
+          "l": "Accionado(s)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Entidad o persona, NIT si lo conoces, representante legal y correo de notificaciones judiciales."
+        },
+        {
+          "k": "vinculados",
+          "l": "Terceros a vincular (opcional)",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Superintendencia Nacional de Salud; ADRES."
+        }
+      ]
+    },
+    {
+      "n": "El caso",
+      "campos": [
+        {
+          "k": "derechos",
+          "l": "Derechos fundamentales vulnerados",
+          "t": "chips",
+          "opciones": [
+            "Salud",
+            "Vida digna",
+            "Seguridad social",
+            "Mínimo vital",
+            "Petición",
+            "Debido proceso",
+            "Igualdad",
+            "Trabajo",
+            "Estabilidad laboral reforzada",
+            "Educación",
+            "Vivienda digna",
+            "Hábeas data",
+            "Intimidad",
+            "Buen nombre",
+            "Dignidad humana",
+            "Acceso a la administración de justicia",
+            "Unidad familiar",
+            "Libre desarrollo de la personalidad"
+          ],
+          "req": true
+        },
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Ej.: 2/09 el médico le ordenó el medicamento X. 9/09 la EPS lo negó por falta de autorización del comité técnico. Desde entonces no recibe el tratamiento…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "procedencia",
+          "l": "Procedencia: subsidiariedad e inmediatez",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Ej.: Pasaron 6 semanas desde la negativa; no hay otro medio igual de eficaz porque el tratamiento es continuo; es adulta mayor.",
+          "ayuda": "Por qué la tutela es el medio adecuado y cuánto tiempo ha pasado desde la vulneración."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Lo que se pide al juez",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Ordenar a la EPS entregar el medicamento en 48 horas y garantizar el tratamiento integral."
+        },
+        {
+          "k": "medida",
+          "l": "Medida provisional (opcional)",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Entrega inmediata del medicamento mientras se decide, porque suspenderlo agrava la enfermedad."
+        }
+      ]
+    },
+    {
+      "n": "Pruebas y notificaciones",
+      "campos": [
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Ej.: Fórmula médica del 2/09/2026; respuesta de la EPS del 9/09/2026; cédula de la accionante; poder."
+        },
+        {
+          "k": "juramento",
+          "l": "Manifestar bajo juramento que no se ha presentado otra tutela por los mismos hechos (art. 37, D. 2591 de 1991)",
+          "t": "check",
+          "def": true
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Accionante: dirección y correo. Accionado: correo de notificaciones judiciales."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: artículo 86 de la Constitución, Decreto 2591 de 1991 y Decreto 306 de 1992. Reparto: Decreto 1069 de 2015, modificado por el Decreto 333 de 2021. La tutela es informal y no requiere abogado; no le apliques las cargas de admisión de la demanda del artículo 6 de la Ley 2213 de 2022 (sentencia C-522 de 2023).\nEstructura: lugar y fecha; destinatario (Juez … (Reparto)) y, si aplica, E. S. D.; bloque de referencia (Referencia: Acción de tutela; Accionante; Accionado; Derechos invocados); párrafo de presentación con identificación de quien actúa y la calidad en que lo hace; HECHOS (numerados y cronológicos, con fechas); DERECHOS FUNDAMENTALES VULNERADOS (cada derecho y cómo se vulnera); PROCEDENCIA DE LA ACCIÓN (legitimación por activa y por pasiva; subsidiariedad: inexistencia de otro medio idóneo y eficaz o perjuicio irremediable; inmediatez); FUNDAMENTOS DE DERECHO; MEDIDA PROVISIONAL solo si se pide (art. 7 del Decreto 2591 de 1991: necesidad y urgencia); PRETENSIONES (órdenes concretas y verificables, con plazo, normalmente 48 horas); PRUEBAS (enumeradas; pide que se oficie al accionado por los documentos que estén en su poder); JURAMENTO (art. 37 del Decreto 2591 de 1991); ANEXOS; NOTIFICACIONES.\nSi el accionado es un particular, explica por qué procede la tutela en su contra (art. 42 del Decreto 2591 de 1991: servicio público, subordinación o indefensión).",
+  "ejemplo": {
+    "destinatario": "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+    "ciudad": "Bogotá D.C.",
+    "cliente": "María Fernanda López Rincón, C.C. 52.123.456 de Bogotá, 63 años, domiciliada en Bogotá, Calle 45 # 13-20, maria.lopez@correo.com, 310 555 0101.",
+    "contraparte": "EPS Salud Ejemplo S.A.S., NIT 900.123.456-7, notificaciones judiciales: notificaciones@epsejemplo.com",
+    "derechos": [
+      "Salud",
+      "Vida digna",
+      "Seguridad social"
+    ],
+    "hechos": "- afiliada al régimen contributivo de la EPS desde 2015\n- 2/09/2026 el reumatólogo le diagnosticó artritis reumatoide y le ordenó tofacitinib 5 mg cada 12 horas por 3 meses\n- 9/09/2026 la EPS negó la entrega: dijo que requiere autorización del comité técnico, que no ha resuelto\n- sin el medicamento tiene dolor e inflamación y no puede trabajar (es costurera independiente)\n- presentó queja ante la EPS el 15/09/2026 y no le han respondido",
+    "procedencia": "Han pasado 6 semanas desde la negativa. Es adulta mayor, sujeto de especial protección, y el tratamiento es continuo; no hay otro medio igual de eficaz.",
+    "pretensiones": "Que se ordene a la EPS entregar el medicamento en 48 horas y garantizar el tratamiento integral para la artritis reumatoide.",
+    "pruebas": "Fórmula médica del 2/09/2026; respuesta de la EPS del 9/09/2026; queja del 15/09/2026; cédula; poder.",
+    "juramento": true,
+    "notificaciones": "Accionante: Calle 45 # 13-20, Bogotá; maria.lopez@correo.com. EPS: notificaciones@epsejemplo.com"
+  },
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=2790",
+    "https://www.corteconstitucional.gov.co/relatoria/"
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "id": "alegatos",
+  "nombre": "Alegatos de conclusión",
+  "area": "Procesos en curso",
+  "norma": "Art. 373 CGP · Art. 181 CPACA",
+  "rolFirma": "de la parte que represento",
+  "rolCliente": "la parte que represento",
+  "desc": "Argumentación final sobre los hechos probados y el derecho aplicable.",
+  "grupos": [
+    {
+      "n": "Proceso",
+      "campos": [
+        {
+          "k": "jurisdiccion",
+          "l": "Jurisdicción",
+          "t": "select",
+          "opciones": [
+            [
+              "civil",
+              "Civil, comercial o familia (CGP)"
+            ],
+            [
+              "laboral",
+              "Laboral (Ley 2452 de 2025)"
+            ],
+            [
+              "admin",
+              "Contencioso administrativo (CPACA)"
+            ]
+          ],
+          "req": false,
+          "def": "admin"
+        },
+        {
+          "k": "destinatario",
+          "l": "Despacho",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Cuarto Administrativo del Circuito de Bogotá D.C.",
+          "sug": [
+            "Juez Administrativo del Circuito de Bogotá D.C. (Reparto)",
+            "Tribunal Administrativo de Antioquia (Reparto)"
+          ]
+        },
+        {
+          "k": "radicado",
+          "l": "Radicado del proceso",
+          "t": "radicado",
+          "req": true,
+          "ph": "11001-40-03-012-2026-00345-00"
+        },
+        {
+          "k": "proceso",
+          "l": "Clase de proceso",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: Nulidad y restablecimiento del derecho"
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Parte que represento",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre y calidad."
+        },
+        {
+          "k": "contraparte",
+          "l": "Contraparte",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Nombre y calidad."
+        }
+      ]
+    },
+    {
+      "n": "Argumentos",
+      "campos": [
+        {
+          "k": "posicion",
+          "l": "Tu posición y lo que se busca",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Que se acceda a las pretensiones: la resolución se expidió con falsa motivación."
+        },
+        {
+          "k": "hechos_probados",
+          "l": "Hechos probados y con qué prueba",
+          "t": "area",
+          "rows": 7,
+          "req": true,
+          "ph": "Ej.: La historia laboral (folio 45) acredita 1.350 semanas; el testigo Juan Ruiz declaró que…"
+        },
+        {
+          "k": "argumentos",
+          "l": "Argumentos jurídicos clave",
+          "t": "area",
+          "rows": 4,
+          "req": false,
+          "ph": "Ej.: Aplica el régimen de transición porque…"
+        },
+        {
+          "k": "replica",
+          "l": "Argumentos de la contraparte que debes rebatir (opcional)",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Ej.: La entidad alega prescripción, pero…"
+        },
+        {
+          "k": "pretensiones",
+          "l": "Solicitud final",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Declarar la nulidad y condenar en costas."
+        }
+      ]
+    }
+  ],
+  "guia": "Alegatos finales. CGP: art. 373 (alegatos en la audiencia de instrucción y juzgamiento; por escrito solo cuando el juez lo permite); CPACA: art. 181 (alegatos por escrito dentro de los 10 días siguientes cuando el juez prescinde de la audiencia de alegaciones y juzgamiento); segunda instancia civil y de familia: art. 12 de la Ley 2213 de 2022.\nEstructura: destinatario; referencia; oportunidad; SÍNTESIS DEL LITIGIO (pretensiones y problema jurídico); HECHOS PROBADOS (cada hecho con la prueba que lo demuestra: documento con su folio, testimonio con el nombre del testigo y lo que declaró, dictamen); VALORACIÓN PROBATORIA (sana crítica, art. 176 CGP; carga de la prueba, art. 167 CGP); ARGUMENTOS JURÍDICOS; RÉPLICA a la contraparte; SOLICITUD. Persuasivo y sobrio. Nunca inventes pruebas, folios ni declaraciones que el abogado no haya indicado.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425",
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=42691"
+  ]
+}

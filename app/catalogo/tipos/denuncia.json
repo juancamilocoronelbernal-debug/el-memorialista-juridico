@@ -1,0 +1,131 @@
+{
+  "id": "denuncia",
+  "nombre": "Denuncia penal o querella",
+  "area": "Penal",
+  "norma": "Arts. 66 a 74 Ley 906/2004",
+  "rolFirma": "de la víctima",
+  "rolCliente": "el denunciante",
+  "desc": "Puesta en conocimiento de un posible delito ante la Fiscalía General de la Nación.",
+  "grupos": [
+    {
+      "n": "Destinatario",
+      "campos": [
+        {
+          "k": "clase",
+          "l": "Clase",
+          "t": "select",
+          "opciones": [
+            [
+              "denuncia",
+              "Denuncia"
+            ],
+            [
+              "querella",
+              "Querella (delito querellable)"
+            ]
+          ],
+          "req": false,
+          "def": "denuncia"
+        },
+        {
+          "k": "destinatario",
+          "l": "Destinatario",
+          "t": "texto",
+          "req": true,
+          "ph": "Fiscalía General de la Nación, Fiscal Seccional (Reparto)",
+          "sug": [
+            "Fiscalía General de la Nación, Fiscal Seccional (Reparto)",
+            "Fiscalía General de la Nación, Fiscal Local (Reparto)"
+          ]
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Denunciante o víctima",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "contraparte",
+          "l": "Denunciado(s)",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Nombre, identificación y ubicación si se conocen. Si no, escribe “en averiguación de responsables”."
+        }
+      ]
+    },
+    {
+      "n": "Los hechos",
+      "campos": [
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": true,
+          "ph": "Circunstancias de tiempo, modo y lugar. Ej.: El 2/10/2026 recibí una llamada de alguien que dijo ser del banco…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "delito",
+          "l": "Posible(s) delito(s) (opcional)",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: Estafa; hurto por medios informáticos"
+        },
+        {
+          "k": "danos",
+          "l": "Perjuicios sufridos (opcional)",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Ej.: Transferencias por $7.800.000 desde mi cuenta de ahorros."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Solicitudes",
+          "t": "area",
+          "rows": 2,
+          "req": false,
+          "ph": "Si lo dejas vacío: investigar, reconocer la calidad de víctima y adoptar medidas de protección si proceden."
+        },
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Ej.: Extractos bancarios, capturas de chats, números telefónicos, testigos."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu dirección, correo y teléfono."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: Ley 906 de 2004: arts. 66 (titularidad de la acción penal), 67 (deber de denunciar), 69 (requisitos: verbalmente, por escrito o por medio técnico que permita identificar al autor, con relación detallada de los hechos; manifestar si los mismos hechos ya se pusieron en conocimiento de otro funcionario; advertencia sobre la responsabilidad penal por falsa denuncia), 70 a 74 (querella; caducidad de 6 meses, art. 73; delitos querellables, art. 74), y 11 y 132 y siguientes (derechos de las víctimas). Para delitos querellables del procedimiento abreviado aplica la Ley 1826 de 2017. Adecuación típica con el Código Penal (Ley 599 de 2000): menciona los tipos penales con prudencia (“podrían configurar”) y marca [VERIFICAR] el artículo.\nEstructura: destinatario; referencia (Denuncia penal o Querella; denunciante; denunciado o “en averiguación de responsables”); presentación; HECHOS (cronológicos, con tiempo, modo y lugar); POSIBLE CALIFICACIÓN JURÍDICA; PERJUICIOS si los hay; ELEMENTOS MATERIALES PROBATORIOS (enumerados y descritos); JURAMENTO (bajo la gravedad del juramento, que los hechos son ciertos y que no se ha presentado otra denuncia por los mismos hechos ante otra autoridad); SOLICITUDES (reconocimiento de la calidad de víctima, medidas de protección, actos urgentes); ANEXOS; NOTIFICACIONES.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=14787"
+  ]
+}

@@ -1,0 +1,168 @@
+{
+  "id": "recurso_judicial",
+  "nombre": "Recurso de reposición o apelación (autos)",
+  "area": "Procesos en curso",
+  "norma": "Arts. 318 y 320 a 322 CGP",
+  "rolFirma": "de la parte recurrente",
+  "rolCliente": "la parte que represento",
+  "desc": "Contra autos judiciales, dentro de los 3 días siguientes a su notificación por estado.",
+  "grupos": [
+    {
+      "n": "Proceso",
+      "campos": [
+        {
+          "k": "jurisdiccion",
+          "l": "Jurisdicción",
+          "t": "select",
+          "opciones": [
+            [
+              "civil",
+              "Civil, comercial o familia (CGP)"
+            ],
+            [
+              "laboral",
+              "Laboral (Ley 2452 de 2025)"
+            ],
+            [
+              "admin",
+              "Contencioso administrativo (CPACA)"
+            ],
+            [
+              "penal",
+              "Penal (Ley 906 de 2004)"
+            ]
+          ],
+          "req": false,
+          "def": "civil"
+        },
+        {
+          "k": "destinatario",
+          "l": "Juez que dictó la providencia",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Doce Civil Municipal de Bogotá D.C.",
+          "sug": [
+            "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+            "Juez Civil del Circuito de Medellín (Reparto)",
+            "Juez de Pequeñas Causas y Competencia Múltiple de Cali (Reparto)"
+          ]
+        },
+        {
+          "k": "radicado",
+          "l": "Radicado del proceso",
+          "t": "radicado",
+          "req": true,
+          "ph": "11001-40-03-012-2026-00345-00"
+        },
+        {
+          "k": "proceso",
+          "l": "Clase de proceso",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: Ejecutivo singular de menor cuantía"
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Parte que recurre",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre y calidad (demandante, demandado…)."
+        },
+        {
+          "k": "contraparte",
+          "l": "Contraparte",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Nombre y calidad."
+        }
+      ]
+    },
+    {
+      "n": "La providencia",
+      "campos": [
+        {
+          "k": "providencia",
+          "l": "Providencia recurrida",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Auto del 9/10/2026 que rechazó la demanda por no aportar el certificado de existencia."
+        },
+        {
+          "k": "notificacion_fecha",
+          "l": "Fecha de notificación",
+          "t": "texto",
+          "req": true,
+          "ph": "Ej.: Estado del 10 de octubre de 2026"
+        },
+        {
+          "k": "recurso",
+          "l": "Recurso",
+          "t": "select",
+          "opciones": [
+            [
+              "reposicion_apelacion",
+              "Reposición y en subsidio apelación"
+            ],
+            [
+              "reposicion",
+              "Reposición"
+            ],
+            [
+              "apelacion",
+              "Apelación"
+            ],
+            [
+              "queja",
+              "Reposición y en subsidio queja (contra el auto que negó la apelación)"
+            ],
+            [
+              "suplica",
+              "Súplica"
+            ]
+          ],
+          "req": false,
+          "def": "reposicion_apelacion"
+        },
+        {
+          "k": "razones",
+          "l": "Razones del recurso",
+          "t": "area",
+          "rows": 7,
+          "req": true,
+          "ph": "Ej.: El certificado sí se aportó como anexo 4 del correo de radicación…"
+        },
+        {
+          "k": "pretensiones",
+          "l": "Lo que se pide",
+          "t": "area",
+          "rows": 2,
+          "req": true,
+          "ph": "Ej.: Revocar el auto y, en su lugar, admitir la demanda."
+        }
+      ]
+    }
+  ],
+  "guia": "CGP: reposición (art. 318: procede contra los autos que dicte el juez, salvo norma en contrario; si el auto se dicta fuera de audiencia, se interpone por escrito dentro de los 3 días siguientes a su notificación, con expresión de las razones que lo sustenten; en audiencia, verbalmente y de inmediato); apelación de autos (art. 321: autos apelables y los demás señalados expresamente en el CGP; art. 322: puede interponerse directamente o en subsidio de la reposición, dentro de los 3 días siguientes a la notificación, y el apelante debe sustentarlo ante el juez que dictó la providencia dentro de ese término o de los 3 días siguientes a la notificación del auto que niega la reposición); queja (arts. 352 y 353: en subsidio de la reposición contra el auto que negó la apelación o la casación); súplica (art. 331).\nLaboral: para procesos iniciados desde el 6 de abril de 2026, Ley 2452 de 2025 (reposición de autos dictados fuera de audiencia y queja: 3 días; autos apelables en el art. 228) [VERIFICAR]. Contencioso administrativo: arts. 242 a 247 del CPACA, modificados por la Ley 2080 de 2021. Penal: arts. 176 a 179 de la Ley 906 de 2004.\nEstructura: destinatario; referencia (proceso, radicado, partes); identificación de quien recurre y oportunidad; PROVIDENCIA RECURRIDA (fecha y decisión); FUNDAMENTOS DEL RECURSO (razones, cargo por cargo, con las normas aplicables); SOLICITUD (revocar o modificar y, en subsidio, conceder la apelación o expedir las copias para la queja); si hay apelación, sus reparos concretos.",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "id": "peticion",
+  "nombre": "Derecho de petición",
+  "area": "Peticiones y actuaciones administrativas",
+  "norma": "Art. 23 C.P. · Ley 1755/2015",
+  "rolFirma": "del peticionario",
+  "rolCliente": "el peticionario",
+  "juris": "ninguna",
+  "desc": "Solicitud respetuosa a una entidad pública o a un particular.",
+  "grupos": [
+    {
+      "n": "Destinatario",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Entidad o empresa destinataria",
+          "t": "texto",
+          "req": true,
+          "ph": "Administradora Colombiana de Pensiones, Colpensiones",
+          "sug": [
+            "Señores Administradora Colombiana de Pensiones, Colpensiones",
+            "Señores Alcaldía de Medellín, Secretaría de Movilidad",
+            "Señores Banco de Ejemplo S.A., Servicio al Cliente"
+          ],
+          "ayuda": "Incluye la dependencia si la conoces."
+        },
+        {
+          "k": "dir_destinatario",
+          "l": "Dirección o correo de radicación",
+          "t": "texto",
+          "req": false,
+          "ph": "Ej.: notificacionesjudiciales@entidad.gov.co"
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Peticionario",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Peticionario(a)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        }
+      ]
+    },
+    {
+      "n": "La petición",
+      "campos": [
+        {
+          "k": "modalidad",
+          "l": "Modalidad",
+          "t": "select",
+          "opciones": [
+            [
+              "particular",
+              "Interés particular · 15 días"
+            ],
+            [
+              "documentos",
+              "Información o copias · 10 días"
+            ],
+            [
+              "consulta",
+              "Consulta · 30 días"
+            ],
+            [
+              "general",
+              "Interés general · 15 días"
+            ],
+            [
+              "privado",
+              "Ante una empresa privada · 15 días"
+            ]
+          ],
+          "req": false,
+          "def": "particular"
+        },
+        {
+          "k": "hechos",
+          "l": "Contexto y hechos",
+          "t": "area",
+          "rows": 8,
+          "req": false,
+          "ph": "Ej.: Radiqué la solicitud de pensión de vejez el 3/03/2026 con el número…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Lo que se solicita",
+          "t": "area",
+          "rows": 4,
+          "req": true,
+          "ph": "Ej.: Que se informe el estado de la solicitud y se expida copia del expediente administrativo."
+        },
+        {
+          "k": "anexos",
+          "l": "Anexos",
+          "t": "area",
+          "rows": 2,
+          "ph": "Ej.: Cédula; constancia de radicación."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Dirección física y correo donde recibirás la respuesta."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: artículo 23 de la Constitución; Ley 1437 de 2011 (CPACA), arts. 13 y siguientes, sustituidos por la Ley 1755 de 2015. Términos (art. 14): 15 días hábiles por regla general; 10 días para documentos e información; 30 días para consultas. Ante organizaciones privadas: arts. 32 y 33 del CPACA (sustituidos por la Ley 1755 de 2015). Si es pertinente, recuerda que la respuesta debe ser oportuna, de fondo, clara, precisa y congruente con lo pedido.\nEstructura: lugar y fecha; destinatario (Señores, entidad, dependencia, dirección o correo); ASUNTO o referencia (Derecho de petición en interés particular, general, de información o de consulta); presentación del peticionario con fundamento en el art. 23 C.P.; HECHOS si los hay; PETICIONES (numeradas, claras y precisas, cada una independiente); FUNDAMENTOS DE DERECHO (breves); ANEXOS; NOTIFICACIONES (dirección física y correo para la respuesta). No uses “E. S. D.”: no es un despacho judicial. Tono respetuoso y firme.",
+  "ejemplo": {
+    "destinatario": "Fondo de Pensiones Ejemplo S.A., Dirección de Prestaciones Económicas",
+    "dir_destinatario": "servicioalcliente@pensionesejemplo.com",
+    "ciudad": "Bogotá D.C.",
+    "cliente": "Jorge Iván Restrepo Gómez, C.C. 79.456.123 de Bogotá, domiciliado en Bogotá, Carrera 30 # 45-10, jorge.restrepo@correo.com, 311 555 0202.",
+    "modalidad": "particular",
+    "hechos": "radicó solicitud de pensión de vejez el 3/03/2026 (radicado 2026-PV-00123). Han pasado más de 7 meses sin respuesta de fondo. Llamó a la línea dos veces y le dijeron que está en estudio.",
+    "pretensiones": "1) que resuelvan de fondo la solicitud de pensión; 2) que le informen en qué etapa está y qué documentos faltan, si falta alguno; 3) copia completa del expediente administrativo.",
+    "anexos": "Cédula; constancia de radicación del 3/03/2026.",
+    "notificaciones": "Carrera 30 # 45-10, Bogotá; jorge.restrepo@correo.com"
+  },
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=65334"
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "id": "demanda_ejecutiva",
+  "nombre": "Demanda ejecutiva",
+  "area": "Civil y comercial",
+  "norma": "Arts. 422 y ss. CGP",
+  "rolFirma": "de la parte ejecutante",
+  "rolCliente": "la parte ejecutante",
+  "desc": "Cobro judicial de una obligación clara, expresa y exigible: pagarés, letras, facturas, contratos, actas.",
+  "grupos": [
+    {
+      "n": "Despacho",
+      "campos": [
+        {
+          "k": "destinatario",
+          "l": "Juez o despacho",
+          "t": "texto",
+          "req": true,
+          "ph": "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+          "sug": [
+            "Juez Civil Municipal de Bogotá D.C. (Reparto)",
+            "Juez Civil del Circuito de Medellín (Reparto)",
+            "Juez de Pequeñas Causas y Competencia Múltiple de Cali (Reparto)"
+          ]
+        },
+        {
+          "k": "ciudad",
+          "l": "Ciudad",
+          "t": "texto",
+          "ph": "Bogotá D.C.",
+          "def": "@ciudad",
+          "ayuda": "Donde se radica el escrito."
+        }
+      ]
+    },
+    {
+      "n": "Partes",
+      "campos": [
+        {
+          "k": "cliente",
+          "l": "Ejecutante (acreedor)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        },
+        {
+          "k": "contraparte",
+          "l": "Ejecutado(s) (deudor)",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Nombre completo, cédula, ciudad de domicilio, dirección, correo y teléfono."
+        }
+      ]
+    },
+    {
+      "n": "La obligación",
+      "campos": [
+        {
+          "k": "titulo",
+          "l": "Título ejecutivo",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Pagaré No. 001 suscrito el 10/01/2026 por $20.000.000, con vencimiento el 10/07/2026."
+        },
+        {
+          "k": "valores",
+          "l": "Valores adeudados",
+          "t": "area",
+          "rows": 3,
+          "req": true,
+          "ph": "Ej.: Capital $20.000.000; intereses de plazo al 1,5 % mensual hasta el 10/07/2026; moratorios desde el 11/07/2026."
+        },
+        {
+          "k": "hechos",
+          "l": "Hechos",
+          "t": "area",
+          "rows": 8,
+          "req": false,
+          "ph": "Ej.: El deudor no pagó en la fecha de vencimiento; se le requirió el 1/08/2026…",
+          "ayuda": "Escríbelos como te salgan: en borrador, en viñetas o en desorden. Se redactan con lenguaje jurídico y en orden cronológico, sin agregar hechos."
+        },
+        {
+          "k": "pretensiones",
+          "l": "Pretensiones (opcional)",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Si lo dejas vacío: mandamiento de pago por capital, intereses de plazo y moratorios a la tasa máxima legal, y costas."
+        },
+        {
+          "k": "medidas",
+          "l": "Medidas cautelares",
+          "t": "area",
+          "rows": 3,
+          "req": false,
+          "ph": "Ej.: Embargo y secuestro del inmueble con matrícula 50N-998877; embargo de las cuentas del deudor en el Banco X."
+        }
+      ]
+    },
+    {
+      "n": "Pruebas y notificaciones",
+      "campos": [
+        {
+          "k": "pruebas",
+          "l": "Pruebas y anexos",
+          "t": "area",
+          "rows": 3,
+          "ph": "Ej.: Pagaré original (o certificado de depósito si es desmaterializado); certificado de tradición."
+        },
+        {
+          "k": "notificaciones",
+          "l": "Direcciones de notificación",
+          "t": "area",
+          "rows": 2,
+          "ph": "Tu cliente: dirección y correo. La contraparte: dirección, correo y cómo lo obtuviste."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento: CGP arts. 422 (título ejecutivo: obligación clara, expresa y exigible, que conste en documento que provenga del deudor y constituya plena prueba contra él), 424 (sumas de dinero), 430 y 431 (mandamiento de pago), 599 (embargo y secuestro); Código de Comercio arts. 619 y siguientes (títulos valores), 671 y siguientes (letra de cambio), 709 y siguientes (pagaré); art. 884 del Código de Comercio (intereses moratorios: una y media veces el interés bancario corriente certificado por la Superintendencia Financiera, sin exceder la tasa de usura).\nEstructura: destinatario; referencia (Proceso ejecutivo singular de mínima, menor o mayor cuantía; ejecutante; ejecutado); presentación; HECHOS (creación del título, vencimiento, incumplimiento, saldo); PRETENSIONES (librar mandamiento de pago por el capital, los intereses de plazo y los moratorios desde la exigibilidad hasta el pago total, y condenar en costas); FUNDAMENTOS DE DERECHO; CUANTÍA Y COMPETENCIA; PRUEBAS (el título ejecutivo); MEDIDAS CAUTELARES (si el abogado las indica, inclúyelas en un capítulo propio o como solicitud separada al final); ANEXOS; NOTIFICACIONES. Con medidas cautelares previas no se envía copia de la demanda al demandado (art. 6 de la Ley 2213 de 2022). Si el título es desmaterializado o una factura electrónica, menciona el certificado o registro correspondiente con [VERIFICAR].",
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ]
+}
