@@ -1,6 +1,5 @@
 <!doctype html><html lang="es-CO"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>El Memorialista</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
@@ -583,7 +582,12 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
     <div class="hist-in gutter">
       <header class="hist-cab">
         <div class="tit"><h1>Historial</h1><p id="histResumen">Cada escrito que redactes se guarda aquí automáticamente.</p></div>
-        <input type="search" id="histBuscar" placeholder="Buscar por cliente, tipo o asunto" aria-label="Buscar en el historial">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="search" id="histBuscar" placeholder="Buscar por cliente, tipo o asunto" aria-label="Buscar en el historial">
+          <button class="btn chico" id="btnDescargarCopia" type="button" title="Descargar archivo JSON con perfil, logo, firma, plantilla e historial">Descargar copia de seguridad</button>
+          <label class="btn chico fantasma" for="archivoRestaurarCopia" style="cursor:pointer;">Restaurar copia</label>
+          <input type="file" id="archivoRestaurarCopia" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0;">
+        </div>
       </header>
       <ol class="hist-lista" id="histLista"></ol>
       <div class="vacio" id="histVacio" hidden><strong>Todavía no hay escritos</strong>Elige un tipo de documento en Redactar, llena los datos del caso y pulsa “Redactar escrito”. Cada versión se guarda aquí.</div>
@@ -1316,63 +1320,132 @@ async function iniciarCapacidades() {
   }
 }
 
-const colas = new Map();
-function enCola(clave, fn) {
-  const prev = colas.get(clave) || Promise.resolve();
-  const p = prev.catch(() => {}).then(fn);
-  colas.set(clave, p);
-  return p;
-}
-const Almacen = {
-  remoto() { return false; },
-  ref(k) { return CAP.db.doc(`data/users/${CAP.uid}/${k}`); },
-  async leer(k) {
-    if (!this.remoto()) return lsGet('doc:' + k);
-    for (let intento = 0; ; intento++) {
-      try { const s = await this.ref(k).get(); return s.exists ? s.data() : null; }
-      catch (e) { if (e && e.code === 'unavailable' && intento === 0) { await espera(500 + Math.random() * 700); continue; } throw e; }
-    }
-  },
-  escribir(k, data) {
-    return enCola(k, async () => {
-      if (!this.remoto()) { if (!lsSet('doc:' + k, data)) throw { code: 'local_lleno' }; return; }
-      for (let intento = 0; ; intento++) {
-        try { await this.ref(k).set(data); return; }
-        catch (e) { if (e && e.code === 'unavailable' && intento === 0) { await espera(600 + Math.random() * 700); continue; } throw e; }
-      }
+/* =========================================================
+   Base de Datos Interna del Navegador (IndexedDB)
+   Almacenamiento privado, seguro e ilimitado por usuario
+   ========================================================= */
+const IDB = {
+  _db: null,
+  async abrir() {
+    if (this._db) return this._db;
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('memorialista_db', 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('almacen')) db.createObjectStore('almacen');
+        if (!db.objectStoreNames.contains('historial')) db.createObjectStore('historial', { keyPath: 'id' });
+      };
+      req.onsuccess = e => { this._db = e.target.result; resolve(this._db); };
+      req.onerror = e => reject(e.target.error);
     });
   },
-  borrar(k) { return enCola(k, async () => { if (this.remoto()) await this.ref(k).delete(); else lsDel('doc:' + k); }); },
-  hist() { return CAP.db.doc(`data/users/${CAP.uid}/perfil`).collection('historial'); },
-  async listarHist() {
-    if (this.remoto()) {
-      const q = await this.hist().orderBy('actualizado', 'desc').limit(60).get();
-      return q.docs.map(d => ({ id: d.id, ...d.data() }));
-    }
-    return (lsGet('hist') || []).slice().sort((a, b) => b.actualizado - a.actualizado);
-  },
-  guardarHist(id, data) {
-    return enCola('h:' + id, async () => {
-      if (this.remoto()) { await this.hist().doc(id).set(data); return; }
-      const lista = (lsGet('hist') || []).filter(x => x.id !== id);
-      lista.push({ id, ...data });
-      if (!lsSet('hist', lista.slice(-40))) throw { code: 'local_lleno' };
+  async get(store, key) {
+    const db = await this.abrir();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      const req = tx.objectStore(store).get(key);
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror = () => reject(req.error);
     });
   },
-  borrarHist(id) {
-    return enCola('h:' + id, async () => {
-      if (this.remoto()) await this.hist().doc(id).delete();
-      else lsSet('hist', (lsGet('hist') || []).filter(x => x.id !== id));
+  async set(store, key, val) {
+    const db = await this.abrir();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const req = key !== undefined ? tx.objectStore(store).put(val, key) : tx.objectStore(store).put(val);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
     });
   },
+  async del(store, key) {
+    const db = await this.abrir();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const req = tx.objectStore(store).delete(key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  },
+  async getAll(store) {
+    const db = await this.abrir();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      const req = tx.objectStore(store).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  },
+  async clear(store) {
+    const db = await this.abrir();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const req = tx.objectStore(store).clear();
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
 };
-function mensajeAlmacen(e) {
-  const c = e && e.code;
-  if (c === 'quota_exceeded') return 'Se llenó el espacio de almacenamiento. Elimina escritos viejos del historial.';
-  if (c === 'invalid_argument') return 'No se pudo guardar: el contenido es demasiado grande.';
-  if (c === 'local_lleno') return 'Este navegador no tiene espacio para guardar más. Elimina escritos viejos del historial.';
-  if (c === 'resource_exhausted') return 'Demasiados guardados seguidos. Se reintentará con el próximo cambio.';
-  return 'No se pudo guardar en este momento. Se reintentará con el próximo cambio.';
+
+const Almacen = {
+  async leer(k) {
+    try { return await IDB.get('almacen', k); } catch { return null; }
+  },
+  async escribir(k, data) {
+    try { await IDB.set('almacen', k, data); }
+    catch (e) {
+      if (e && e.name === 'QuotaExceededError') {
+        toast('El almacenamiento interno está lleno. Te recomendamos descargar una copia de seguridad.', 'error', 9000);
+      }
+      throw e;
+    }
+  },
+  async borrar(k) {
+    try { await IDB.del('almacen', k); } catch { /* ignore */ }
+  },
+  async listarHist() {
+    try {
+      const lista = await IDB.getAll('historial');
+      return lista.sort((a, b) => (b.actualizado || b.creado || 0) - (a.actualizado || a.creado || 0));
+    } catch { return []; }
+  },
+  async guardarHist(id, data) {
+    try {
+      await IDB.set('historial', undefined, { id, ...data });
+    } catch (e) {
+      if (e && e.name === 'QuotaExceededError') {
+        toast('El espacio de almacenamiento del navegador está lleno. Te sugerimos descargar una copia de seguridad desde el Historial.', 'error', 9000);
+      }
+      throw e;
+    }
+  },
+  async borrarHist(id) {
+    try { await IDB.del('historial', id); } catch { /* ignore */ }
+  }
+};
+
+async function migrarLocalStorageAIndexedDB() {
+  if (localStorage.getItem('memorialista:migrado_idb_v2')) return;
+  try {
+    const histViejo = lsGet('hist');
+    if (Array.isArray(histViejo)) {
+      for (const item of histViejo) {
+        if (item && item.id) await IDB.set('historial', undefined, item);
+      }
+      lsDel('hist');
+    }
+    const logoViejo = lsGet('img:logo');
+    if (logoViejo) { await IDB.set('almacen', 'logo', logoViejo); lsDel('img:logo'); }
+    const firmaVieja = lsGet('img:firma');
+    if (firmaVieja) { await IDB.set('almacen', 'firma', firmaVieja); lsDel('img:firma'); }
+    for (let i = 0; i < 20; i++) {
+      const p = lsGet('doc:plantilla_' + i);
+      if (p) { await IDB.set('almacen', 'plantilla_' + i, p); lsDel('doc:plantilla_' + i); }
+    }
+    localStorage.setItem('memorialista:migrado_idb_v2', '1');
+    console.log('[Memorialista] Migración a IndexedDB completada con éxito.');
+  } catch (e) {
+    console.warn('[Memorialista] Error durante la migración a IndexedDB:', e);
+  }
 }
 
 /* =========================================================
@@ -2474,22 +2547,6 @@ function construirPrompt() {
   L.push(FORMATO_SALIDA);
   return L.join('\n');
 }
-function mensajeSample(e) {
-  const c = e && e.code;
-  return ({
-    not_granted: 'No se concedió permiso para usar Claude en esta página. Puedes activarlo en el menú de permisos del artifact.',
-    sampling_disabled: 'La redacción con Claude no está disponible para esta cuenta.',
-    not_declared: 'La redacción con Claude no está disponible en esta vista.',
-    capability_disabled: 'La redacción con Claude no está disponible en esta vista.',
-    capability_removed: 'Actualiza la aplicación de Claude para usar la redacción.',
-    rate_limited: 'Llegaste al límite de uso por ahora. Intenta de nuevo en unos minutos.',
-    session_expired: 'Tu sesión de Claude expiró. Vuelve a iniciar sesión y reintenta.',
-    prompt_too_large: 'Los datos son demasiado extensos. Acorta la muestra de estilo o los hechos.',
-    refused: 'Claude no redactó este escrito con los datos dados. Revisa la solicitud y vuelve a intentarlo.',
-    empty_completion: 'No llegó texto. Intenta de nuevo.',
-    invalid_json: 'La respuesta no tuvo el formato esperado. Intenta de nuevo.',
-  })[c] || 'Se interrumpió la conexión. Lo redactado hasta ahora se conservó y puedes reintentar.';
-}
 let reloj = null, relojBase = '';
 function iniciarReloj(base) {
   const t0 = Date.now();
@@ -3134,7 +3191,7 @@ function cargarAjustesEnFormulario() {
   $('#bloqueDiseno').hidden = plantilla;
   $('#bloquePlantilla').hidden = !plantilla;
   $('#notaFormatoPlantilla').hidden = !usaPlantilla();
-  $('#notaAlmacen').textContent = CAP.listo ? (Almacen.remoto() ? 'Tu perfil, tus imágenes y tu historial se guardan en tu cuenta de Claude, solo visibles para ti.' : 'Esta vista no tiene almacenamiento en tu cuenta: los datos se guardan solo en este navegador.') : '';
+  $('#notaAlmacen').textContent = 'Tus datos de membrete, imágenes e historial se guardan de forma privada y segura en tu navegador (IndexedDB).';
 }
 function alCambiarAjuste(el) {
   let v;
@@ -3338,16 +3395,106 @@ function cargarEspejoLocal() {
     state.catalogoAbierto = false;
   }
 }
-async function cargarDesdeAlmacen() {
-  if (!Almacen.remoto()) { cargarAjustesEnFormulario(); if (state.perfil.plantilla) cargarPlantillaGuardada(); return; }
+
+/* =========================================================
+   Copia de seguridad y restauración (JSON)
+   ========================================================= */
+async function descargarCopiaSeguridad() {
+  toast('Generando copia de seguridad...', 'info', 3000);
   try {
-    const [perfil, logo, firma] = await Promise.all([Almacen.leer('perfil'), Almacen.leer('logo'), Almacen.leer('firma')]);
-    if (perfil) { state.perfil = mezclar(clon(PERFIL_BASE), perfil); lsSet('perfil', state.perfil); }
-    else if (lsGet('perfil')) Almacen.escribir('perfil', state.perfil).catch(() => {});
-    if (logo && logo.dataUrl) { IMG.logo = logo; lsSet('img:logo', logo); } else if (IMG.logo) Almacen.escribir('logo', IMG.logo).catch(() => {});
-    if (firma && firma.dataUrl) { IMG.firma = firma; lsSet('img:firma', firma); } else if (IMG.firma) Almacen.escribir('firma', IMG.firma).catch(() => {});
+    const hist = await Almacen.listarHist();
+    const logo = await Almacen.leer('logo') || IMG.logo;
+    const firma = await Almacen.leer('firma') || IMG.firma;
+    let plantillaBufB64 = null;
+    if (state.plantilla && state.plantilla.buf) {
+      plantillaBufB64 = bufAB64(state.plantilla.buf);
+    }
+    const copia = {
+      app: 'El Memorialista',
+      version: 1,
+      fechaExportacion: new Date().toISOString(),
+      perfil: state.perfil,
+      logo,
+      firma,
+      plantilla: state.plantilla ? {
+        nombre: state.plantilla.nombre,
+        info: state.plantilla.info,
+        bufferB64: plantillaBufB64
+      } : null,
+      historial: hist
+    };
+    const jsonStr = JSON.stringify(copia, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const fecha = new Date().toISOString().slice(0, 10);
+    await guardarArchivo(`copia_seguridad_memorialista_${fecha}.json`, blob);
+    toast('Copia de seguridad descargada con éxito.', 'ok');
   } catch (e) {
-    toast('No se pudo leer tu perfil guardado. ' + mensajeAlmacen(e), 'error', 6000);
+    console.error(e);
+    toast('Error al generar la copia de seguridad.', 'error');
+  }
+}
+
+async function restaurarCopiaSeguridad(file) {
+  if (!file) return;
+  try {
+    const texto = await file.text();
+    const copia = JSON.parse(texto);
+    if (!copia || !copia.perfil || !Array.isArray(copia.historial)) {
+      throw new Error('El archivo no tiene el formato válido de copia de seguridad de El Memorialista.');
+    }
+    const confirmar = confirm(`Se restaurarán los datos de "${copia.perfil.abogado?.nombre || 'Abogado(a)'}" con ${copia.historial.length} escritos del historial.\n\n¿Deseas sobrescribir los datos actuales?`);
+    if (!confirmar) return;
+
+    state.perfil = mezclar(clon(PERFIL_BASE), copia.perfil);
+    lsSet('perfil', state.perfil);
+
+    if (copia.logo) {
+      IMG.logo = copia.logo;
+      await Almacen.escribir('logo', copia.logo);
+    }
+    if (copia.firma) {
+      IMG.firma = copia.firma;
+      await Almacen.escribir('firma', copia.firma);
+    }
+    if (copia.plantilla && copia.plantilla.bufferB64) {
+      const buf = b64ABuf(copia.plantilla.bufferB64);
+      await cargarJSZip();
+      const info = copia.plantilla.info || await analizarPlantilla(await window.JSZip.loadAsync(buf));
+      state.plantilla = { buf, info, nombre: copia.plantilla.nombre };
+      state.perfil.plantilla = {
+        nombre: copia.plantilla.nombre,
+        bytes: buf.byteLength,
+        subido: Date.now(),
+        info: infoSinImagenes(info)
+      };
+      guardarPerfil.ya();
+    }
+
+    await IDB.clear('historial');
+    for (const hItem of copia.historial) {
+      if (hItem && hItem.id) await Almacen.guardarHist(hItem.id, hItem);
+    }
+
+    cargarAjustesEnFormulario();
+    actualizarChip();
+    pintarHistorial();
+    if (state.vista === 'redactar') renderHoja();
+    else if (state.vista === 'membrete') renderPrevia();
+    toast('¡Copia de seguridad restaurada con éxito!', 'ok', 6000);
+  } catch (e) {
+    console.error(e);
+    toast(e.message || 'Error al restaurar la copia de seguridad.', 'error', 7000);
+  }
+}
+
+async function cargarDesdeAlmacen() {
+  await migrarLocalStorageAIndexedDB();
+  try {
+    const [logo, firma] = await Promise.all([Almacen.leer('logo'), Almacen.leer('firma')]);
+    if (logo && logo.dataUrl) IMG.logo = logo;
+    if (firma && firma.dataUrl) IMG.firma = firma;
+  } catch (e) {
+    console.warn('[Memorialista] Error al cargar recursos:', e);
   }
   cargarAjustesEnFormulario();
   actualizarChip();
@@ -3375,6 +3522,8 @@ function iniciar() {
   $('#btnPdf').addEventListener('click', () => pedirExportacion('pdf'));
   $('#btnDeshacerAjuste').addEventListener('click', deshacerAjuste);
   $('#histBuscar').addEventListener('input', pintarHistorial);
+  const btnDesc = $('#btnDescargarCopia'); if (btnDesc) btnDesc.addEventListener('click', descargarCopiaSeguridad);
+  const inpRest = $('#archivoRestaurarCopia'); if (inpRest) inpRest.addEventListener('change', e => { if (e.target.files[0]) restaurarCopiaSeguridad(e.target.files[0]); e.target.value = ''; });
   for (const el of $$('#ajForm [data-path]')) el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'radio' ? 'change' : 'input', () => alCambiarAjuste(el));
   $('#logoArchivo').addEventListener('change', e => { subirImagen('logo', e.target.files[0]); e.target.value = ''; });
   $('#firmaArchivo').addEventListener('change', e => { subirImagen('firma', e.target.files[0]); e.target.value = ''; });
