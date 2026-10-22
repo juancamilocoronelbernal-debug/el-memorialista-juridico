@@ -2,6 +2,7 @@
 import asyncio
 import contextlib
 import json
+import re
 from typing import Any, AsyncIterator, Literal, Optional
 
 import anyio
@@ -39,6 +40,13 @@ from app.services.radicacion import (
     preparar_radicacion,
     PrepararRadicacionRequest,
     PrepararRadicacionResponse,
+)
+from app.services.comparador_versiones import (
+    comparar_versiones,
+    generar_docx_con_control_de_cambios,
+    CompararVersionesRequest,
+    CompararVersionesResponse,
+    ExportarWordDiffRequest,
 )
 
 router = APIRouter(prefix="/api", tags=["Documentos"])
@@ -265,6 +273,39 @@ async def endpoint_preparar_radicacion(req: PrepararRadicacionRequest, request: 
     await verificar_acceso(request)
     limitador.verificar(request, "radicacion")
     return preparar_radicacion(req)
+
+
+@router.post("/versiones/comparar", response_model=CompararVersionesResponse)
+async def endpoint_comparar_versiones(req: CompararVersionesRequest, request: Request):
+    """Compara dos versiones de un escrito judicial palabra por palabra y calcula estadísticas."""
+    await verificar_acceso(request)
+    limitador.verificar(request, "revisar")
+    return comparar_versiones(req)
+
+
+@router.post("/versiones/exportar-docx")
+async def endpoint_exportar_docx_control_cambios(req: ExportarWordDiffRequest, request: Request):
+    """Genera y descarga un documento Word (.docx) con control de cambios nativo (w:ins y w:del)."""
+    await verificar_acceso(request)
+    limitador.verificar(request, "revisar")
+    docx_bytes = generar_docx_con_control_de_cambios(
+        texto_base=req.texto_base,
+        texto_comparado=req.texto_comparado,
+        autor=req.autor or "El Memorialista",
+        fecha=req.fecha,
+        titulo=req.titulo or "Escrito con Control de Cambios",
+        perfil=req.perfil,
+    )
+    safe_title = re.sub(r"[^\w\s-]", "", req.titulo or "Control_de_Cambios")[:50].strip().replace(" ", "_")
+    filename = f"{safe_title}_Control_Cambios.docx"
+    return Response(
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
 
 
 @router.post("/extraer")

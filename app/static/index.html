@@ -418,6 +418,12 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .barra-cuota-progreso{height:100%;background:#2563eb;border-radius:999px;transition:width .3s}
 .btn-peligro{background:#dc2626;color:#fff;border:none;border-radius:var(--r);padding:8px 14px;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .btn-peligro:hover{background:#b91c1c}
+
+/* ---------- comparador de versiones y diff ---------- */
+.diff-ins{background:#dcfce7;color:#15803d;text-decoration:none;padding:1px 3px;border-radius:2px;font-weight:600}
+.diff-del{background:#fee2e2;color:#b91c1c;text-decoration:line-through;padding:1px 3px;border-radius:2px;font-weight:500}
+.diff-parrafo{margin:0 0 12px;line-height:1.7}
+.diff-parrafo.diff-vacio{min-height:12px}
 </style>
 
 <header class="barra" id="barra">
@@ -461,6 +467,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
           <button class="btn chico fantasma" id="btnAjustar" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M10.8 2.7l2.5 2.5L6 12.5l-3.2.7.7-3.2z"/></svg>Ajustar con IA</button>
           <button class="btn chico fantasma" id="btnRegenerar" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3.2h-3.2"/></svg>Regenerar</button>
           <button class="btn chico fantasma" id="btnCopiar" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="1.2"/><path d="M10.5 5V3.2c0-.7-.5-1.2-1.2-1.2H3.2C2.5 2 2 2.5 2 3.2v6.1c0 .7.5 1.2 1.2 1.2H5"/></svg>Copiar</button>
+          <button class="btn chico fantasma" id="btnCompararVersiones" type="button" disabled title="Compara versiones del escrito y visualiza los cambios por palabra"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h8M4 7h8M4 11h5M12 10l2 2-2 2"/></svg>Comparar versiones <span class="badge-versiones" id="badgeNumVersiones" style="font-size:10.5px;font-weight:700;padding:1px 5px;background:var(--regla);border-radius:10px;margin-left:3px;display:none;">0</span></button>
           <button class="btn chico" id="btnWord" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg>Word</button>
           <button class="btn chico" id="btnPdf" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg>PDF</button>
           <button class="btn chico primario" id="btnRadicacion" type="button" disabled title="Prepara el paquete de radicación judicial en .ZIP con PDF, poder judicial, índice y correos para despacho y traslado simultáneo (Ley 2213/2022)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4.5l5.5-2.5 5.5 2.5-5.5 2.5-5.5-2.5z"/><path d="M2.5 8l5.5 2.5 5.5-2.5"/><path d="M2.5 11.5l5.5 2.5 5.5-2.5"/></svg>Preparar radicación</button>
@@ -1053,6 +1060,70 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
   </div>
 </dialog>
 
+<!-- Modal de Comparar Versiones y Control de Cambios -->
+<dialog id="modalComparar" class="modal-dialog" style="max-width: 900px; width: calc(100vw - 32px); max-height: 92vh;">
+  <div class="modal-cab">
+    <h3><span>🔍</span> Comparador de versiones y control de cambios</h3>
+    <button type="button" class="btn-cerrar-modal" id="btnCerrarModalComparar" title="Cerrar">✕</button>
+  </div>
+  <div class="modal-cuerpo" style="max-height: 80vh; overflow-y: auto; display: grid; gap: 14px; padding: 16px 20px;">
+    <!-- Barra de selección de versiones -->
+    <div style="background: #f8fafc; border: 1px solid var(--regla); border-radius: 6px; padding: 12px 14px; display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center;">
+      <div>
+        <label for="selectVersionBase" style="font-size: 11.5px; font-weight: 700; color: var(--tinta-2); display: block; margin-bottom: 4px;">
+          VERSIÓN BASE (ANTERIOR)
+        </label>
+        <select id="selectVersionBase" style="width: 100%; font-size: 12.5px; padding: 6px 8px; border: 1px solid var(--regla); border-radius: 4px; background: #fff; font-weight: 600;">
+        </select>
+      </div>
+
+      <button type="button" class="btn chico fantasma" id="btnIntercambiarVersiones" title="Intercambiar versiones base y comparada" style="margin-top: 16px; padding: 6px 10px;">
+        ⇄
+      </button>
+
+      <div>
+        <label for="selectVersionComparada" style="font-size: 11.5px; font-weight: 700; color: var(--tinta-2); display: block; margin-bottom: 4px;">
+          VERSIÓN COMPARADA (NUEVA)
+        </label>
+        <select id="selectVersionComparada" style="width: 100%; font-size: 12.5px; padding: 6px 8px; border: 1px solid var(--regla); border-radius: 4px; background: #fff; font-weight: 600;">
+        </select>
+      </div>
+    </div>
+
+    <!-- Barra de métricas y resumen de cambios -->
+    <div id="diffResumenBarra" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 8px 12px; background: #fff; border: 1px solid var(--regla); border-radius: 6px;">
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <span id="diffBadgeAnadidas" style="font-size: 12px; font-weight: 700; color: #15803d; background: #dcfce7; padding: 3px 8px; border-radius: 12px;">+0 añadidas</span>
+        <span id="diffBadgeEliminadas" style="font-size: 12px; font-weight: 700; color: #b91c1c; background: #fee2e2; padding: 3px 8px; border-radius: 12px;">-0 eliminadas</span>
+        <span id="diffBadgeIguales" style="font-size: 12px; color: var(--tinta-2); background: #f1f5f9; padding: 3px 8px; border-radius: 12px;">0 sin cambio</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="btn chico" id="btnRestaurarVersionBase" title="Restaura el texto de la versión base en el editor">
+          ↺ Restaurar esta versión
+        </button>
+        <button type="button" class="btn chico primario" id="btnExportarWordDiff" title="Descarga archivo .docx con control de cambios nativo (w:ins y w:del)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;" aria-hidden="true">
+            <path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/>
+          </svg>
+          Exportar a Word con control de cambios
+        </button>
+      </div>
+    </div>
+
+    <!-- Visor de diferencias por palabra -->
+    <div id="diffVisorDocumento" style="background: #ffffff; border: 1px solid var(--regla); border-radius: 6px; padding: 24px 28px; min-height: 240px; font-family: var(--fuente-cuerpo); font-size: 14px; line-height: 1.65; color: var(--tinta); box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); max-height: 50vh; overflow-y: auto;">
+      <!-- Diff renderizado dinámicamente -->
+    </div>
+
+    <p style="margin: 0; font-size: 11.5px; color: var(--tinta-2); line-height: 1.4;">
+      💡 <strong>Control de cambios en Word:</strong> El archivo exportado contiene etiquetas oficiales OpenXML (<code>&lt;w:ins&gt;</code> y <code>&lt;w:del&gt;</code>) con autor y fecha, compatibles con Microsoft Word, Google Docs y LibreOffice para que cualquier abogado pueda aceptar o rechazar cambios individualmente.
+    </p>
+  </div>
+  <div class="modal-pie">
+    <button type="button" class="btn chico fantasma" id="btnCerrarModalCompararPie">Cerrar</button>
+  </div>
+</dialog>
+
 <script src="auditor.js"></script>
 <script>
 'use strict';
@@ -1255,6 +1326,7 @@ const state = {
   tipo: null,
   datos: {},
   texto: '',
+  versiones: [],
   ejemplo: true,
   docId: null,
   creado: null,
@@ -3183,7 +3255,7 @@ async function redactar(modo = 'nuevo', instruccion = '') {
     else if (ev.t === 'fin') meta = ev;
     else if (ev.t === 'error') errorServidor = ev;
   });
-  const cerrar = (aviso, fallo) => { terminado = true; terminarRedaccion(acumulado, modo, aviso, fallo); };
+  const cerrar = (aviso, fallo) => { terminado = true; terminarRedaccion(acumulado, modo, aviso, fallo, instruccion); };
   try {
     const res = await apiFetch('/api/redactar', {
       method: 'POST',
@@ -3234,7 +3306,7 @@ async function redactar(modo = 'nuevo', instruccion = '') {
     toast(e.message || 'Error al conectar con la Inteligencia Artificial.', 'error', 7000);
   }
 }
-function terminarRedaccion(texto, modo, aviso, fallo = false) {
+function terminarRedaccion(texto, modo, aviso, fallo = false, instruccion = '') {
   pararReloj();
   state.generando = false;
   state.ctl = null;
@@ -3251,7 +3323,16 @@ function terminarRedaccion(texto, modo, aviso, fallo = false) {
   state.revisionRequisitos = null;
   state.textoRevisado = null;
   state.tipoRevisado = null;
-  if (modo === 'nuevo') { state.docId = null; state.creado = null; }
+  if (modo === 'nuevo') {
+    state.docId = null;
+    state.creado = null;
+    state.versiones = [];
+    registrarVersion('generacion', 'Generación inicial');
+  } else if (modo === 'regenerar') {
+    registrarVersion('generacion', 'Regeneración con IA');
+  } else if (modo === 'ajuste' || modo === 'continuar') {
+    registrarVersion('ajuste_ia', instruccion ? `Ajuste con IA: "${instruccion}"` : 'Ajuste con IA', instruccion);
+  }
   renderHoja();
   ponerControles();
   $('#btnDeshacerAjuste').hidden = !state.prevTexto;
@@ -4484,7 +4565,7 @@ function validarFormulario() {
   return !primero;
 }
 const guardarBorrador = debounce(() => {
-  lsSet('borrador', { tipo: state.tipo, datos: state.datos, texto: state.texto, docId: state.docId, creado: state.creado, prompt: state.prompt.length < 200000 ? state.prompt : '' });
+  lsSet('borrador', { tipo: state.tipo, datos: state.datos, texto: state.texto, versiones: state.versiones, docId: state.docId, creado: state.creado, prompt: state.prompt.length < 200000 ? state.prompt : '' });
 }, 400);
 
 /* =========================================================
@@ -4504,11 +4585,11 @@ async function guardarEnHistorial() {
   if (!state.texto || state.ejemplo) return false;
   const ahora = Date.now();
   if (!state.docId) { state.docId = 'd' + ahora.toString(36) + Math.random().toString(36).slice(2, 6); state.creado = ahora; }
-  const data = { titulo: tituloDoc(), tipo: state.tipo, creado: state.creado || ahora, actualizado: ahora, datos: state.datos, texto: state.texto };
+  const data = { titulo: tituloDoc(), tipo: state.tipo, creado: state.creado || ahora, actualizado: ahora, datos: state.datos, texto: state.texto, versiones: state.versiones };
   try {
     await Almacen.guardarHist(state.docId, data);
     guardarBorrador();
-    if (supabase && state.usuario) {
+    if (sbClient && state.usuario) {
       sincronizarDocumentoConSupabase(state.docId, data).catch(() => {});
     }
     return true;
@@ -4517,6 +4598,11 @@ async function guardarEnHistorial() {
 }
 const guardarEdicion = debounce(async () => {
   if (state.generando || state.ejemplo) return;
+  sincronizarTexto();
+  const ultVer = (state.versiones && state.versiones.length > 0) ? state.versiones[state.versiones.length - 1].texto : null;
+  if (state.texto && state.texto !== ultVer) {
+    registrarVersion('edicion_manual', 'Edición manual');
+  }
   estadoHoja('', 'Editado · guardando…');
   const ok = await guardarEnHistorial();
   estadoHoja(ok ? 'listo' : 'error', ok ? 'Editado · guardado ' + horaCorta(Date.now()) : 'Editado · sin guardar');
@@ -4540,12 +4626,13 @@ function pintarHistorial() {
     const acc = h('div', { class: 'acc' });
     const li = h('li', { class: 'hist-item' },
       h('span', { class: 'f' }, fechaCorta(x.actualizado || x.creado), h('br'), horaCorta(x.actualizado || x.creado)),
-      h('span', { class: 't' }, x.titulo || 'Escrito', h('span', { class: 'tp' }, TIPOS[x.tipo]?.nombre || '')),
+      h('span', { class: 't' }, x.titulo || 'Escrito', h('span', { class: 'tp' }, (TIPOS[x.tipo]?.nombre || '') + (x.versiones?.length ? ` · ${x.versiones.length} vers.` : ''))),
       acc);
     const normal = () => {
       acc.replaceChildren(
         h('button', { class: 'btn chico primario', type: 'button', onclick: () => abrirDeHistorial(x) }, 'Abrir'),
         h('button', { class: 'btn chico', type: 'button', onclick: () => abrirDeHistorial(x, true) }, 'Usar como base'),
+        h('button', { class: 'btn chico fantasma', type: 'button', onclick: () => abrirComparadorHistorial(x) }, 'Comparar'),
         h('button', { class: 'btn chico fantasma', type: 'button', onclick: confirmar }, 'Eliminar'));
     };
     const confirmar = () => {
@@ -4565,8 +4652,25 @@ function abrirDeHistorial(x, comoBase = false) {
   state.tipo = x.tipo;
   state.datos = mezclar(Object.fromEntries(camposTipo(TIPOS[x.tipo]).map(c => [c.k, valorDefecto(c)])), x.datos || {});
   state.catalogoAbierto = false;
-  if (comoBase) { state.texto = ''; state.ejemplo = true; state.docId = null; state.creado = null; }
-  else { state.texto = x.texto || ''; state.ejemplo = !state.texto; state.docId = x.id; state.creado = x.creado; }
+  if (comoBase) {
+    state.texto = ''; state.ejemplo = true; state.docId = null; state.creado = null; state.versiones = [];
+  } else {
+    state.texto = x.texto || '';
+    state.ejemplo = !state.texto;
+    state.docId = x.id;
+    state.creado = x.creado;
+    state.versiones = Array.isArray(x.versiones) && x.versiones.length > 0 ? x.versiones : (state.texto ? [{
+      id: 'v_' + (x.creado || Date.now()).toString(36),
+      numero: 1,
+      fecha: new Date(x.creado || Date.now()).toISOString(),
+      fechaFormateada: `${fechaCorta(x.creado || Date.now())}, ${horaCorta(x.creado || Date.now())}`,
+      origen: 'generacion',
+      origenEtiqueta: 'Guardado',
+      descripcion: 'Versión guardada',
+      texto: state.texto,
+      palabras: (state.texto.match(/\b\w+\b/g) || []).length
+    }] : []);
+  }
   state.prompt = ''; state.prevTexto = null;
   renderZonaTipo(); renderFormulario(); $('#accionesForm').hidden = false;
   irVista('redactar');
@@ -4589,6 +4693,9 @@ function ponerControles() {
   $('#btnPdf').disabled = !hay || g;
   const btnRad = $('#btnRadicacion');
   if (btnRad) btnRad.disabled = !hay || g;
+  const btnComp = $('#btnCompararVersiones');
+  if (btnComp) btnComp.disabled = !hay || g;
+  actualizarBadgeVersiones();
   $('#btnRedactar').disabled = g;
   $('#edicion').hidden = !hay || g;
   if (!hay || g) { $('#ajuste').hidden = true; }
@@ -5056,6 +5163,296 @@ function mostrarModalRadicacion(data) {
 
   modal.showModal();
 }
+
+/* =========================================================
+   Control de Versiones y Comparador (Diff por palabra)
+   ========================================================= */
+function registrarVersion(origen, descripcion, instruccion = '') {
+  if (!state.texto || state.ejemplo) return;
+  if (!Array.isArray(state.versiones)) state.versiones = [];
+
+  const ult = state.versiones[state.versiones.length - 1];
+  if (ult && ult.texto === state.texto) return;
+
+  const ahora = Date.now();
+  const d = new Date(ahora);
+  const num = state.versiones.length + 1;
+  const palabras = (state.texto.match(/\b\w+\b/g) || []).length;
+
+  let etiqueta = 'Edición manual';
+  if (origen === 'generacion') etiqueta = num === 1 ? 'Generación inicial' : 'Regeneración con IA';
+  else if (origen === 'ajuste_ia') etiqueta = 'Ajuste con IA';
+
+  const version = {
+    id: 'v_' + ahora.toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+    numero: num,
+    fecha: d.toISOString(),
+    fechaFormateada: `${fechaCorta(ahora)}, ${horaCorta(ahora)}`,
+    origen: origen,
+    origenEtiqueta: etiqueta,
+    descripcion: descripcion || (origen === 'ajuste_ia' ? (instruccion ? `Ajuste: "${instruccion}"` : 'Ajuste con IA') : (origen === 'generacion' ? 'Generación con IA' : 'Edición manual')),
+    instruccion: instruccion || '',
+    texto: state.texto,
+    palabras: palabras
+  };
+
+  state.versiones.push(version);
+  actualizarBadgeVersiones();
+  guardarBorrador();
+}
+
+function actualizarBadgeVersiones() {
+  const badge = $('#badgeNumVersiones');
+  const count = (state.versiones || []).length;
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline-block' : 'none';
+  }
+  const btn = $('#btnCompararVersiones');
+  if (btn) {
+    btn.disabled = !state.texto || state.ejemplo || count === 0;
+  }
+}
+
+async function abrirComparadorVersiones() {
+  sincronizarTexto();
+  if (!state.texto || state.ejemplo) {
+    toast('No hay un escrito redactado para comparar versiones.', 'info');
+    return;
+  }
+
+  // Asegurar que la versión actual esté registrada si cambió
+  const ultVer = (state.versiones && state.versiones.length > 0) ? state.versiones[state.versiones.length - 1].texto : null;
+  if (state.texto && state.texto !== ultVer) {
+    registrarVersion('edicion_manual', 'Edición actual');
+  }
+
+  if (!state.versiones || state.versiones.length === 0) {
+    registrarVersion('generacion', 'Versión inicial');
+  }
+
+  const modal = $('#modalComparar');
+  if (!modal) return;
+
+  poblarSelectoresVersiones();
+  modal.showModal();
+  await ejecutarComparacion();
+}
+
+function abrirComparadorHistorial(x) {
+  if (!x || !x.texto) return;
+  const versionesItem = Array.isArray(x.versiones) && x.versiones.length > 0 ? x.versiones : [{
+    id: 'v_' + (x.creado || Date.now()).toString(36),
+    numero: 1,
+    fecha: new Date(x.creado || Date.now()).toISOString(),
+    fechaFormateada: `${fechaCorta(x.creado || Date.now())}, ${horaCorta(x.creado || Date.now())}`,
+    origen: 'generacion',
+    origenEtiqueta: 'Guardado',
+    descripcion: 'Versión guardada',
+    texto: x.texto,
+    palabras: (x.texto.match(/\b\w+\b/g) || []).length
+  }];
+
+  const modal = $('#modalComparar');
+  if (!modal) return;
+
+  const selBase = $('#selectVersionBase');
+  const selComp = $('#selectVersionComparada');
+  selBase.replaceChildren();
+  selComp.replaceChildren();
+
+  versionesItem.forEach((v, idx) => {
+    const t = `V${v.numero} · ${v.origenEtiqueta} (${v.fechaFormateada}) - ${v.palabras} palabras`;
+    selBase.appendChild(new Option(t, String(idx)));
+    selComp.appendChild(new Option(t, String(idx)));
+  });
+
+  const len = versionesItem.length;
+  if (len >= 2) {
+    selBase.value = String(len - 2);
+    selComp.value = String(len - 1);
+  } else {
+    selBase.value = '0';
+    selComp.value = '0';
+  }
+
+  modal.showModal();
+  ejecutarComparacionCustom(versionesItem);
+}
+
+function poblarSelectoresVersiones() {
+  const selBase = $('#selectVersionBase');
+  const selComp = $('#selectVersionComparada');
+  if (!selBase || !selComp) return;
+  selBase.replaceChildren();
+  selComp.replaceChildren();
+
+  (state.versiones || []).forEach((v, idx) => {
+    const t = `V${v.numero} · ${v.origenEtiqueta} (${v.fechaFormateada}) - ${v.palabras} palabras`;
+    selBase.appendChild(new Option(t, String(idx)));
+    selComp.appendChild(new Option(t, String(idx)));
+  });
+
+  const len = (state.versiones || []).length;
+  if (len >= 2) {
+    selBase.value = String(len - 2);
+    selComp.value = String(len - 1);
+  } else {
+    selBase.value = '0';
+    selComp.value = '0';
+  }
+}
+
+async function ejecutarComparacion() {
+  await ejecutarComparacionCustom(state.versiones || []);
+}
+
+async function ejecutarComparacionCustom(versionesLista) {
+  const selBase = $('#selectVersionBase');
+  const selComp = $('#selectVersionComparada');
+  if (!selBase || !selComp) return;
+  const idxBase = parseInt(selBase.value, 10);
+  const idxComp = parseInt(selComp.value, 10);
+
+  const verBase = versionesLista[idxBase];
+  const verComp = versionesLista[idxComp];
+
+  const visor = $('#diffVisorDocumento');
+  if (!visor) return;
+
+  if (!verBase || !verComp) {
+    visor.innerHTML = '<p class="diff-parrafo" style="color:var(--tinta-2);">Selecciona dos versiones para ver la comparación.</p>';
+    return;
+  }
+
+  visor.innerHTML = '<p class="diff-parrafo" style="color:var(--tinta-2);">⏳ Comparando diferencias palabra por palabra…</p>';
+
+  try {
+    const res = await apiFetch('/api/versiones/comparar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        texto_base: verBase.texto,
+        texto_comparado: verComp.texto,
+        autor: state.perfil?.abogado?.nombre || 'El Memorialista',
+        fecha: verComp.fecha
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error al comparar versiones en el servidor.');
+    }
+
+    const data = await res.json();
+    const anadidas = data.estadisticas.palabras_anadidas;
+    const eliminadas = data.estadisticas.palabras_eliminadas;
+    const iguales = data.estadisticas.palabras_sin_cambio;
+
+    $('#diffBadgeAnadidas').textContent = `+${anadidas} ${anadidas === 1 ? 'añadida' : 'añadidas'}`;
+    $('#diffBadgeEliminadas').textContent = `-${eliminadas} ${eliminadas === 1 ? 'eliminada' : 'eliminadas'}`;
+    $('#diffBadgeIguales').textContent = `${iguales} sin cambio`;
+
+    if (anadidas === 0 && eliminadas === 0) {
+      visor.innerHTML = '<div style="text-align:center; padding: 30px 10px; color: var(--tinta-2);">' +
+        '<span style="font-size:24px; display:block; margin-bottom:8px;">⚖️</span>' +
+        '<strong>No hay diferencias entre las versiones seleccionadas.</strong><br>' +
+        '<span style="font-size:12px;">El texto es idéntico en ambas versiones.</span>' +
+        '</div>';
+    } else {
+      visor.innerHTML = data.html_diff;
+    }
+
+  } catch (err) {
+    console.error('Error al comparar versiones:', err);
+    visor.innerHTML = `<p class="diff-parrafo" style="color:#b91c1c;">Error al comparar versiones: ${esc(err.message)}</p>`;
+  }
+}
+
+async function exportarWordDiff() {
+  const selBase = $('#selectVersionBase');
+  const selComp = $('#selectVersionComparada');
+  const idxBase = parseInt(selBase.value, 10);
+  const idxComp = parseInt(selComp.value, 10);
+
+  const verBase = (state.versiones || [])[idxBase];
+  const verComp = (state.versiones || [])[idxComp];
+
+  if (!verBase || !verComp) {
+    toast('Selecciona las versiones a comparar antes de exportar.', 'info');
+    return;
+  }
+
+  const btn = $('#btnExportarWordDiff');
+  const txtOriginal = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px;animation:spin 1s linear infinite" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="10"/></svg> Exportando…`;
+
+  try {
+    toast('Generando archivo Word con control de cambios (w:ins y w:del)…', 'info', 3000);
+
+    const payload = {
+      texto_base: verBase.texto,
+      texto_comparado: verComp.texto,
+      autor: state.perfil?.abogado?.nombre || 'El Memorialista',
+      fecha: verComp.fecha,
+      titulo: `${tituloDoc()} - Control de Cambios V${verBase.numero} vs V${verComp.numero}`,
+      perfil: state.perfil
+    };
+
+    const res = await apiFetch('/api/versiones/exportar-docx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error al exportar documento con control de cambios.');
+    }
+
+    const blob = await res.blob();
+    const nombre = nombreArchivo('docx').replace('.docx', `_ControlCambios_V${verBase.numero}_vs_V${verComp.numero}.docx`);
+    await guardarArchivo(nombre, blob);
+    toast('Documento Word con control de cambios descargado.', 'ok', 5000);
+
+  } catch (err) {
+    console.error('Error exportando Word diff:', err);
+    toast('Error al exportar a Word: ' + (err.message || 'Intenta de nuevo'), 'error', 6000);
+  } finally {
+    btn.innerHTML = txtOriginal;
+    btn.disabled = false;
+  }
+}
+
+function restaurarVersionBase() {
+  const selBase = $('#selectVersionBase');
+  const idxBase = parseInt(selBase.value, 10);
+  const verBase = (state.versiones || [])[idxBase];
+
+  if (!verBase) return;
+
+  const confirmar = confirm(`¿Deseas restaurar la Versión #${verBase.numero} (${verBase.origenEtiqueta}) en el editor principal?`);
+  if (!confirmar) return;
+
+  state.texto = verBase.texto;
+  state.prevTexto = null;
+  renderHoja();
+  ponerControles();
+  registrarVersion('edicion_manual', `Restaurada Versión #${verBase.numero}`);
+
+  $('#modalComparar').close();
+  toast(`Se restauró la Versión #${verBase.numero} en el escrito.`, 'ok', 4000);
+}
+
+function intercambiarVersiones() {
+  const selBase = $('#selectVersionBase');
+  const selComp = $('#selectVersionComparada');
+  const tmp = selBase.value;
+  selBase.value = selComp.value;
+  selComp.value = tmp;
+  ejecutarComparacion();
+}
 function copiarTexto() {
   sincronizarTexto();
   const texto = textoPlano(state.texto);
@@ -5420,7 +5817,7 @@ function cargarEspejoLocal() {
   if (b && b.tipo && TIPOS[b.tipo]) {
     state.tipo = b.tipo;
     state.datos = mezclar(Object.fromEntries(camposTipo(TIPOS[b.tipo]).map(c => [c.k, valorDefecto(c)])), b.datos || {});
-    state.texto = b.texto || ''; state.ejemplo = !state.texto; state.docId = b.docId || null; state.creado = b.creado || null; state.prompt = b.prompt || '';
+    state.texto = b.texto || ''; state.versiones = Array.isArray(b.versiones) ? b.versiones : []; state.ejemplo = !state.texto; state.docId = b.docId || null; state.creado = b.creado || null; state.prompt = b.prompt || '';
     state.catalogoAbierto = false;
   }
 }
@@ -6387,6 +6784,18 @@ function iniciar() {
   if (mRad) {
     $('#btnCerrarModalRadicacion')?.addEventListener('click', () => mRad.close());
     $('#btnCerrarModalRadicacionPie')?.addEventListener('click', () => mRad.close());
+  }
+  const btnComp = $('#btnCompararVersiones');
+  if (btnComp) btnComp.addEventListener('click', abrirComparadorVersiones);
+  const mComp = $('#modalComparar');
+  if (mComp) {
+    $('#btnCerrarModalComparar')?.addEventListener('click', () => mComp.close());
+    $('#btnCerrarModalCompararPie')?.addEventListener('click', () => mComp.close());
+    $('#btnIntercambiarVersiones')?.addEventListener('click', intercambiarVersiones);
+    $('#btnRestaurarVersionBase')?.addEventListener('click', restaurarVersionBase);
+    $('#btnExportarWordDiff')?.addEventListener('click', exportarWordDiff);
+    $('#selectVersionBase')?.addEventListener('change', ejecutarComparacion);
+    $('#selectVersionComparada')?.addEventListener('change', ejecutarComparacion);
   }
   $('#btnDeshacerAjuste').addEventListener('click', deshacerAjuste);
   $('#histBuscar').addEventListener('input', pintarHistorial);
