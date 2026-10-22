@@ -15,7 +15,7 @@ def test_catalogo_todos_tipos_tienen_requisitos():
         assert res.status_code == 200
         data = res.json()
         tipos = data["tipos"]
-        assert len(tipos) == 25
+        assert len(tipos) >= 26
 
         for t in tipos:
             tid = t["id"]

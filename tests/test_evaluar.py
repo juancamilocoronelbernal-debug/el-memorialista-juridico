@@ -13,12 +13,12 @@ from scripts.evaluar import (
 
 
 def test_catalogo_casos_completo():
-    """Verifica que existan exactamente 75 casos en tests/casos/ (3 casos por cada uno de los 25 tipos)."""
+    """Verifica que existan 3 casos en tests/casos/ por cada tipo del catálogo."""
     tipos = listar_tipos(incluir_guia=False)
-    assert len(tipos) == 25, f"Se esperaban 25 tipos en el catálogo, hay {len(tipos)}"
+    assert len(tipos) >= 26, f"Se esperaban al menos 26 tipos en el catálogo, hay {len(tipos)}"
 
     casos = cargar_casos()
-    assert len(casos) == 75, f"Se esperaban 75 casos en total (3 por tipo), hay {len(casos)}"
+    assert len(casos) == len(tipos) * 3, f"Se esperaban {len(tipos) * 3} casos en total (3 por tipo), hay {len(casos)}"
 
     conteo_por_tipo = {}
     for c in casos:

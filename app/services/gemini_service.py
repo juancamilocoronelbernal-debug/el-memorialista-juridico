@@ -461,7 +461,13 @@ class GeminiService:
         return min(10.0, base * (2 ** (intento - 1))) + random.uniform(0, 0.4)
 
     # ------------------------------------------------------------------ proveedores
-    def _payload_gemini(self, motor: Motor, mensajes: list, degradado: bool) -> dict:
+    def _payload_gemini(
+        self,
+        motor: Motor,
+        mensajes: list,
+        degradado: bool,
+        instruccion_sistema: str | None = None,
+    ) -> dict:
         s = self.s
         legado = motor.modelo.startswith(("gemini-1", "gemini-2"))
         config = {
@@ -480,7 +486,7 @@ class GeminiService:
                 else:
                     config["thinkingConfig"] = {"thinkingBudget": 8192}
         payload = {
-            "systemInstruction": {"parts": [{"text": INSTRUCCION_SISTEMA}]},
+            "systemInstruction": {"parts": [{"text": instruccion_sistema if instruccion_sistema is not None else INSTRUCCION_SISTEMA}]},
             "contents": [{"role": rol, "parts": [{"text": texto}]} for rol, texto in mensajes],
             "generationConfig": config,
         }
@@ -489,11 +495,17 @@ class GeminiService:
             payload["safetySettings"] = [{"category": c, "threshold": umbral} for c in CATEGORIAS_SEGURIDAD]
         return payload
 
-    async def _stream_gemini(self, motor: Motor, mensajes: list, degradado: bool):
+    async def _stream_gemini(
+        self,
+        motor: Motor,
+        mensajes: list,
+        degradado: bool,
+        instruccion_sistema: str | None = None,
+    ):
         s = self.s
         cliente = await self._cliente()
         url = f"{s.GEMINI_API_BASE.rstrip('/')}/v1beta/models/{motor.modelo}:streamGenerateContent"
-        payload = self._payload_gemini(motor, mensajes, degradado)
+        payload = self._payload_gemini(motor, mensajes, degradado, instruccion_sistema=instruccion_sistema)
         async with cliente.stream(
             "POST", url, params={"alt": "sse"}, json=payload, headers=self._cab_gemini()
         ) as respuesta:

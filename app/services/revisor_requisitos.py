@@ -49,6 +49,21 @@ def _evaluacion_heuristica(req: dict[str, Any], texto_lower: str) -> Tuple[str, 
             return "no_aplica", "Se solicitan medidas cautelares previas, lo cual exceptúa el requisito de procedibilidad.", ""
         return "no_cumple", "No se indica si se agotó la conciliación previa obligatoria.", "Indica que se agotó la conciliación extrajudicial en derecho aportando la constancia de no acuerdo o imposibilidad (Ley 2220 de 2022)."
 
+    if "contraprestacion" in rid or "420" in norma and "5" in norma:
+        if "contraprestación" in texto_lower or "contraprestacion" in texto_lower or "no depende" in texto_lower:
+            return "cumple", "Contiene manifestación de no depender de contraprestación pendiente (art. 420 num. 5 CGP).", ""
+        return "no_cumple", "Falta manifestación expresa de que el pago no depende de contraprestación pendiente del acreedor.", "Incluye en los hechos o acápite de juramento: 'Manifiesto que el pago de la suma demandada no depende del cumplimiento de una contraprestación pendiente a cargo del acreedor (art. 420 num. 5 del CGP)'."
+
+    if "apercibimiento" in rid or "421" in norma:
+        if "apercibimiento" in texto_lower or "fuerza de sentencia" in texto_lower or "auto con fuerza" in texto_lower or ("421" in texto_lower and "silencio" in texto_lower):
+            return "cumple", "Incluye solicitud de apercibimiento legal del art. 421 del CGP.", ""
+        return "no_cumple", "Falta solicitud expresa de apercibimiento legal del art. 421 del CGP.", "Agrega en pretensiones: 'Solicito apercibir al demandado conforme al artículo 421 del CGP, advirtiéndole que si no paga o guarda silencio dentro del término de 10 días, se dictará auto con fuerza de sentencia condenatoria'."
+
+    if "pruebas_o_juramento" in rid or ("420" in norma and "6" in norma):
+        if "prueba" in texto_lower or "anexo" in texto_lower or "juramento" in texto_lower or "document" in texto_lower:
+            return "cumple", "Se relacionan pruebas documentales o juramento de carecer de ellas.", ""
+        return "no_cumple", "Se omitieron las pruebas documentales o el juramento de no poseerlas.", "Relaciona los documentos contractuales o manifiesta bajo juramento que careces de ellos (art. 420 num. 6 CGP)."
+
     if "procedencia" in rid or "subsidiariedad" in rid:
         if "subsidiariedad" in texto_lower or "inmediatez" in texto_lower or "perjuicio irremediable" in texto_lower or "otro medio" in texto_lower:
             return "cumple", "Desarrolla los requisitos de procedencia, inmediatez y subsidiariedad.", ""

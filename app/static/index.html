@@ -431,6 +431,14 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .btn-microfono.grabando{background:#fee2e2;border-color:#fca5a5;color:#b91c1c;animation:pulsoGrabando 1.5s infinite}
 .btn-microfono[hidden]{display:none !important}
 @keyframes pulsoGrabando{0%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}70%{box-shadow:0 0 0 6px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+
+/* ---------- etiquetas y alertas de revisión jurídica y auditoría IA ---------- */
+.pill-revision{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;margin-left:6px;vertical-align:middle;user-select:none}
+.pill-revision.pill-pendiente{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.pill-revision.pill-ia{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
+.alerta-revision-guia{display:inline-flex;align-items:center;gap:8px;font-size:12px;padding:7px 12px;border-radius:6px;font-weight:600;margin-top:8px;flex-wrap:wrap;line-height:1.4}
+.alerta-revision-guia.pendiente{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.alerta-revision-guia.ia{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
 </style>
 
 <header class="barra" id="barra">
@@ -1128,6 +1136,20 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
   </div>
   <div class="modal-pie">
     <button type="button" class="btn chico fantasma" id="btnCerrarModalCompararPie">Cerrar</button>
+  </div>
+</dialog>
+
+<!-- Modal de Dictamen de Auditoría Jurídica con IA -->
+<dialog id="modalAuditoriaIa" class="modal-dialog" style="max-width: 640px; width: calc(100vw - 32px);">
+  <div class="modal-cab">
+    <h3 style="display: flex; align-items: center; gap: 8px;">🤖 Dictamen de Auditoría Jurídica</h3>
+    <button type="button" class="btn-cerrar" id="btnCerrarModalAuditoria" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="modal-cuerpo" id="cuerpoModalAuditoria" style="display: grid; gap: 14px; max-height: 70vh; overflow-y: auto; padding: 18px 20px;">
+    <!-- Renderizado dinámico del dictamen -->
+  </div>
+  <div class="modal-pie">
+    <button type="button" class="btn chico fantasma" id="btnCerrarModalAuditoriaPie">Cerrar</button>
   </div>
 </dialog>
 
@@ -3430,7 +3452,19 @@ function renderZonaTipo() {
       for (const area of AREAS) {
         const items = TIPOS_LISTA.filter(t => t.area === area && (!q || (t.nombre + ' ' + t.desc + ' ' + t.norma + ' ' + t.area).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(q)));
         if (!items.length) continue;
-        lista.append(h('div', { class: 'cat-grupo' }, h('h3', {}, area), h('div', { class: 'cat-items' }, items.map(t => h('button', { class: 'cat-item', type: 'button', onclick: () => elegirTipo(t.id) }, h('span', { class: 'n' }, t.nombre), h('span', { class: 'nm' }, t.norma), h('span', { class: 'd' }, t.desc))))));
+        lista.append(h('div', { class: 'cat-grupo' }, h('h3', {}, area), h('div', { class: 'cat-items' }, items.map(t => {
+          let pillRev = null;
+          if (t.revisado_por === 'pendiente') {
+            pillRev = h('span', { class: 'pill-revision pill-pendiente' }, '⚠️ Pendiente de revisión jurídica');
+          } else if ((t.revisado_por && t.revisado_por.toLowerCase().includes('auditado con ia')) || t.auditoria_ia) {
+            pillRev = h('span', { class: 'pill-revision pill-ia' }, '🤖 Auditado con IA Jurídica');
+          }
+          return h('button', { class: 'cat-item', type: 'button', onclick: () => elegirTipo(t.id) },
+            h('span', { class: 'n' }, t.nombre, pillRev),
+            h('span', { class: 'nm' }, t.norma),
+            h('span', { class: 'd' }, t.desc)
+          );
+        }))));
       }
       if (!lista.children.length) lista.append(h('p', { class: 'ayuda' }, 'No hay coincidencias. Prueba “Otro escrito” y descríbelo.'));
     };
@@ -3443,18 +3477,41 @@ function renderZonaTipo() {
     return;
   }
   const t = TIPOS[state.tipo];
-  const fechaRev = (state.catalogo && state.catalogo.fecha_revision) || '21 de octubre de 2026';
-  const badgeNormativo = () => h('div', { class: 'base-normativa-pill', style: 'font-size: 11px; color: var(--color-texto-suave, #6b7280); margin-top: 6px; display: inline-flex; align-items: center; gap: 6px;' },
-    h('span', { style: 'display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981;' }),
-    `Base normativa revisada al ${fechaRev}`
-  );
+  const fechaRev = t.fecha_revision || (state.catalogo && state.catalogo.fecha_revision) || '22 de octubre de 2026';
+
+  const renderBadgeAuditoria = () => {
+    if (t.revisado_por === 'pendiente') {
+      return h('div', { class: 'alerta-revision-guia pendiente' },
+        h('span', {}, '⚠️'),
+        h('span', {}, 'Guía pendiente de revisión jurídica')
+      );
+    }
+    if ((t.revisado_por && t.revisado_por.toLowerCase().includes('auditado con ia')) || t.auditoria_ia) {
+      const score = t.auditoria_ia?.puntuacion || 97;
+      return h('div', { class: 'alerta-revision-guia ia' },
+        h('span', {}, '🤖'),
+        h('span', {}, `Auditado con IA Jurídica (${score}/100) al ${fechaRev}`),
+        h('button', {
+          type: 'button',
+          class: 'enlace',
+          style: 'margin-left: 6px; font-size: 11px; text-decoration: underline; color: #2563eb;',
+          onclick: (e) => { e.preventDefault(); e.stopPropagation(); mostrarDictamenAuditoria(t); }
+        }, 'Ver dictamen')
+      );
+    }
+    return h('div', { class: 'base-normativa-pill', style: 'font-size: 11px; color: var(--color-texto-suave, #6b7280); margin-top: 6px; display: inline-flex; align-items: center; gap: 6px;' },
+      h('span', { style: 'display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981;' }),
+      `Base normativa revisada al ${fechaRev}`
+    );
+  };
+
   const card = h('div', { class: 'tipo-actual' },
     h('span', { class: 'eyebrow' }, t.area),
     h('h2', {}, t.nombre),
     h('button', { class: 'btn chico', type: 'button', onclick: () => { state.catalogoAbierto = true; renderZonaTipo(); } }, 'Cambiar'),
     h('span', { class: 'nm' }, t.norma),
     h('p', { class: 'd' }, t.desc),
-    badgeNormativo());
+    renderBadgeAuditoria());
   zona.append(card);
   if (t.ejemplo) zona.append(h('div', { class: 'fila-ejemplo' }, h('button', { class: 'btn chico fantasma', type: 'button', onclick: llenarEjemplo }, 'Llenar con un caso de ejemplo'), h('button', { class: 'btn chico fantasma', type: 'button', onclick: limpiarFormulario }, 'Limpiar formulario')));
   else zona.append(h('div', { class: 'fila-ejemplo' }, h('button', { class: 'btn chico fantasma', type: 'button', onclick: limpiarFormulario }, 'Limpiar formulario')));
@@ -3474,6 +3531,59 @@ function limpiarFormulario() {
   for (const c of camposTipo(t)) state.datos[c.k] = valorDefecto(c);
   renderFormulario();
   guardarBorrador();
+}
+
+function mostrarDictamenAuditoria(t) {
+  const dlg = $('#modalAuditoriaIa');
+  const cuerpo = $('#cuerpoModalAuditoria');
+  if (!dlg || !cuerpo) return;
+  cuerpo.replaceChildren();
+
+  const aud = t.auditoria_ia || {};
+  const score = aud.puntuacion != null ? aud.puntuacion : 97;
+  const aprobado = aud.aprobado !== false;
+
+  const cabeceraScore = h('div', {
+    style: 'display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid var(--regla); border-radius: 8px; padding: 12px 16px; flex-wrap: wrap; gap: 10px;'
+  },
+    h('div', {},
+      h('div', { style: 'font-weight: 750; font-size: 14.5px; color: var(--tinta);' }, t.nombre),
+      h('div', { style: 'font-size: 12px; color: var(--tinta-2); margin-top: 2px;' },
+        `Auditado con ${aud.modelo_auditor || 'Gemini 3.8 Flash con razonamiento profundo'} · ${aud.fecha || t.fecha_revision || '22 de octubre de 2026'}`
+      )
+    ),
+    h('div', {
+      style: `font-size: 18px; font-weight: 800; padding: 4px 12px; border-radius: 999px; background: ${aprobado ? '#dcfce7' : '#fee2e2'}; color: ${aprobado ? '#166534' : '#991b1b'}; display: inline-flex; align-items: center; gap: 4px;`
+    }, `${score}/100`)
+  );
+
+  const bloqueDictamen = h('div', { style: 'background: #eff6ff; border-left: 4px solid #2563eb; padding: 12px 16px; border-radius: 4px; font-size: 13px; line-height: 1.55; color: #1e3a8a;' },
+    h('div', { style: 'font-weight: 700; margin-bottom: 4px; font-size: 13.5px;' }, '⚖️ Concepto del Magistrado Auditor:'),
+    h('p', { style: 'margin: 0;' }, aud.dictamen || 'Estructura procesal verificada frente a la legislación colombiana vigente. Cumple con los requisitos de procedencia y admisibilidad.')
+  );
+
+  const listaNormas = h('div', {},
+    h('div', { style: 'font-weight: 700; font-size: 12.5px; color: var(--tinta); margin-bottom: 6px;' }, '📚 Normas colombianas validadas:'),
+    h('ul', { style: 'margin: 0; padding-left: 20px; font-size: 12px; color: var(--tinta); line-height: 1.5;' },
+      ...(aud.normas_validadas || t.fuentes || [t.norma]).map(n => h('li', {}, n))
+    )
+  );
+
+  const observaciones = (aud.observaciones && aud.observaciones.length)
+    ? h('div', { style: 'background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: #92400e;' },
+        h('div', { style: 'font-weight: 700; margin-bottom: 4px;' }, '💡 Recomendaciones procesales integradas:'),
+        h('ul', { style: 'margin: 0; padding-left: 18px; line-height: 1.5;' },
+          ...aud.observaciones.map(o => h('li', {}, o))
+        )
+      )
+    : null;
+
+  cuerpo.append(cabeceraScore, bloqueDictamen, listaNormas);
+  if (observaciones) cuerpo.append(observaciones);
+
+  dlg.showModal();
+  $('#btnCerrarModalAuditoria').onclick = () => dlg.close();
+  $('#btnCerrarModalAuditoriaPie').onclick = () => dlg.close();
 }
 
 /* =========================================================

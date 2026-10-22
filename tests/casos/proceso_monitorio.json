@@ -1,0 +1,140 @@
+[
+  {
+    "id": "proceso_monitorio_01_servicios_profesionales",
+    "tipo": "proceso_monitorio",
+    "descripcion": "Demanda de proceso monitorio para el cobro de honorarios profesionales por consultoría técnica de ingeniería.",
+    "datos": {
+      "destinatario": "Juez Civil Municipal de Bogotá (Reparto)",
+      "despacho": "Juez Civil Municipal de Bogotá (Reparto)",
+      "ciudad": "Bogotá, D.C.",
+      "cliente": "Ingeniería y Diseños Estructurales S.A.S., NIT 901.345.678-2",
+      "demandado": "Desarrollos Urbanísticos del Norte Ltda., NIT 830.456.789-0",
+      "origen_contractual": "Contrato de prestación de servicios profesionales de diseño y cálculo estructural",
+      "capital": "28500000",
+      "fecha_exigibilidad": "2026-04-30",
+      "intereses_tipo": "solo_moratorios_comerciales",
+      "contraprestacion_satisfecha": true,
+      "hechos": "1. El 15 de enero de 2026 las partes suscribieron contrato de consultoría estructural para el proyecto Torre 93.\n2. La sociedad actora entregó a entera satisfacción la totalidad de los planos y memorias de cálculo el 15 de abril de 2026.\n3. La demandada se obligó a cancelar la suma de $28.500.000 el día 30 de abril de 2026 y no ha efectuado el pago.\n4. La obligación es de origen netamente contractual, líquida, exigible y de mínima cuantía, sin existir título ejecutivo.",
+      "pretensiones": "1. Requerir a la sociedad Desarrollos Urbanísticos del Norte Ltda. para que en el término perentorio de 10 días pague la suma de $28.500.000 por capital insoluto.\n2. Ordenar el pago de los intereses moratorios comerciales a la tasa máxima legal desde el 1 de mayo de 2026 hasta el pago total.\n3. Apercibir a la demandada de conformidad con el art. 421 del CGP con fuerza de sentencia condenatoria en caso de no pago o silencio.\n4. Condenar en costas procesales.",
+      "pruebas_documentales": "Copia del contrato de prestación de servicios, actas de entrega final y radicado de cobro.",
+      "cuantia": "Mínima cuantía ($28.500.000)",
+      "notificaciones": "Demandante: Carrera 7 # 71-21 Torre B Of. 801, Bogotá; juridico@ingenieriaydisenos.com. Demandada: Calle 93 # 14-20 Of. 402, Bogotá; gerencia@urbanisticosnorte.com",
+      "demandado_correo_origen": "Canal digital pactado expresamente en la cláusula décima del contrato comercial"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "FUNDAMENTOS",
+        "CUANTÍA",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Ingeniería y Diseños Estructurales",
+        "Desarrollos Urbanísticos del Norte",
+        "28.500.000",
+        "421"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Tutela",
+        "Nueva EPS",
+        "Pensión de vejez"
+      ],
+      "longitud_minima": 1200,
+      "longitud_maxima": 15000
+    }
+  },
+  {
+    "id": "proceso_monitorio_02_suministro_mercancias",
+    "tipo": "proceso_monitorio",
+    "descripcion": "Demanda de proceso monitorio por entrega de insumos comerciales con remisiones recibidas y factura no aceptada expresamente.",
+    "datos": {
+      "destinatario": "Juez Civil Municipal de Medellín (Reparto)",
+      "despacho": "Juez Civil Municipal de Medellín (Reparto)",
+      "ciudad": "Medellín (Antioquia)",
+      "cliente": "Comercializadora Textil Andina S.A.S., NIT 900.876.543-1",
+      "demandado": "Confecciones La Moda Real E.U., NIT 811.234.987-0",
+      "origen_contractual": "Contrato verbal de compraventa y suministro mercantil de rollos de tela",
+      "capital": "19400000",
+      "fecha_exigibilidad": "2026-06-15",
+      "intereses_tipo": "solo_moratorios_comerciales",
+      "contraprestacion_satisfecha": true,
+      "hechos": "1. En mayo de 2026 la demandada solicitó el suministro de 50 rollos de dril y lino para confección.\n2. Los insumos fueron entregados a satisfacción según guía de remisión No. 1289 del 25 de mayo de 2026.\n3. Se pactó el pago a 30 días con vencimiento el 15 de junio de 2026 por valor de $19.400.000.\n4. La compradora adeuda el 100% de la mercancía sin que exista título valor cambiario firmado.",
+      "pretensiones": "1. Librar requerimiento de pago a Confecciones La Moda Real E.U. por la suma de $19.400.000 COP.\n2. Liquidar intereses moratorios legales a la tasa comercial vigente hasta el pago efectivo.\n3. Advertir el apercibimiento del artículo 421 del Código General del Proceso con efectos de cosa juzgada.\n4. Condena en costas.",
+      "pruebas_documentales": "Guías de remisión con firma de recibido en bodega y correos de requerimiento.",
+      "cuantia": "Mínima cuantía ($19.400.000)",
+      "notificaciones": "Demandante: Carrera 43A # 1-50, Medellín; cartera@textilandina.com. Demandada: Calle 33 # 65-40, Medellín; admin@confeccionesmodareal.com",
+      "demandado_correo_origen": "Dirección electrónica cruzada durante la cotización y entrega de la mercancía"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "FUNDAMENTOS",
+        "CUANTÍA",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Comercializadora Textil Andina",
+        "Confecciones La Moda Real",
+        "19.400.000",
+        "421"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Acción popular",
+        "Medio ambiente",
+        "Contrato de trabajo"
+      ],
+      "longitud_minima": 1200,
+      "longitud_maxima": 15000
+    }
+  },
+  {
+    "id": "proceso_monitorio_03_obra_remodelacion",
+    "tipo": "proceso_monitorio",
+    "descripcion": "Demanda de proceso monitorio por saldo insoluto en contrato de obra civil y adecuaciones locativas.",
+    "datos": {
+      "destinatario": "Juez Civil Municipal de Cali (Reparto)",
+      "despacho": "Juez Civil Municipal de Cali (Reparto)",
+      "ciudad": "Cali (Valle del Cauca)",
+      "cliente": "Carlos Alberto Restrepo Gómez, C.C. 14.890.123",
+      "demandado": "Restaurante y Eventos El Trapiche S.A.S., NIT 901.654.321-4",
+      "origen_contractual": "Contrato de obra civil y adecuaciones de cocina industrial y pisos",
+      "capital": "15800000",
+      "fecha_exigibilidad": "2026-07-20",
+      "intereses_tipo": "moratorios_civiles",
+      "contraprestacion_satisfecha": true,
+      "hechos": "1. El señor Restrepo fue contratado para remodelar la cocina y áreas de servicio del restaurante.\n2. Las obras se entregaron formalmente el 5 de julio de 2026 cumpliendo todas las especificaciones acordadas.\n3. El saldo final de $15.800.000 debía cancelarse el 20 de julio de 2026, fecha en la que no se hizo el desembolso.\n4. El acreedor satisfizo plenamente su prestación y no adeuda labor alguna al establecimiento demandado.",
+      "pretensiones": "1. Notificar y requerir a Restaurante y Eventos El Trapiche S.A.S. para que en el término de 10 días pague $15.800.000.\n2. Reconocer intereses de mora civiles (art. 1617 C.C.) causados desde el 21 de julio de 2026.\n3. Aplicar el apercibimiento legal del artículo 421 del CGP dictando auto ejecutivo si no hay oposición.\n4. Costas procesales.",
+      "pruebas_documentales": "Contrato escrito de obra, acta de recibo y fotos de las obras concluidas.",
+      "cuantia": "Mínima cuantía ($15.800.000)",
+      "notificaciones": "Demandante: Avenida 6N # 28-10, Cali; carlosingeniero@email.com. Demandada: Calle 9 # 66-50, Cali; eventoseltrapiche@email.com",
+      "demandado_correo_origen": "Registrado en la Cámara de Comercio de Cali y suministrado en el contrato de obra"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "FUNDAMENTOS",
+        "CUANTÍA",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Carlos Alberto Restrepo",
+        "Restaurante y Eventos El Trapiche",
+        "15.800.000",
+        "421"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Pensión de invalidez",
+        "Reclamación de seguro",
+        "Habeas corpus"
+      ],
+      "longitud_minima": 1200,
+      "longitud_maxima": 15000
+    }
+  }
+]

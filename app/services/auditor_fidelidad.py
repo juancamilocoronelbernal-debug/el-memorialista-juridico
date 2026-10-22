@@ -200,6 +200,10 @@ def es_encabezado_o_autoridad(cand: str) -> bool:
         "asunto",
         "tramite",
         "despacho",
+        "apercibimiento",
+        "apercibimiento legal",
+        "proceso monitorio",
+        "monitorio",
     ]
     return any(p in norm for p in patrones)
 

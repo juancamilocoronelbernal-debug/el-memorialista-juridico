@@ -1,0 +1,288 @@
+{
+  "id": "proceso_monitorio",
+  "nombre": "Demanda de proceso monitorio",
+  "area": "Civil",
+  "norma": "Arts. 419 a 421 del Código General del Proceso (CGP)",
+  "rolFirma": "demandante",
+  "rolCliente": "demandante",
+  "desc": "Cobro rápido de obligaciones dinerarias de mínima cuantía de origen contractual, sin título ejecutivo.",
+  "revisado_por": "Auditado con IA Jurídica (gemini-3.8-flash)",
+  "fecha_revision": "22 de octubre de 2026",
+  "fuentes": [
+    "Ley 1564 de 2012 (Código General del Proceso), arts. 419 a 421",
+    "Ley 2213 de 2022 (Vigencia permanente de las TIC en la justicia), arts. 6 y 8",
+    "Código de Comercio, art. 884 (Intereses mercantiles y usura)",
+    "Código Civil, arts. 1608 y 1617 (Mora e intereses civiles)"
+  ],
+  "grupos": [
+    {
+      "n": "Despacho y partes",
+      "campos": [
+        {
+          "k": "despacho",
+          "l": "Despacho judicial",
+          "t": "text",
+          "req": true,
+          "ph": "Juez Civil Municipal de Bogotá (Reparto)",
+          "ayuda": "Juez Civil Municipal del domicilio del demandado o del lugar de cumplimiento de la obligación contractual."
+        },
+        {
+          "k": "cliente",
+          "l": "Nombre del acreedor (demandante)",
+          "t": "text",
+          "req": true,
+          "ph": "Nombre o razón social completa del acreedor"
+        },
+        {
+          "k": "cliente_doc",
+          "l": "Documento del demandante (con DV si es NIT)",
+          "t": "text",
+          "req": true,
+          "ph": "C.C. 1.020.304.506 o NIT 901.234.567-8"
+        },
+        {
+          "k": "cliente_correo",
+          "l": "Correo electrónico del demandante (canal digital)",
+          "t": "text",
+          "req": true,
+          "ph": "acreedor@ejemplo.com"
+        },
+        {
+          "k": "demandado",
+          "l": "Nombre del deudor (demandado)",
+          "t": "text",
+          "req": true,
+          "ph": "Nombre o razón social del deudor"
+        },
+        {
+          "k": "demandado_doc",
+          "l": "Documento del demandado (si se conoce)",
+          "t": "text",
+          "ph": "C.C. 79.800.900 o NIT si es persona jurídica"
+        },
+        {
+          "k": "demandado_correo",
+          "l": "Correo electrónico del demandado para notificación",
+          "t": "text",
+          "req": true,
+          "ph": "deudor@empresa.com",
+          "ayuda": "Obligatorio según art. 6 y 8 de la Ley 2213 de 2022 para surtir la citación digital."
+        },
+        {
+          "k": "demandado_correo_origen",
+          "l": "Cómo se obtuvo el correo del demandado (juramento art. 8 Ley 2213)",
+          "t": "text",
+          "ph": "Suministrado en el contrato / cruzado por correos de cobro / registro mercantil",
+          "req": true
+        },
+        {
+          "k": "demandado_direccion",
+          "l": "Dirección física y ciudad del demandado",
+          "t": "text",
+          "ph": "Calle 50 No. 40-30, Medellín (opcional para citación física subsidiaria)",
+          "ayuda": "Opcional. Útil si se requiere practicar notificación física subsidiaria o medidas cautelares sobre bienes muebles."
+        }
+      ]
+    },
+    {
+      "n": "Obligación dineraria y cuantía",
+      "campos": [
+        {
+          "k": "origen_contractual",
+          "l": "Origen contractual de la obligación",
+          "t": "text",
+          "req": true,
+          "ph": "Ej.: Contrato de prestación de servicios profesionales / compraventa comercial de mercancías",
+          "ayuda": "El proceso monitorio exige que la deuda provenga exclusivamente de un contrato (verbal o escrito)."
+        },
+        {
+          "k": "capital",
+          "l": "Valor del capital adeudado (en pesos COP)",
+          "t": "valor",
+          "req": true,
+          "ph": "18000000",
+          "ayuda": "Debe ser de mínima cuantía (hasta 40 SMMLV). Muestra el valor en letras automáticamente."
+        },
+        {
+          "k": "fecha_exigibilidad",
+          "l": "Fecha en que se hizo exigible el pago",
+          "t": "date",
+          "req": true,
+          "ayuda": "Día exacto desde el cual el deudor incurrió en mora."
+        },
+        {
+          "k": "intereses_tipo",
+          "l": "Tipo de intereses reclamados",
+          "t": "select",
+          "req": true,
+          "opciones": [
+            [
+              "corrientes_y_mora",
+              "Intereses corrientes pactados y moratorios legales"
+            ],
+            [
+              "solo_moratorios_comerciales",
+              "Intereses moratorios a la tasa máxima legal (1.5 veces IBC Superintendencia Financiera)"
+            ],
+            [
+              "moratorios_civiles",
+              "Intereses moratorios civiles (art. 1617 Código Civil - 6% anual)"
+            ],
+            [
+              "solo_capital",
+              "Solo cobro de capital (sin intereses)"
+            ]
+          ],
+          "def": "solo_moratorios_comerciales"
+        },
+        {
+          "k": "contraprestacion_satisfecha",
+          "l": "¿El acreedor ya cumplió toda su contraprestación?",
+          "t": "check",
+          "def": true,
+          "ayuda": "Requisito legal esencial (art. 420 num. 5 CGP): el pago no puede depender de una contraprestación pendiente del acreedor."
+        }
+      ]
+    },
+    {
+      "n": "Hechos",
+      "campos": [
+        {
+          "k": "hechos",
+          "l": "Relación clara y cronológica de los hechos",
+          "t": "area",
+          "rows": 6,
+          "req": true,
+          "ph": "- Fecha y términos en que se celebró el contrato\n- Prestación cumplida y entregada a satisfacción por el acreedor\n- Fecha pactada para el pago y suma acordada\n- Incumplimiento del deudor e infructuosas gestiones de cobro",
+          "ayuda": "Describe la celebración del contrato, la entrega de los bienes o servicios, y la renuencia al pago."
+        }
+      ]
+    },
+    {
+      "n": "Pretensiones y apercibimiento",
+      "campos": [
+        {
+          "k": "pretensiones",
+          "l": "Pretensiones de pago y apercibimiento legal",
+          "t": "area",
+          "rows": 5,
+          "req": true,
+          "ph": "1. Ordenar al demandado pagar la suma de $... por concepto de capital adeudado.\n2. Ordenar el pago de los intereses moratorios causados desde la fecha de mora hasta el pago efectivo.\n3. Librar el requerimiento con el apercibimiento legal del artículo 421 del CGP.\n4. Condenar en costas y agencias en derecho.",
+          "ayuda": "El escrito debe incluir expresamente la solicitud del requerimiento con advertencia de fuerza de sentencia (art. 421 CGP)."
+        },
+        {
+          "k": "medidas_cautelares",
+          "l": "Medidas cautelares previas solicitadas",
+          "t": "area",
+          "rows": 3,
+          "ph": "Embargo y retención de sumas depositadas en cuentas bancarias del deudor; embargo de bienes muebles o vehículos.",
+          "ayuda": "Opcional. En proceso monitorio se puede pedir embargo y secuestro previo de bienes del deudor (art. 599 CGP)."
+        }
+      ]
+    },
+    {
+      "n": "Pruebas y anexos",
+      "campos": [
+        {
+          "k": "pruebas_documentales",
+          "l": "Relación de pruebas documentales aportadas",
+          "t": "area",
+          "rows": 4,
+          "ph": "- Copia del contrato / orden de servicio / factura comercial\n- Mensajes de datos (WhatsApp, correos electrónicos con acuse de recibo)\n- Certificación bancaria o extracto de no pago",
+          "ayuda": "Si no tienes documentos, debes manifestarlo bajo gravedad del juramento en la demanda (art. 420 num. 6 CGP)."
+        },
+        {
+          "k": "sin_prueba_documental_juramento",
+          "l": "Manifestar bajo juramento que no se posee prueba documental contractual",
+          "t": "check",
+          "def": false,
+          "ayuda": "Solo si la obligación fue enteramente verbal y no existen soportes documentales (art. 420 num. 6 CGP)."
+        }
+      ]
+    }
+  ],
+  "guia": "Fundamento procesal: artículos 419, 420 y 421 del Código General del Proceso (CGP - Ley 1564 de 2012).\nNaturaleza jurídica y procedencia: Quien pretenda el pago de una obligación en dinero, de origen contractual, determinada y exigible, que sea de mínima cuantía (hasta 40 SMMLV), puede formular demanda de proceso monitorio ante el Juez Civil Municipal competente.\nReglas no negociables:\n1. Solo procede para obligaciones contractuales en dinero. No procede si existe título ejecutivo (pagaré, letra, acta de conciliación, sentencia); si hay título ejecutivo, la vía correcta es la demanda ejecutiva.\n2. No procede para reclamar perjuicios extracontractuales ni perjuicios que no hayan sido fijados y cuantificados contractualmente.\n3. Es requisito procesal esencial afirmar que el pago no depende del cumplimiento de una contraprestación a cargo del acreedor (art. 420 num. 5 CGP).\n4. Apercibimiento obligatorio del art. 421 CGP: El escrito debe pedir expresamente que se requiera al demandado para que en el término perentorio de diez (10) días pague o exponga por escrito las razones por las cuales niega total o parcialmente la deuda; y que si no contesta o no comparece, el juez dictará auto con fuerza de sentencia condenatoria (cosa juzgada) y ordenará seguir adelante con la ejecución y medidas cautelares.\n5. Postulación: No requiere actuar a través de abogado para su radicación si es de mínima cuantía (art. 420 parágrafo), pero si lo suscribe apoderado, se anuncia el poder especial y número de Tarjeta Profesional.\n6. Notificación digital: Incluir manifestación bajo juramento sobre cómo se obtuvo el canal digital del deudor (art. 8 Ley 2213 de 2022) y el envío simultáneo electrónico salvo que se decreten medidas cautelares previas (art. 6 Ley 2213 de 2022).\nEstructura procesal obligatoria:\n- Destinatario (Señor Juez Civil Municipal de ...);\n- Referencia: Demanda de Proceso Monitorio; Demandante; Demandado;\n- Presentación y legitimación de las partes con indicación de domicilio, documentos y canales digitales;\n- PRETENSIONES (orden de requerimiento de pago del capital, intereses pactados o legales discriminados, apercibimiento del art. 421 CGP y costas);\n- HECHOS debidamente numerados y cronológicos (origen del contrato, cumplimiento pleno del acreedor, exigibilidad de la obligación e incumplimiento del deudor);\n- MANIFESTACIONES BAJO JURAMENTO (que el pago no depende de contraprestación pendiente del acreedor, y juramento del canal digital art. 8 Ley 2213);\n- JURAMENTO SOBRE PRUEBA DOCUMENTAL (si no se tienen documentos escritos, art. 420 num. 6);\n- MEDIDAS CAUTELARES si se solicitan (embargo y retención de cuentas o bienes);\n- PRUEBAS (documentales aportadas o testimoniales);\n- CUANTÍA Y COMPETENCIA (mínima cuantía, domicilio del demandado o lugar de cumplimiento contractual);\n- ANEXOS (documentos, certificado de existencia y representación legal si aplica, poder especial);\n- NOTIFICACIONES (física y electrónica de las partes).",
+  "version": "1.0.0",
+  "requisitos": [
+    {
+      "id": "monitorio_designacion_juez",
+      "texto": "Designación del Juez Civil Municipal competente (domicilio del deudor o lugar de cumplimiento)",
+      "norma": "CGP arts. 28 num. 1 y 3, 82 num. 1 y 419",
+      "critico": true
+    },
+    {
+      "id": "monitorio_identificacion_partes",
+      "texto": "Identificación, domicilio y canales digitales de demandante y demandado con juramento de obtención",
+      "norma": "CGP art. 82 num. 2 y Ley 2213 de 2022 arts. 6 y 8",
+      "critico": true
+    },
+    {
+      "id": "demanda_monitorio_exigibilidad",
+      "texto": "Determinación clara de la suma líquida de dinero, su exigibilidad y el origen contractual de la obligación",
+      "norma": "CGP arts. 419 y 420 num. 2",
+      "critico": true
+    },
+    {
+      "id": "demanda_monitorio_contraprestacion",
+      "texto": "Manifestación expresa de que el pago de la suma no depende del cumplimiento de una contraprestación pendiente del acreedor",
+      "norma": "CGP art. 420 num. 5",
+      "critico": true
+    },
+    {
+      "id": "demanda_monitorio_apercibimiento",
+      "texto": "Solicitud expresa de requerimiento de pago con apercibimiento legal de dictar auto con fuerza de sentencia condenatoria si guarda silencio en 10 días",
+      "norma": "CGP art. 421",
+      "critico": true
+    },
+    {
+      "id": "demanda_monitorio_cuantia",
+      "texto": "Delimitación expresa de la mínima cuantía (hasta 40 SMMLV)",
+      "norma": "CGP arts. 25 y 419",
+      "critico": true
+    },
+    {
+      "id": "monitorio_pruebas_o_juramento",
+      "texto": "Aporte de pruebas documentales o manifestación bajo juramento de carecer de ellas",
+      "norma": "CGP art. 420 num. 6",
+      "critico": true
+    }
+  ],
+  "ejemplo": {
+    "despacho": "Señor Juez Civil Municipal de Medellín (Reparto)",
+    "cliente": "Inversiones y Servicios Comerciales del Valle S.A.S.",
+    "cliente_doc": "NIT 901.458.789-2",
+    "cliente_correo": "cobranzas@inversionessas.com",
+    "demandado": "Constructora e Inmobiliaria Los Andes Ltda.",
+    "demandado_doc": "NIT 830.124.567-1",
+    "demandado_correo": "gerencia@constructoralosandes.com",
+    "demandado_correo_origen": "Suministrado directamente en la orden de compra No. 450 y cruzado en correos electrónicos de facturación",
+    "origen_contractual": "Contrato mercantil de suministro y montaje de carpintería metálica",
+    "capital": "24500000",
+    "fecha_exigibilidad": "2026-05-15",
+    "intereses_tipo": "solo_moratorios_comerciales",
+    "contraprestacion_satisfecha": true,
+    "hechos": "1. El 10 de marzo de 2026, mi poderdante y la sociedad demandada celebraron un contrato comercial de suministro y montaje de carpintería metálica para la obra 'Torres del Prado'.\n2. Mi representada suministró e instaló la totalidad de los materiales acordados, los cuales fueron recibidos a entera satisfacción mediante acta de entrega y recibo final del 30 de abril de 2026.\n3. Se emitió la cuenta de cobro y factura comercial por valor de $24.500.000 COP con fecha de vencimiento y exigibilidad pactada para el día 15 de mayo de 2026.\n4. La sociedad demandada se abstuvo de realizar el pago en la fecha acordada y hasta la fecha no ha realizado abono alguno, a pesar de los requerimientos extrajudiciales cursados a su correo electrónico.\n5. La obligación es de naturaleza estrictamente contractual, líquida, actualmente exigible y de mínima cuantía, y mi representada no cuenta con un título ejecutivo (letra, pagaré ni cheque) firmado por el deudor.",
+    "pretensiones": "1. Requerir a la sociedad demandada Constructora e Inmobiliaria Los Andes Ltda. para que en el término perentorio de diez (10) días contados a partir de su notificación personal, pague a favor de Inversiones y Servicios Comerciales del Valle S.A.S. la suma de VEINTICUATRO MILLONES QUINIENTOS MIL PESOS M/CTE ($24.500.000 COP) por concepto de capital insoluto.\n2. Ordenar el pago de los intereses moratorios causados sobre el capital adeudado a la tasa máxima legal mercantil (1.5 veces el Interés Bancario Corriente certificado por la Superintendencia Financiera), liquidados desde el 16 de mayo de 2026 hasta el momento en que se efectúe el pago total.\n3. Apercibir a la demandada de conformidad con el artículo 421 del CGP, advirtiéndole que si dentro del término de diez (10) días no comparece, guarda silencio o no expone razones fundadas para negar la deuda, se dictará auto con fuerza de sentencia condenatoria y se ordenará seguir adelante la ejecución con medidas cautelares.\n4. Condenar a la demandada al pago de las costas y agencias en derecho que se causen.",
+    "medidas_cautelares": "Solicito ordenar el embargo y retención de las cuentas bancarias de ahorros y corrientes a nombre de la demandada en entidades financieras, hasta por el límite legal.",
+    "pruebas_documentales": "1. Copia de la orden de compra y suministro suscrita por las partes.\n2. Copia del acta de entrega y recibo final a satisfacción del 30 de abril de 2026.\n3. Copia de la factura comercial y cuenta de cobro con constancia de radicación.\n4. Copia de los mensajes de datos y correos electrónicos de cobro cruzados entre las partes.\n5. Certificado de existencia y representación legal de ambas partes.",
+    "sin_prueba_documental_juramento": false
+  },
+  "auditoria_ia": {
+    "puntuacion": 97,
+    "aprobado": true,
+    "dictamen": "La estructura del memorial para demanda de proceso monitorio cumple a cabalidad con los presupuestos sustanciales y adjetivos consagrados en los artículos 419 a 421 del Código General del Proceso (Ley 1564 de 2012) y las exigencias de justicia digital de la Ley 2213 de 2022. Incorpora de manera sobresaliente los apercibimientos y juramentos obligatorios que previenen la inadmisión o rechazo de plano.",
+    "normas_validadas": [
+      "Ley 1564 de 2012 (CGP), Arts. 82, 84, 419, 420, 421 y 599",
+      "Ley 2213 de 2022, Arts. 6 y 8",
+      "Código de Comercio, Art. 884",
+      "Código Civil, Arts. 1608 y 1617"
+    ],
+    "observaciones": [
+      "Aunque el proceso monitorio admite postulación en causa propia (sin abogado), convendría prever un subcampo opcional para datos de apoderado judicial (T.P. y facultad de recibir), dado que en la práctica mercantil gran parte de estos cobros son tramitados por mandatarios judiciales.",
+      "Se sugiere recordar al usuario en la ayuda de pretensiones que la liquidación de intereses moratorios mercantiles no puede superar el límite de usura certificado periódicamente por la Superintendencia Financiera de Colombia."
+    ],
+    "riesgos_inadmisorios": [],
+    "modelo_auditor": "gemini-3.8-flash",
+    "fecha": "22 de octubre de 2026"
+  }
+}

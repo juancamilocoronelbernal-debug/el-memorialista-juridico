@@ -159,6 +159,19 @@ async def obtener_catalogo():
     }
 
 
+@router.post("/catalogo/auditar/{tipo_id}")
+async def endpoint_auditar_tipo(tipo_id: str):
+    """Ejecuta la auditoría jurídica automatizada con IA sobre un tipo del catálogo."""
+    from app.services.auditor_catalogo import auditar_tipo_por_id
+    try:
+        dictamen = await auditar_tipo_por_id(tipo_id, actualizar_json=True)
+        return dictamen
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Tipo de escrito '{tipo_id}' no encontrado en el catálogo.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al auditar el tipo con IA: {e}")
+
+
 @router.get("/radicado")
 async def obtener_radicado_info():
     """Retorna la tabla y estructura oficial del radicado judicial de 23 dígitos."""

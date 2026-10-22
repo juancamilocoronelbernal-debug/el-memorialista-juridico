@@ -93,7 +93,7 @@ def generar_mock_escrito(caso: dict[str, Any]) -> tuple[str, float, dict[str, in
     exp = caso.get("expectativas", {})
 
     ciudad = datos.get("ciudad", "Bogotá, D.C.")
-    destinatario = datos.get("destinatario", "SEÑOR JUEZ DE LA REPÚBLICA (REPARTO)")
+    destinatario = datos.get("destinatario") or datos.get("despacho") or "SEÑOR JUEZ DE LA REPÚBLICA (REPARTO)"
     radicado = datos.get("radicado", "")
 
     # Extracción fiel de partes del formulario
@@ -164,6 +164,14 @@ def generar_mock_escrito(caso: dict[str, Any]) -> tuple[str, float, dict[str, in
             "",
         ])
 
+    if "monitorio" in tipo:
+        lineas.extend([
+            "### MANIFESTACIÓN BAJO JURAMENTO Y APERCIBIMIENTO LEGAL",
+            "Manifiesto expresamente bajo la gravedad del juramento que el pago de la suma demandada no depende del cumplimiento de una contraprestación pendiente a cargo del acreedor (art. 420 num. 5 del CGP).",
+            "Asimismo, solicito expresamente requerir al demandado con el apercibimiento legal del artículo 421 del CGP, advirtiéndole que si no paga o no comparece dentro de diez (10) días, se dictará auto con fuerza de sentencia condenatoria (cosa juzgada).",
+            "",
+        ])
+
     # Asegurar que todas las secciones obligatorias aparezcan como acápite
     secciones_orden = exp.get("secciones_obligatorias", ["HECHOS", "PRETENSIONES", "FUNDAMENTOS", "PRUEBAS", "NOTIFICACIONES"])
 
@@ -186,6 +194,8 @@ def generar_mock_escrito(caso: dict[str, Any]) -> tuple[str, float, dict[str, in
                 citas_base = "Fundamento en el artículo 23 de la Constitución Política y en la Ley 1755 de 2015 que regula el derecho de petición."
             elif "demanda" in tipo:
                 citas_base = "Fundamento en los artículos 82, 83 y 84 del Código General del Proceso (CGP) y la Ley 2213 de 2022."
+            elif "monitorio" in tipo:
+                citas_base = "Fundamento en los artículos 419, 420 y 421 del Código General del Proceso (CGP - Ley 1564 de 2012) y en la Ley 2213 de 2022."
             elif "penal" in tipo or "denuncia" in tipo:
                 citas_base = "Fundamento en el artículo 66 de la Ley 906 de 2004 (Código de Procedimiento Penal)."
             elif "laboral" in tipo:
@@ -204,7 +214,7 @@ def generar_mock_escrito(caso: dict[str, Any]) -> tuple[str, float, dict[str, in
                 "para evitar la consumación de un perjuicio irremediable."
             )
         elif "prueba" in sec_norm or "anexo" in sec_norm or "valoracion" in sec_norm:
-            pruebas_txt = datos.get("pruebas") or "Aporto los documentos y testimonios relacionados en el acápite de antecedentes fácticos conforme a la sana crítica del art. 176 del CGP."
+            pruebas_txt = datos.get("pruebas") or datos.get("pruebas_documentales") or "Aporto los documentos y testimonios relacionados en el acápite de antecedentes fácticos conforme a la sana crítica del art. 176 del CGP."
             lineas.append(pruebas_txt)
         elif "notificaci" in sec_norm:
             notif_txt = datos.get("notificaciones")
@@ -214,7 +224,9 @@ def generar_mock_escrito(caso: dict[str, Any]) -> tuple[str, float, dict[str, in
             lineas.append("Afirmo bajo la gravedad del juramento que la dirección electrónica indicada para la contraparte es la que utiliza para sus comunicaciones (art. 8 de la Ley 2213 de 2022).")
         elif "cuantia" in sec_norm or "competencia" in sec_norm:
             cuantia_txt = datos.get("cuantia", "Mayor cuantía")
-            lineas.append(f"La cuantía del proceso se estima en {cuantia_txt}, por lo cual es competente este Despacho judicial.")
+            if "monitorio" in tipo and "mínima" not in cuantia_txt.lower() and "minima" not in cuantia_txt.lower():
+                cuantia_txt = f"Mínima cuantía ({cuantia_txt})"
+            lineas.append(f"La cuantía del proceso se estima en {cuantia_txt}, correspondiente a mínima cuantía de conformidad con los artículos 25 y 419 del CGP.")
         elif "conciliacion" in sec_norm or "procedibilidad" in sec_norm:
             lineas.append("Se agotó el requisito de procedibilidad de conciliación prejudicial conforme a la Ley 2220 de 2022, aportando la constancia de no acuerdo.")
         else:

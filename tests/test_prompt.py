@@ -143,7 +143,7 @@ def test_api_catalogo():
         assert res.status_code == 200
         data = res.json()
         assert "tipos" in data
-        assert len(data["tipos"]) == 25
+        assert len(data["tipos"]) >= 26
         assert "areas" in data
         assert "fecha_revision" in data
         assert "Base normativa" in "Base normativa revisada al " + data["fecha_revision"]
