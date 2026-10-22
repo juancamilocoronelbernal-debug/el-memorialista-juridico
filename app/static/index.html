@@ -1225,7 +1225,7 @@ async function iniciarCapacidades() {
 /* =========================================================
    Supabase Auth (Magic Link), Base de Datos y Storage Privado
    ========================================================= */
-let supabase = null;
+let sbClient = null;
 
 function dataUrlABlob(dataUrl) {
   if (!dataUrl) return null;
@@ -1257,10 +1257,10 @@ async function iniciarSupabase() {
     state.supabaseConfig = config;
 
     if (window.supabase && config.supabase_url && config.supabase_anon_key) {
-      supabase = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
-      window.supabaseClient = supabase;
+      sbClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+      window.supabaseClient = sbClient;
 
-      supabase.auth.onAuthStateChange(async (event, session) => {
+      sbClient.auth.onAuthStateChange(async (event, session) => {
         state.session = session;
         state.usuario = session?.user || null;
         actualizarUiAuth();
@@ -1272,7 +1272,7 @@ async function iniciarSupabase() {
         }
       });
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await sbClient.auth.getSession();
       state.session = session;
       state.usuario = session?.user || null;
       actualizarUiAuth();
@@ -1375,8 +1375,8 @@ async function manejarSubmitMagicLink(e) {
   msg.textContent = '⏳ Enviando enlace mágico a tu correo...';
 
   try {
-    if (supabase) {
-      const { error } = await supabase.auth.signInWithOtp({
+    if (sbClient) {
+      const { error } = await sbClient.auth.signInWithOtp({
         email: email,
         options: {
           emailRedirectTo: window.location.origin
@@ -1434,30 +1434,30 @@ async function migrarDatosNavegadorASupabase(user) {
     let firmaPath = null;
     let plantillaPath = null;
 
-    if (supabase) {
+    if (sbClient) {
       // 1. Storage privado para logo, firma y plantilla
       if (logoData) {
         const logoBlob = dataUrlABlob(logoData);
         if (logoBlob) {
           logoPath = `logo/${user.id}/logo.png`;
-          await supabase.storage.from('archivos-privados').upload(logoPath, logoBlob, { upsert: true }).catch(e => console.warn(e));
+          await sbClient.storage.from('archivos-privados').upload(logoPath, logoBlob, { upsert: true }).catch(e => console.warn(e));
         }
       }
       if (firmaData) {
         const firmaBlob = dataUrlABlob(firmaData);
         if (firmaBlob) {
           firmaPath = `firma/${user.id}/firma.png`;
-          await supabase.storage.from('archivos-privados').upload(firmaPath, firmaBlob, { upsert: true }).catch(e => console.warn(e));
+          await sbClient.storage.from('archivos-privados').upload(firmaPath, firmaBlob, { upsert: true }).catch(e => console.warn(e));
         }
       }
       if (plantillaData) {
         plantillaPath = `plantilla/${user.id}/plantilla.docx`;
-        await supabase.storage.from('archivos-privados').upload(plantillaPath, plantillaData, { upsert: true }).catch(e => console.warn(e));
+        await sbClient.storage.from('archivos-privados').upload(plantillaPath, plantillaData, { upsert: true }).catch(e => console.warn(e));
       }
 
       // 2. Perfil del abogado
       const nombreUsuario = membrete?.nombre || user.email.split('@')[0];
-      await supabase.from('perfiles').upsert({
+      await sbClient.from('perfiles').upsert({
         id: user.id,
         email: user.email,
         nombre_completo: nombreUsuario,
@@ -1476,7 +1476,7 @@ async function migrarDatosNavegadorASupabase(user) {
         const radicado = item.datos?.radicado || '';
         const despacho = item.datos?.destinatario || '';
 
-        const { data: clienteCreado } = await supabase.from('clientes').insert({
+        const { data: clienteCreado } = await sbClient.from('clientes').insert({
           user_id: user.id,
           nombre_razon_social: nomCliente || 'Cliente sin nombre',
           numero_documento: 'Por registrar',
@@ -1484,7 +1484,7 @@ async function migrarDatosNavegadorASupabase(user) {
           domicilio: item.datos?.ciudad || 'Bogotá D.C.'
         }).select().single().catch(() => ({ data: null }));
 
-        const { data: casoCreado } = await supabase.from('casos').insert({
+        const { data: casoCreado } = await sbClient.from('casos').insert({
           user_id: user.id,
           cliente_id: clienteCreado ? clienteCreado.id : null,
           nombre_caso: item.titulo || `Caso ${nomCliente} vs ${contraparte || 'Contraparte'}`,
@@ -1495,7 +1495,7 @@ async function migrarDatosNavegadorASupabase(user) {
           estado: 'activo'
         }).select().single().catch(() => ({ data: null }));
 
-        const { data: docCreado } = await supabase.from('documentos').insert({
+        const { data: docCreado } = await sbClient.from('documentos').insert({
           caso_id: casoCreado ? casoCreado.id : null,
           tipo: item.tipo || 'memorial',
           titulo: item.titulo || 'Memorial judicial',
@@ -1506,7 +1506,7 @@ async function migrarDatosNavegadorASupabase(user) {
         }).select().single().catch(() => ({ data: null }));
 
         if (docCreado) {
-          await supabase.from('versiones').insert({
+          await sbClient.from('versiones').insert({
             documento_id: docCreado.id,
             version: 1,
             texto: item.texto || '',
@@ -1529,13 +1529,13 @@ async function migrarDatosNavegadorASupabase(user) {
 }
 
 async function sincronizarDocumentoConSupabase(docId, data) {
-  if (!supabase || !state.usuario) return;
+  if (!sbClient || !state.usuario) return;
   try {
     const user = state.usuario;
     const nomCliente = (data.datos?.cliente || 'Cliente').split(/[,\n]/)[0].trim();
     const contraparte = (data.datos?.contraparte || '').split(/[,\n]/)[0].trim();
 
-    const { data: casoCreado } = await supabase.from('casos').insert({
+    const { data: casoCreado } = await sbClient.from('casos').insert({
       user_id: user.id,
       nombre_caso: data.titulo || `Expediente ${nomCliente}`,
       contraparte: contraparte,
@@ -1545,7 +1545,7 @@ async function sincronizarDocumentoConSupabase(docId, data) {
       estado: 'activo'
     }).select().single();
 
-    const { data: docCreado } = await supabase.from('documentos').insert({
+    const { data: docCreado } = await sbClient.from('documentos').insert({
       caso_id: casoCreado ? casoCreado.id : null,
       tipo: data.tipo,
       titulo: data.titulo || 'Memorial',
@@ -1556,7 +1556,7 @@ async function sincronizarDocumentoConSupabase(docId, data) {
     }).select().single();
 
     if (docCreado) {
-      await supabase.from('versiones').insert({
+      await sbClient.from('versiones').insert({
         documento_id: docCreado.id,
         version: 1,
         texto: data.texto || '',
@@ -1624,8 +1624,8 @@ async function eliminarMiCuenta() {
       throw new Error(err.detail || 'Error en el servidor al eliminar cuenta.');
     }
 
-    if (supabase) {
-      await supabase.auth.signOut().catch(() => {});
+    if (sbClient) {
+      await sbClient.auth.signOut().catch(() => {});
     }
 
     const keysBorrar = Object.keys(localStorage).filter(k => k.startsWith('supabase_migrado_') || k === 'codigoAcceso');
@@ -6193,7 +6193,7 @@ function iniciar() {
 
   const btnCerrarSesion = $('#btnCerrarSesionCuenta');
   if (btnCerrarSesion) btnCerrarSesion.addEventListener('click', async () => {
-    if (supabase) await supabase.auth.signOut().catch(() => {});
+    if (sbClient) await sbClient.auth.signOut().catch(() => {});
     state.session = null;
     state.usuario = null;
     actualizarUiAuth();
