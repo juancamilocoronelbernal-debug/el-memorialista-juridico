@@ -428,6 +428,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
       <button role="tab" id="tab-membrete" data-vista="membrete" aria-selected="false" aria-controls="vista-membrete">Membrete y estilo</button>
       <button role="tab" id="tab-historial" data-vista="historial" aria-selected="false" aria-controls="vista-historial">Historial</button>
       <button role="tab" id="tab-plazos" data-vista="plazos" aria-selected="false" aria-controls="vista-plazos">⏱️ Términos y plazos</button>
+      <button role="tab" id="tab-calculos" data-vista="calculos" aria-selected="false" aria-controls="vista-calculos">🧮 Cálculos jurídicos</button>
     </nav>
     <div class="barra-derecha" style="display: flex; align-items: center; gap: 8px;">
       <button class="perfil-chip pendiente" id="perfilChip" type="button"><span class="ini" aria-hidden="true">?</span><span class="txt">Configura tu membrete</span></button>
@@ -720,6 +721,182 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 
       <!-- PANEL DE RESULTADOS DE LA CALCULADORA -->
       <div id="plazos_resultado_panel" style="display: grid; gap: 16px;"></div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN DE CÁLCULOS JURÍDICOS Y FINANCIEROS -->
+  <section id="vista-calculos" class="vista calculos" role="tabpanel" aria-labelledby="tab-calculos" hidden>
+    <div class="calculos-in gutter" style="max-width: 1040px; margin: 0 auto; padding-block: 24px 80px; display: grid; gap: 20px;">
+      <header class="calculos-cab" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h1 style="font-size: 22px; font-weight: 700; margin: 0 0 6px;">🧮 Cálculos Jurídicos, Laborales y Financieros</h1>
+          <p style="margin: 0; color: var(--tinta-2); font-size: 14px;">
+            Liquidación laboral integral, intereses de mora mercantil (Superfinanciera) y actualización monetaria con IPC del DANE.
+          </p>
+        </div>
+        <div class="calculos-subnav" style="display: flex; gap: 6px; background: var(--fondo); padding: 4px; border-radius: var(--r); border: 1px solid var(--regla);">
+          <button type="button" id="subtab-laboral" class="btn chico" style="font-weight: 600;" onclick="cambiarSubtabCalculos('laboral')">💼 Liquidación Laboral</button>
+          <button type="button" id="subtab-mora" class="btn chico secundario" style="font-weight: 600;" onclick="cambiarSubtabCalculos('mora')">📈 Intereses Comerciales</button>
+          <button type="button" id="subtab-ipc" class="btn chico secundario" style="font-weight: 600;" onclick="cambiarSubtabCalculos('ipc')">📊 Indexación IPC</button>
+        </div>
+      </header>
+
+      <!-- SUB-SECCIÓN 1: LIQUIDACIÓN LABORAL -->
+      <div id="calc-seccion-laboral" class="calc-seccion" style="display: grid; gap: 18px;">
+        <div class="card" style="background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 22px; display: grid; gap: 16px;">
+          <h2 style="font-size: 17px; margin: 0 0 4px; font-weight: 600;">Liquidación de Prestaciones e Indemnizaciones Laborales</h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+            <div class="campo">
+              <label for="lab_trabajador">Nombre del trabajador</label>
+              <input type="text" id="lab_trabajador" placeholder="Ej. Pedro Gómez">
+            </div>
+            <div class="campo">
+              <label for="lab_empleador">Nombre del empleador</label>
+              <input type="text" id="lab_empleador" placeholder="Ej. Soluciones Andinas S.A.S.">
+            </div>
+            <div class="campo">
+              <label for="lab_fecha_inicio">Fecha de inicio de labores</label>
+              <input type="date" id="lab_fecha_inicio">
+            </div>
+            <div class="campo">
+              <label for="lab_fecha_fin">Fecha de terminación</label>
+              <input type="date" id="lab_fecha_fin">
+            </div>
+            <div class="campo">
+              <label for="lab_salario_base">Salario básico mensual (COP)</label>
+              <input type="number" id="lab_salario_base" placeholder="Ej. 2000000" min="0" step="1000">
+            </div>
+            <div class="campo">
+              <label for="lab_tipo_contrato">Tipo de contrato</label>
+              <select id="lab_tipo_contrato" onchange="toggleCamposLaboral()">
+                <option value="indefinido">Término Indefinido</option>
+                <option value="termino_fijo">Término Fijo</option>
+                <option value="obra_labor">Obra o Labor Determinada</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="lab_motivo">Motivo de terminación</label>
+              <select id="lab_motivo">
+                <option value="despido_sin_justa_causa">Despido sin justa causa (con indemnización art. 64 CST)</option>
+                <option value="despido_con_justa_causa">Despido con justa causa comprobada</option>
+                <option value="renuncia_voluntaria">Renuncia voluntaria del trabajador</option>
+                <option value="mutuo_acuerdo">Mutuo acuerdo / Transacción</option>
+                <option value="vencimiento_termino">Vencimiento del término pactado</option>
+                <option value="terminacion_obra">Terminación de la obra contratada</option>
+              </select>
+            </div>
+            <div class="campo" id="lab_campo_fecha_pactada" hidden>
+              <label for="lab_fecha_pactada">Fecha pactada de vencimiento (Término Fijo)</label>
+              <input type="date" id="lab_fecha_pactada">
+            </div>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 16px; padding-top: 10px; border-top: 1px solid var(--regla);">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer;">
+              <input type="checkbox" id="lab_incluir_auxilio" checked>
+              <span>Auxilio de transporte legal (si devenga ≤ 2 SMMLV)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer;">
+              <input type="checkbox" id="lab_check_moratoria" onchange="toggleCamposLaboral()">
+              <span>Indemnización moratoria art. 65 CST (salarios caídos)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer;">
+              <input type="checkbox" id="lab_check_consignacion" onchange="toggleCamposLaboral()">
+              <span>Sanción no consignación de cesantías (art. 99 Ley 50/1990)</span>
+            </label>
+          </div>
+
+          <div id="lab_panel_opciones_extra" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;" hidden>
+            <div class="campo" id="lab_campo_corte_moratoria" hidden>
+              <label for="lab_fecha_corte_moratoria">Fecha de corte para mora (art. 65)</label>
+              <input type="date" id="lab_fecha_corte_moratoria">
+            </div>
+            <div class="campo" id="lab_campo_dias_consignacion" hidden>
+              <label for="lab_dias_consignacion">Días de mora en consignar cesantías</label>
+              <input type="number" id="lab_dias_consignacion" min="0" placeholder="Ej. 30">
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+            <button type="button" class="btn" onclick="ejecutarCalculoLaboral()">⚡ Calcular Liquidación Laboral</button>
+          </div>
+        </div>
+
+        <div id="lab_resultado_panel" style="display: grid; gap: 16px;"></div>
+      </div>
+
+      <!-- SUB-SECCIÓN 2: INTERESES MORATORIOS MERCANTILES -->
+      <div id="calc-seccion-mora" class="calc-seccion" style="display: none; gap: 18px;">
+        <div class="card" style="background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 22px; display: grid; gap: 16px;">
+          <h2 style="font-size: 17px; margin: 0 0 4px; font-weight: 600;">Intereses Moratorios Mercantiles (Art. 884 Código de Comercio)</h2>
+          <p style="margin: 0; font-size: 13.5px; color: var(--tinta-2);">
+            Liquidación mes a mes aplicando 1.5 veces el Interés Bancario Corriente (IBC) certificado oficialmente por la Superintendencia Financiera de Colombia (límite de usura).
+          </p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+            <div class="campo">
+              <label for="mora_capital">Capital en mora (COP)</label>
+              <input type="number" id="mora_capital" placeholder="Ej. 50000000" min="1" step="1000">
+            </div>
+            <div class="campo">
+              <label for="mora_fecha_inicio">Fecha de exigibilidad / inicio de mora</label>
+              <input type="date" id="mora_fecha_inicio">
+            </div>
+            <div class="campo">
+              <label for="mora_fecha_fin">Fecha de corte de liquidación</label>
+              <input type="date" id="mora_fecha_fin">
+            </div>
+            <div class="campo">
+              <label for="mora_concepto">Concepto / Obligación / Factura / Pagaré</label>
+              <input type="text" id="mora_concepto" placeholder="Ej. Factura de Venta FE-1044">
+            </div>
+            <div class="campo">
+              <label for="mora_metodo">Método de liquidación</label>
+              <select id="mora_metodo">
+                <option value="financiero_exacto">Efectivo Anual Financiero Exacto (Días/365)</option>
+                <option value="nominal_comercial">Nominal Comercial (Mes 30 días)</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+            <button type="button" class="btn" onclick="ejecutarCalculoMora()">📈 Calcular Intereses Comerciales</button>
+          </div>
+        </div>
+
+        <div id="mora_resultado_panel" style="display: grid; gap: 16px;"></div>
+      </div>
+
+      <!-- SUB-SECCIÓN 3: INDEXACIÓN CON IPC DANE -->
+      <div id="calc-seccion-ipc" class="calc-seccion" style="display: none; gap: 18px;">
+        <div class="card" style="background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 22px; display: grid; gap: 16px;">
+          <h2 style="font-size: 17px; margin: 0 0 4px; font-weight: 600;">Actualización Monetaria con IPC del DANE</h2>
+          <p style="margin: 0; font-size: 13.5px; color: var(--tinta-2);">
+            Fórmula jurisprudencial unificada de la Corte Suprema de Justicia (Salas Civil y Laboral) y el Consejo de Estado: <code>VA = VH × (IPC_final / IPC_inicial)</code>.
+          </p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+            <div class="campo">
+              <label for="ipc_valor">Valor histórico original (COP)</label>
+              <input type="number" id="ipc_valor" placeholder="Ej. 10000000" min="1" step="1000">
+            </div>
+            <div class="campo">
+              <label for="ipc_fecha_ini">Fecha inicial (causación / exigibilidad)</label>
+              <input type="date" id="ipc_fecha_ini">
+            </div>
+            <div class="campo">
+              <label for="ipc_fecha_fin">Fecha final (corte de liquidación)</label>
+              <input type="date" id="ipc_fecha_fin">
+            </div>
+            <div class="campo">
+              <label for="ipc_concepto">Concepto / Perjuicio / Condena</label>
+              <input type="text" id="ipc_concepto" placeholder="Ej. Indemnización perjuicios materiales">
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+            <button type="button" class="btn" onclick="ejecutarCalculoIPC()">📊 Calcular Indexación con IPC</button>
+          </div>
+        </div>
+
+        <div id="ipc_resultado_panel" style="display: grid; gap: 16px;"></div>
+      </div>
     </div>
   </section>
 </main>
@@ -4642,10 +4819,10 @@ function iniciarEdicion() {
    Navegación
    ========================================================= */
 function irVista(v) {
-  if (!['redactar', 'membrete', 'historial', 'plazos'].includes(v)) v = 'redactar';
+  if (!['redactar', 'membrete', 'historial', 'plazos', 'calculos'].includes(v)) v = 'redactar';
   state.vista = v;
   for (const b of $$('.pestanas button')) b.setAttribute('aria-selected', String(b.dataset.vista === v));
-  for (const s of ['redactar', 'membrete', 'historial', 'plazos']) {
+  for (const s of ['redactar', 'membrete', 'historial', 'plazos', 'calculos']) {
     const el = $('#vista-' + s);
     if (el) el.hidden = s !== v;
   }
@@ -4653,6 +4830,7 @@ function irVista(v) {
   if (v === 'historial') renderHistorial();
   if (v === 'membrete') renderPrevia();
   if (v === 'plazos') renderVistaPlazos();
+  if (v === 'calculos') renderVistaCalculos();
   if (v === 'redactar') { sincronizarTexto(); renderHoja(); }
   window.scrollTo(0, 0);
 }
@@ -5347,6 +5525,480 @@ function pintarResultadoPlazosCompleto(data, panel) {
   panel.append(tarjetaPrincipal, tarjetaReglas, tarjetaDesglose);
 }
 
+/* =========================================================
+   Cálculos Jurídicos, Laborales y Financieros
+   ========================================================= */
+let subtabCalculosActual = 'laboral';
+let vistaCalculosInicializada = false;
+
+function cambiarSubtabCalculos(subtab) {
+  subtabCalculosActual = subtab;
+  const tabs = ['laboral', 'mora', 'ipc'];
+  for (const t of tabs) {
+    const btn = $('#subtab-' + t);
+    const sec = $('#calc-seccion-' + t);
+    if (btn) {
+      btn.className = t === subtab ? 'btn chico' : 'btn chico secundario';
+    }
+    if (sec) {
+      sec.style.display = t === subtab ? 'grid' : 'none';
+    }
+  }
+}
+
+function toggleCamposLaboral() {
+  const tipoContrato = $('#lab_tipo_contrato')?.value;
+  const pactada = $('#lab_campo_fecha_pactada');
+  if (pactada) pactada.hidden = tipoContrato !== 'termino_fijo';
+
+  const checkMora = $('#lab_check_moratoria')?.checked;
+  const checkConsignacion = $('#lab_check_consignacion')?.checked;
+  const panelExtra = $('#lab_panel_opciones_extra');
+  const campoCorte = $('#lab_campo_corte_moratoria');
+  const campoConsignacion = $('#lab_campo_dias_consignacion');
+
+  if (panelExtra) panelExtra.hidden = !checkMora && !checkConsignacion;
+  if (campoCorte) campoCorte.hidden = !checkMora;
+  if (campoConsignacion) campoConsignacion.hidden = !checkConsignacion;
+}
+
+function renderVistaCalculos() {
+  if (vistaCalculosInicializada) return;
+  vistaCalculosInicializada = true;
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const haceUnAnio = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
+  const haceTresMeses = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+
+  if ($('#lab_fecha_inicio') && !$('#lab_fecha_inicio').value) $('#lab_fecha_inicio').value = haceUnAnio;
+  if ($('#lab_fecha_fin') && !$('#lab_fecha_fin').value) $('#lab_fecha_fin').value = hoy;
+  if ($('#lab_salario_base') && !$('#lab_salario_base').value) $('#lab_salario_base').value = '2000000';
+  if ($('#lab_fecha_corte_moratoria') && !$('#lab_fecha_corte_moratoria').value) $('#lab_fecha_corte_moratoria').value = hoy;
+
+  if ($('#mora_capital') && !$('#mora_capital').value) $('#mora_capital').value = '50000000';
+  if ($('#mora_fecha_inicio') && !$('#mora_fecha_inicio').value) $('#mora_fecha_inicio').value = haceTresMeses;
+  if ($('#mora_fecha_fin') && !$('#mora_fecha_fin').value) $('#mora_fecha_fin').value = hoy;
+
+  if ($('#ipc_valor') && !$('#ipc_valor').value) $('#ipc_valor').value = '10000000';
+  if ($('#ipc_fecha_ini') && !$('#ipc_fecha_ini').value) $('#ipc_fecha_ini').value = '2022-01-01';
+  if ($('#ipc_fecha_fin') && !$('#ipc_fecha_fin').value) $('#ipc_fecha_fin').value = hoy;
+}
+
+async function ejecutarCalculoLaboral() {
+  const panel = $('#lab_resultado_panel');
+  if (!panel) return;
+
+  const fIni = $('#lab_fecha_inicio')?.value;
+  const fFin = $('#lab_fecha_fin')?.value;
+  const salario = parseFloat($('#lab_salario_base')?.value) || 0;
+  if (!fIni || !fFin) {
+    toast('Ingresa la fecha de inicio y terminación laboral.');
+    return;
+  }
+  if (salario <= 0) {
+    toast('Ingresa el salario básico mensual.');
+    return;
+  }
+
+  panel.replaceChildren(
+    h('div', { style: 'padding: 24px; text-align: center; color: var(--tinta-2);' },
+      h('span', { class: 'girando', style: 'display: inline-block; margin-right: 8px;' }, '⏳'),
+      'Calculando prestaciones e indemnizaciones laborales...'
+    )
+  );
+
+  try {
+    const payload = {
+      fecha_inicio: fIni,
+      fecha_fin: fFin,
+      salario_base: salario,
+      incluir_auxilio_transporte: Boolean($('#lab_incluir_auxilio')?.checked),
+      tipo_contrato: $('#lab_tipo_contrato')?.value || 'indefinido',
+      motivo_terminacion: $('#lab_motivo')?.value || 'despido_sin_justa_causa',
+      nombre_trabajador: $('#lab_trabajador')?.value || '',
+      nombre_empleador: $('#lab_empleador')?.value || '',
+      liquidar_moratoria_art65: Boolean($('#lab_check_moratoria')?.checked),
+      fecha_corte_moratoria: $('#lab_fecha_corte_moratoria')?.value || null,
+      liquidar_sancion_consignacion_art99: Boolean($('#lab_check_consignacion')?.checked),
+      dias_mora_consignacion: parseInt($('#lab_dias_consignacion')?.value, 10) || null,
+      fecha_fin_pactada: $('#lab_fecha_pactada')?.value || null
+    };
+
+    const res = await apiFetch('/api/calculos/laboral', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error en cálculo laboral');
+    }
+
+    const data = await res.json();
+    pintarResultadoLaboral(data, panel);
+  } catch (err) {
+    panel.replaceChildren(
+      h('div', { style: 'padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--r); color: #dc2626;' },
+        h('strong', {}, 'Error de cálculo: '),
+        err.message
+      )
+    );
+  }
+}
+
+function pintarResultadoLaboral(data, panel) {
+  panel.replaceChildren();
+
+  // Tarjeta de resumen
+  const tarjetaCab = h('div', { class: 'card', style: 'background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 20px; display: grid; gap: 14px;' },
+    h('div', { style: 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;' },
+      h('div', {},
+        h('h3', { style: 'margin: 0; font-size: 18px; font-weight: 700;' }, 'Resultado de la Liquidación Laboral'),
+        h('p', { style: 'margin: 4px 0 0; font-size: 13.5px; color: var(--tinta-2);' },
+          `Trabajador: ${data.trabajador} | Periodo: ${data.fecha_inicio} a ${data.fecha_fin} (${data.dias_totales_servicio} días)`
+        )
+      ),
+      h('div', { style: 'text-align: right;' },
+        h('div', { style: 'font-size: 12px; color: var(--tinta-2); text-transform: uppercase; font-weight: 600;' }, 'Gran Total Liquidación'),
+        h('div', { style: 'font-size: 24px; font-weight: 800; color: #166534;' }, formatoMonedaCOP(data.gran_total_liquidacion))
+      )
+    ),
+    h('div', { style: 'display: flex; gap: 16px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--regla); font-size: 13px;' },
+      h('span', {}, h('strong', {}, 'Salario Base: '), formatoMonedaCOP(data.salario_base_ordinario)),
+      h('span', {}, h('strong', {}, 'Auxilio Transporte: '), formatoMonedaCOP(data.auxilio_transporte)),
+      h('span', {}, h('strong', {}, 'Subtotal Prestaciones: '), formatoMonedaCOP(data.total_prestaciones_sociales)),
+      data.total_indemnizaciones_y_sanciones > 0 ? h('span', {}, h('strong', {}, 'Subtotal Indemnizaciones: '), formatoMonedaCOP(data.total_indemnizaciones_y_sanciones)) : ''
+    )
+  );
+
+  // Alerta de Ley 2466 de 2025
+  const bloquesAlertas = [];
+  if (data.advertencias_legales && data.advertencias_legales.length > 0) {
+    for (const adv of data.advertencias_legales) {
+      bloquesAlertas.push(
+        h('div', { style: 'background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--r); padding: 14px 18px; font-size: 13.5px; color: #92400e; line-height: 1.5; white-space: pre-wrap;' },
+          adv
+        )
+      );
+    }
+  }
+
+  // Tabla detallada de rubros
+  const filas = data.conceptos.map(c =>
+    h('tr', { style: 'border-bottom: 1px solid var(--regla);' },
+      h('td', { style: 'padding: 10px;' },
+        h('strong', {}, c.concepto),
+        h('div', { style: 'font-size: 11.5px; color: var(--tinta-2); margin-top: 2px;' }, c.detalle)
+      ),
+      h('td', { style: 'padding: 10px; text-align: center;' }, String(c.dias)),
+      h('td', { style: 'padding: 10px; text-align: right;' }, formatoMonedaCOP(c.base_calculo)),
+      h('td', { style: 'padding: 10px; font-family: var(--mono); font-size: 12px;' }, c.formula),
+      h('td', { style: 'padding: 10px; text-align: right; font-weight: 700; color: #166534;' }, formatoMonedaCOP(c.subtotal)),
+      h('td', { style: 'padding: 10px; font-size: 12px; color: var(--tinta-2);' }, c.norma)
+    )
+  );
+
+  const tablaCard = h('div', { class: 'card', style: 'background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 16px; overflow-x: auto;' },
+    h('table', { style: 'width: 100%; border-collapse: collapse; font-size: 13px;' },
+      h('thead', {},
+        h('tr', { style: 'border-bottom: 2px solid var(--regla); background: var(--fondo); text-align: left;' },
+          h('th', { style: 'padding: 10px;' }, 'Rubro / Concepto'),
+          h('th', { style: 'padding: 10px; text-align: center;' }, 'Días'),
+          h('th', { style: 'padding: 10px; text-align: right;' }, 'Base Cálculo'),
+          h('th', { style: 'padding: 10px;' }, 'Fórmula'),
+          h('th', { style: 'padding: 10px; text-align: right;' }, 'Subtotal'),
+          h('th', { style: 'padding: 10px;' }, 'Fuente Legal')
+        )
+      ),
+      h('tbody', {}, ...filas)
+    )
+  );
+
+  const barraAcciones = crearBarraAccionesTabla(data.tabla_markdown, data.tabla_texto);
+  panel.append(tarjetaCab, ...bloquesAlertas, tablaCard, barraAcciones);
+}
+
+async function ejecutarCalculoMora() {
+  const panel = $('#mora_resultado_panel');
+  if (!panel) return;
+
+  const capital = parseFloat($('#mora_capital')?.value) || 0;
+  const fIni = $('#mora_fecha_inicio')?.value;
+  const fFin = $('#mora_fecha_fin')?.value;
+  if (capital <= 0) {
+    toast('Ingresa un monto de capital válido.');
+    return;
+  }
+  if (!fIni || !fFin) {
+    toast('Ingresa la fecha de inicio y de corte de la mora.');
+    return;
+  }
+
+  panel.replaceChildren(
+    h('div', { style: 'padding: 24px; text-align: center; color: var(--tinta-2);' },
+      h('span', { class: 'girando', style: 'display: inline-block; margin-right: 8px;' }, '⏳'),
+      'Liquidando intereses moratorios mes a mes con tasas SFC...'
+    )
+  );
+
+  try {
+    const payload = {
+      capital: capital,
+      fecha_inicio: fIni,
+      fecha_fin: fFin,
+      concepto_obligacion: $('#mora_concepto')?.value || '',
+      metodo: $('#mora_metodo')?.value || 'financiero_exacto'
+    };
+
+    const res = await apiFetch('/api/calculos/intereses-moratorios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error en cálculo de intereses');
+    }
+
+    const data = await res.json();
+    pintarResultadoMora(data, panel);
+  } catch (err) {
+    panel.replaceChildren(
+      h('div', { style: 'padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--r); color: #dc2626;' },
+        h('strong', {}, 'Error de cálculo: '),
+        err.message
+      )
+    );
+  }
+}
+
+function pintarResultadoMora(data, panel) {
+  panel.replaceChildren();
+
+  const tarjetaCab = h('div', { class: 'card', style: 'background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 20px; display: grid; gap: 14px;' },
+    h('div', { style: 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;' },
+      h('div', {},
+        h('h3', { style: 'margin: 0; font-size: 18px; font-weight: 700;' }, 'Liquidación de Intereses Moratorios Mercantiles'),
+        h('p', { style: 'margin: 4px 0 0; font-size: 13.5px; color: var(--tinta-2);' },
+          `${data.concepto_obligacion} | Lapso: ${data.fecha_inicio} al ${data.fecha_fin} (${data.dias_totales_mora} días de mora)`
+        )
+      ),
+      h('div', { style: 'text-align: right;' },
+        h('div', { style: 'font-size: 12px; color: var(--tinta-2); text-transform: uppercase; font-weight: 600;' }, 'Gran Total Adeudado'),
+        h('div', { style: 'font-size: 24px; font-weight: 800; color: #1e40af;' }, formatoMonedaCOP(data.total_adeudado))
+      )
+    ),
+    h('div', { style: 'display: flex; gap: 16px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--regla); font-size: 13px;' },
+      h('span', {}, h('strong', {}, 'Capital Base: '), formatoMonedaCOP(data.capital)),
+      h('span', {}, h('strong', {}, 'Intereses Totales: '), formatoMonedaCOP(data.interes_total)),
+      h('span', { style: 'color: var(--tinta-2);' }, data.criterio_legal)
+    )
+  );
+
+  const filas = data.periodos.map(p =>
+    h('tr', { style: 'border-bottom: 1px solid var(--regla);' },
+      h('td', { style: 'padding: 8px 10px; font-weight: 600;' }, p.periodo),
+      h('td', { style: 'padding: 8px 10px; font-size: 12px; color: var(--tinta-2);' }, `${p.fecha_desde} a ${p.fecha_hasta}`),
+      h('td', { style: 'padding: 8px 10px; text-align: center;' }, String(p.dias_mora)),
+      h('td', { style: 'padding: 8px 10px; text-align: right;' }, `${p.ibc_ea.toFixed(2)}%`),
+      h('td', { style: 'padding: 8px 10px; text-align: right; font-weight: 600;' }, `${p.mora_ea.toFixed(2)}%`),
+      h('td', { style: 'padding: 8px 10px; text-align: right; font-family: var(--mono); font-size: 12px;' }, `${p.tasa_periodo_pct.toFixed(4)}%`),
+      h('td', { style: 'padding: 8px 10px; text-align: right; font-weight: 600;' }, formatoMonedaCOP(p.interes_periodo)),
+      h('td', { style: 'padding: 8px 10px; text-align: right; color: var(--tinta-2);' }, formatoMonedaCOP(p.interes_acumulado)),
+      h('td', { style: 'padding: 8px 10px; font-size: 11.5px; color: var(--tinta-2);' }, p.resolucion)
+    )
+  );
+
+  const tablaCard = h('div', { class: 'card', style: 'background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 16px; overflow-x: auto;' },
+    h('table', { style: 'width: 100%; border-collapse: collapse; font-size: 13px;' },
+      h('thead', {},
+        h('tr', { style: 'border-bottom: 2px solid var(--regla); background: var(--fondo); text-align: left;' },
+          h('th', { style: 'padding: 8px 10px;' }, 'Periodo'),
+          h('th', { style: 'padding: 8px 10px;' }, 'Rango Fechas'),
+          h('th', { style: 'padding: 8px 10px; text-align: center;' }, 'Días'),
+          h('th', { style: 'padding: 8px 10px; text-align: right;' }, 'IBC E.A.'),
+          h('th', { style: 'padding: 8px 10px; text-align: right;' }, 'Mora E.A.'),
+          h('th', { style: 'padding: 8px 10px; text-align: right;' }, 'Tasa Tramo'),
+          h('th', { style: 'padding: 8px 10px; text-align: right;' }, 'Interés Mes'),
+          h('th', { style: 'padding: 8px 10px; text-align: right;' }, 'Acumulado'),
+          h('th', { style: 'padding: 8px 10px;' }, 'Resolución SFC')
+        )
+      ),
+      h('tbody', {}, ...filas)
+    )
+  );
+
+  const barraAcciones = crearBarraAccionesTabla(data.tabla_markdown, data.tabla_texto);
+  panel.append(tarjetaCab, tablaCard, barraAcciones);
+}
+
+async function ejecutarCalculoIPC() {
+  const panel = $('#ipc_resultado_panel');
+  if (!panel) return;
+
+  const valor = parseFloat($('#ipc_valor')?.value) || 0;
+  const fIni = $('#ipc_fecha_ini')?.value;
+  const fFin = $('#ipc_fecha_fin')?.value;
+  if (valor <= 0) {
+    toast('Ingresa un monto histórico válido.');
+    return;
+  }
+  if (!fIni || !fFin) {
+    toast('Ingresa la fecha inicial y final para la indexación.');
+    return;
+  }
+
+  panel.replaceChildren(
+    h('div', { style: 'padding: 24px; text-align: center; color: var(--tinta-2);' },
+      h('span', { class: 'girando', style: 'display: inline-block; margin-right: 8px;' }, '⏳'),
+      'Actualizando valor con serie mensual IPC del DANE...'
+    )
+  );
+
+  try {
+    const payload = {
+      valor_historico: valor,
+      fecha_inicial: fIni,
+      fecha_final: fFin,
+      concepto: $('#ipc_concepto')?.value || ''
+    };
+
+    const res = await apiFetch('/api/calculos/indexacion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error en indexación con IPC');
+    }
+
+    const data = await res.json();
+    pintarResultadoIPC(data, panel);
+  } catch (err) {
+    panel.replaceChildren(
+      h('div', { style: 'padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--r); color: #dc2626;' },
+        h('strong', {}, 'Error de cálculo: '),
+        err.message
+      )
+    );
+  }
+}
+
+function pintarResultadoIPC(data, panel) {
+  panel.replaceChildren();
+
+  const tarjetaCab = h('div', { class: 'card', style: 'background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 20px; display: grid; gap: 14px;' },
+    h('div', { style: 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;' },
+      h('div', {},
+        h('h3', { style: 'margin: 0; font-size: 18px; font-weight: 700;' }, 'Actualización Monetaria (Indexación con IPC DANE)'),
+        h('p', { style: 'margin: 4px 0 0; font-size: 13.5px; color: var(--tinta-2);' },
+          `Periodo: ${data.periodo_inicial} a ${data.periodo_final} | ${data.norma}`
+        )
+      ),
+      h('div', { style: 'text-align: right;' },
+        h('div', { style: 'font-size: 12px; color: var(--tinta-2); text-transform: uppercase; font-weight: 600;' }, 'Valor Indexado (VA)'),
+        h('div', { style: 'font-size: 24px; font-weight: 800; color: #15803d;' }, formatoMonedaCOP(data.valor_indexado))
+      )
+    ),
+    h('div', { style: 'display: flex; gap: 16px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--regla); font-size: 13px;' },
+      h('span', {}, h('strong', {}, 'Valor Histórico: '), formatoMonedaCOP(data.valor_historico)),
+      h('span', {}, h('strong', {}, 'Corrección Monetaria: '), formatoMonedaCOP(data.correccion_monetaria)),
+      h('span', {}, h('strong', {}, 'Inflación Acumulada: '), `${data.variacion_porcentual}%`),
+      h('span', {}, h('strong', {}, 'Factor Multiplicador: '), data.factor_indexacion.toFixed(6))
+    )
+  );
+
+  const tablaCard = h('div', { class: 'card', style: 'background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 16px;' },
+    h('table', { style: 'width: 100%; border-collapse: collapse; font-size: 13.5px;' },
+      h('tbody', {},
+        h('tr', { style: 'border-bottom: 1px solid var(--regla);' },
+          h('td', { style: 'padding: 8px 10px; font-weight: 600;' }, 'Valor Histórico Original (VH)'),
+          h('td', { style: 'padding: 8px 10px; text-align: right;' }, formatoMonedaCOP(data.valor_historico)),
+          h('td', { style: 'padding: 8px 10px; color: var(--tinta-2); font-size: 12px;' }, 'Capital de origen')
+        ),
+        h('tr', { style: 'border-bottom: 1px solid var(--regla);' },
+          h('td', { style: 'padding: 8px 10px; font-weight: 600;' }, `IPC Inicial (${data.periodo_inicial})`),
+          h('td', { style: 'padding: 8px 10px; text-align: right;' }, data.ipc_inicial.toFixed(2)),
+          h('td', { style: 'padding: 8px 10px; color: var(--tinta-2); font-size: 12px;' }, 'DANE Total Nacional')
+        ),
+        h('tr', { style: 'border-bottom: 1px solid var(--regla);' },
+          h('td', { style: 'padding: 8px 10px; font-weight: 600;' }, `IPC Final (${data.periodo_final})`),
+          h('td', { style: 'padding: 8px 10px; text-align: right;' }, data.ipc_final.toFixed(2)),
+          h('td', { style: 'padding: 8px 10px; color: var(--tinta-2); font-size: 12px;' }, 'DANE Total Nacional')
+        ),
+        h('tr', { style: 'border-bottom: 1px solid var(--regla);' },
+          h('td', { style: 'padding: 8px 10px; font-weight: 600;' }, 'Factor de Actualización'),
+          h('td', { style: 'padding: 8px 10px; text-align: right; font-family: var(--mono);' }, data.factor_indexacion.toFixed(6)),
+          h('td', { style: 'padding: 8px 10px; color: var(--tinta-2); font-size: 12px;' }, 'IPC_final / IPC_inicial')
+        ),
+        h('tr', { style: 'border-bottom: 1px solid var(--regla);' },
+          h('td', { style: 'padding: 8px 10px; font-weight: 600;' }, 'Corrección Monetaria (Ajuste)'),
+          h('td', { style: 'padding: 8px 10px; text-align: right; font-weight: 600; color: #b45309;' }, formatoMonedaCOP(data.correccion_monetaria)),
+          h('td', { style: 'padding: 8px 10px; color: var(--tinta-2); font-size: 12px;' }, 'Pérdida de poder adquisitivo')
+        ),
+        h('tr', { style: 'background: var(--fondo);' },
+          h('td', { style: 'padding: 10px; font-weight: 800;' }, 'VALOR ACTUALIZADO TOTAL (VA)'),
+          h('td', { style: 'padding: 10px; text-align: right; font-weight: 800; font-size: 16px; color: #15803d;' }, formatoMonedaCOP(data.valor_indexado)),
+          h('td', { style: 'padding: 10px; font-weight: 600; color: #15803d;' }, 'Total indexado a corte')
+        )
+      )
+    )
+  );
+
+  const barraAcciones = crearBarraAccionesTabla(data.tabla_markdown, data.tabla_texto);
+  panel.append(tarjetaCab, tablaCard, barraAcciones);
+}
+
+function crearBarraAccionesTabla(tablaMd, tablaTxt) {
+  return h('div', { style: 'display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: center; padding-top: 6px;' },
+    h('button', {
+      type: 'button',
+      class: 'btn chico secundario',
+      onclick: () => {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(tablaMd);
+          toast('Tabla en formato Markdown copiada al portapapeles.');
+        }
+      }
+    }, '📋 Copiar Markdown'),
+    h('button', {
+      type: 'button',
+      class: 'btn chico secundario',
+      onclick: () => {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(tablaTxt);
+          toast('Tabla en texto plano copiada al portapapeles.');
+        }
+      }
+    }, '📋 Copiar Texto'),
+    h('button', {
+      type: 'button',
+      class: 'btn chico',
+      style: 'background: #047857; color: #fff; font-weight: 600;',
+      onclick: () => insertarAnexoEnEscrito(tablaMd)
+    }, '✍️ Insertar en el escrito')
+  );
+}
+
+function insertarAnexoEnEscrito(tablaMd) {
+  if (!state.texto) {
+    state.texto = '';
+  }
+  state.texto = state.texto.trim() + '\n\n' + tablaMd + '\n';
+  state.ejemplo = false;
+  irVista('redactar');
+  toast('Anexo liquidatorio insertado en el escrito judicial.');
+}
+
+function formatoMonedaCOP(num) {
+  if (num === null || num === undefined) return '$0';
+  return '$' + Math.round(num).toLocaleString('es-CO');
+}
+
 async function cargarDesdeAlmacen() {
   await migrarLocalStorageAIndexedDB();
   try {
@@ -5423,7 +6075,7 @@ function iniciar() {
   renderFormulario();
   if (state.tipo) $('#accionesForm').hidden = false;
   const inicial = location.hash.slice(1);
-  irVista(['membrete', 'historial', 'plazos'].includes(inicial) ? inicial : 'redactar');
+  irVista(['membrete', 'historial', 'plazos', 'calculos'].includes(inicial) ? inicial : 'redactar');
   ponerControles();
   if (!state.ejemplo) estadoHoja('listo', 'Borrador recuperado');
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { ajustarZoom(); if (state.vista === 'redactar') renderMembreteHoja(); });

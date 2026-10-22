@@ -37,6 +37,13 @@ Inspirado en la arquitectura del **Agente COD** (`dropshipping-cod-agent`), este
 7. **Checklist Normativo Procesal:**
    - Requisitos procesales y legales obligatorios para cada uno de los 25 tipos de documentos del catálogo.
 
+8. **Motor de Cálculos Jurídicos, Laborales y Financieros (`app/services/calculos.py`):**
+   - **Liquidación laboral integral:** Cesantías (art. 249 CST), intereses a las cesantías (Ley 52 de 1975), prima de servicios (art. 306 CST), vacaciones compensadas (art. 186/192 CST), indemnización por despido sin justa causa (art. 64 CST para indefinido, término fijo y obra/labor), salarios caídos / indemnización moratoria (art. 65 CST) y sanción por no consignación de cesantías (art. 99 Ley 50 de 1990), con soporte para salarios variables.
+   - **Advertencia Legal Ley 2466 de 2025 (Reforma Laboral):** Dictamen preventivo automático sobre las nuevas tablas indemnizatorias, jornada nocturna desde las 7:00 p.m. y recargos dominicales progresivos al 100%.
+   - **Intereses moratorios mercantiles (Art. 884 Código de Comercio):** Liquidación mes a mes aplicando 1.5 veces el Interés Bancario Corriente (IBC) certificado oficialmente por la Superintendencia Financiera de Colombia (`app/catalogo/tasas_sfc.json`), citando la resolución oficial correspondiente y respetando la tasa de usura.
+   - **Indexación monetaria con IPC del DANE:** Fórmula unificada de la Corte Suprema de Justicia (Salas Civil y Laboral) y el Consejo de Estado (`VA = VH × (IPC_final / IPC_inicial)`) con serie histórica oficial (`app/catalogo/ipc.json`).
+   - **Anexos probatorios automáticos:** Genera tablas en formato Markdown y texto monoespaciado con fuentes legales oficiales para inserción directa en memoriales y demandas.
+
 ---
 
 ## 🛡️ Evaluación y Control de Calidad Pre-Despliegue (`scripts/evaluar.py`)
