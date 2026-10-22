@@ -19,3 +19,4 @@ __pycache__/
 # Reportes de evaluación generados dinámicamente
 reporte_evaluacion*.html
 reporte_evaluacion*.json
+*.zip
