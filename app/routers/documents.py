@@ -5,12 +5,12 @@ import json
 from typing import Any, AsyncIterator, Literal, Optional
 
 import anyio
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response, File, Form, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
-from app.services.gemini_service import Evento, gemini_service
+from app.services.gemini_service import Evento, gemini_service, ErrorIA
 from app.services.limites import limitador, verificar_acceso
 from app.services.prompt import (
     cargar_areas,
@@ -29,6 +29,10 @@ from app.services.plazos import (
     calcular_plazo,
     cargar_calendario_judicial_config,
     obtener_precargas_terminos,
+)
+from app.services.extractor_documentos import (
+    validar_archivos_extraccion,
+    extraer_datos_con_gemini,
 )
 
 router = APIRouter(prefix="/api", tags=["Documentos"])
@@ -219,6 +223,50 @@ async def endpoint_descargar_ics(req: PlazosRequest):
             "Cache-Control": "no-cache",
         },
     )
+
+
+@router.post("/extraer")
+async def endpoint_extraer_documentos(
+    tipo: str = Form(..., description="Identificador del tipo de documento del catálogo"),
+    archivos: list[UploadFile] = File(..., description="Archivos adjuntos del caso (máx 20 MB total)"),
+    request: Request = None,
+):
+    """Extrae campos del caso desde documentos adjuntos (PDF, imágenes, audio) con Gemini 3.8 Flash.
+    
+    PRIVACIDAD: Los archivos se procesan 100% en memoria y se descartan tras el análisis.
+    """
+    if request:
+        verificar_acceso(request)
+
+    tipo_info = obtener_tipo(tipo)
+    if not tipo_info:
+        raise HTTPException(
+            status_code=400,
+            detail=f"El tipo de documento '{tipo}' no existe en el catálogo.",
+        )
+
+    archivos_procesados, total_bytes = await validar_archivos_extraccion(archivos)
+
+    try:
+        propuestas = await extraer_datos_con_gemini(
+            tipo_id=tipo,
+            tipo_info=tipo_info,
+            archivos=archivos_procesados,
+        )
+    except ErrorIA as e:
+        raise HTTPException(status_code=e.http or 500, detail=e.mensaje)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error durante la extracción de datos: {e}")
+
+    return {
+        "ok": True,
+        "tipo": tipo,
+        "total_archivos": len(archivos_procesados),
+        "total_bytes": total_bytes,
+        "propuestas": propuestas,
+    }
 
 
 @router.post("/redactar")

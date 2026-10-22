@@ -358,6 +358,16 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .copia-manual{display:grid;gap:8px}
 .copia-manual textarea{min-height:200px;font-size:13px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- extracción multimodal de documentos del caso ---------- */
+.zona-subida-docs{border:1.5px dashed var(--regla);background:var(--superficie);border-radius:var(--r);padding:18px;margin-bottom:24px;display:grid;gap:14px}
+.dropzone-docs{border:2px dashed #cbd5e1;border-radius:var(--r);padding:22px 16px;text-align:center;cursor:pointer;background:rgba(248,250,252,.6);transition:all .2s ease}
+.dropzone-docs:hover,.dropzone-docs.dragover{border-color:var(--azul,#2563eb);background:rgba(37,99,235,.05);transform:scale(1.005)}
+.tabla-propuestas{width:100%;border-collapse:collapse;font-size:12.5px;text-align:left}
+.tabla-propuestas th{padding:8px 10px;border-bottom:2px solid var(--regla);color:var(--tinta-2);font-weight:600}
+.tabla-propuestas td{padding:10px 10px;border-bottom:1px solid var(--regla);vertical-align:top}
+@keyframes pulsoVerdeCampo{0%{background-color:rgba(34,197,94,.22);border-color:#16a34a;box-shadow:0 0 0 2px rgba(34,197,94,.3)}100%{background-color:transparent;box-shadow:none}}
+.campo-recien-aplicado input,.campo-recien-aplicado textarea{animation:pulsoVerdeCampo 2.5s ease-out}
 </style>
 
 <header class="barra" id="barra">
@@ -874,6 +884,9 @@ const state = {
   catalogoAbierto: true,
   citasVerificadas: [],
   verificandoCitas: false,
+  archivosCaso: [],
+  propuestasExtraidas: [],
+  extrayendoDocs: false,
 };
 const IMG = { logo: null, firma: null };
 const CAP = { sample: true, db: null, user: null, downloads: true, permissions: null, uid: null, listo: true };
@@ -2489,6 +2502,8 @@ function elegirTipo(id, { conservar = true } = {}) {
   }
   state.tipo = id;
   state.datos = datos;
+  state.archivosCaso = [];
+  state.propuestasExtraidas = [];
   state.catalogoAbierto = false;
   renderZonaTipo();
   renderFormulario();
@@ -2561,11 +2576,462 @@ function limpiarFormulario() {
   renderFormulario();
   guardarBorrador();
 }
+
+/* =========================================================
+   Extracción Multimodal de Documentos del Caso (PDF, Imágenes, Audio)
+   ========================================================= */
+function formatearTamanoBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function renderZonaSubidaDocumentos(tipo) {
+  const card = h('section', {
+    class: 'grupo zona-subida-docs',
+    id: 'zonaSubidaDocs'
+  });
+
+  const cab = h('div', { style: 'display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;' },
+    h('div', {},
+      h('h3', { style: 'font-size: 15px; font-weight: 750; margin: 0 0 3px; display: flex; align-items: center; gap: 8px;' },
+        h('span', {}, '📁 Sube los documentos del caso'),
+        h('span', { style: 'font-size: 11px; background: rgba(37,99,235,0.08); color: var(--azul, #2563eb); padding: 2px 8px; border-radius: 999px; font-weight: 600;' }, 'Extracción con IA')
+      ),
+      h('p', { style: 'font-size: 12.5px; color: var(--tinta-2); margin: 0;' },
+        'Adjunta poderes, cédulas, demandas, contratos, grabaciones de audio o providencias (PDF, imágenes, audio · máx. 20 MB en total). La IA de Gemini 3.8 Flash extraerá los datos y te propondrá cada campo antes de que se escriba en el formulario.'
+      )
+    )
+  );
+
+  const inpArchivos = h('input', {
+    type: 'file',
+    id: 'inputArchivosCaso',
+    multiple: true,
+    accept: '.pdf,image/*,audio/*',
+    style: 'display: none;'
+  });
+
+  const dropzone = h('div', {
+    class: 'dropzone-docs',
+    id: 'dropzoneDocs',
+    onclick: () => inpArchivos.click()
+  },
+    h('div', { style: 'font-size: 26px; margin-bottom: 6px;' }, '📄 🎙️ 🖼️'),
+    h('div', { style: 'font-size: 13.5px; font-weight: 650; color: var(--tinta);' },
+      'Arrastra y suelta tus archivos aquí, o ',
+      h('span', { style: 'color: var(--azul, #2563eb); text-decoration: underline;' }, 'haz clic para seleccionarlos')
+    ),
+    h('div', { style: 'font-size: 11.5px; color: var(--tinta-2); margin-top: 4px;' },
+      'PDF, PNG, JPG, WEBP, MP3, WAV, M4A, OGG · Máximo 20 MB en total (privacidad: procesados 100% en memoria y descartados)'
+    )
+  );
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+  });
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer && e.dataTransfer.files) {
+      agregarArchivosCaso(Array.from(e.dataTransfer.files));
+    }
+  });
+
+  inpArchivos.addEventListener('change', () => {
+    if (inpArchivos.files) {
+      agregarArchivosCaso(Array.from(inpArchivos.files));
+      inpArchivos.value = '';
+    }
+  });
+
+  const contenedorArchivos = h('div', { id: 'listaArchivosCaso', style: 'display: grid; gap: 6px;' });
+
+  const barraAccion = h('div', {
+    id: 'barraAccionExtraccion',
+    style: 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding-top: 4px;',
+    hidden: true
+  });
+
+  const lblPeso = h('div', { id: 'lblPesoArchivos', style: 'font-size: 12px; color: var(--tinta-2); font-weight: 500;' });
+  const btnExtraer = h('button', {
+    type: 'button',
+    class: 'btn primario',
+    id: 'btnExtraerDocs',
+    style: 'display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; font-size: 13px;',
+    onclick: () => ejecutarExtraccionDocumentos(tipo)
+  },
+    h('span', {}, '🪄 Extraer datos con IA')
+  );
+  barraAccion.append(lblPeso, btnExtraer);
+
+  const divProgreso = h('div', {
+    id: 'progresoExtraccionDocs',
+    style: 'padding: 16px; background: rgba(37,99,235,0.04); border: 1px solid rgba(37,99,235,0.15); border-radius: 6px; text-align: center; display: grid; gap: 6px;',
+    hidden: true
+  },
+    h('div', { style: 'display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--azul, #2563eb); font-weight: 600; font-size: 13.5px;' },
+      h('span', { class: 'girando', style: 'display: inline-block;' }, '⏳'),
+      h('span', { id: 'txtProgresoExtraccion' }, 'Analizando documentos en memoria con Gemini 3.8 Flash...')
+    ),
+    h('div', { style: 'font-size: 11.5px; color: var(--tinta-2);' },
+      'Extrayendo datos de partes, fechas, hechos y pretensiones con citas textuales y números de página...'
+    )
+  );
+
+  const panelPropuestas = h('div', { id: 'panelPropuestasExtraccion', style: 'display: grid; gap: 12px;', hidden: true });
+
+  card.append(cab, inpArchivos, dropzone, contenedorArchivos, barraAccion, divProgreso, panelPropuestas);
+
+  setTimeout(() => renderListaArchivosCaso(), 0);
+
+  return card;
+}
+
+function agregarArchivosCaso(nuevos) {
+  if (!state.archivosCaso) state.archivosCaso = [];
+  const validos = [];
+  for (const f of nuevos) {
+    const ext = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
+    const esValido = f.type.startsWith('image/') || f.type.startsWith('audio/') || f.type === 'application/pdf' || ['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.mp3', '.wav', '.m4a', '.ogg', '.heic', '.aac', '.flac', '.webm'].includes(ext);
+    if (esValido) {
+      validos.push(f);
+    } else {
+      toast(`El archivo "${f.name}" no es compatible. Formatos permitidos: PDF, imágenes o audio.`, 'error');
+    }
+  }
+  state.archivosCaso.push(...validos);
+  renderListaArchivosCaso();
+}
+
+function renderListaArchivosCaso() {
+  const lista = $('#listaArchivosCaso');
+  const barra = $('#barraAccionExtraccion');
+  const lbl = $('#lblPesoArchivos');
+  const btn = $('#btnExtraerDocs');
+  if (!lista || !barra || !lbl || !btn) return;
+
+  const archivos = state.archivosCaso || [];
+  lista.replaceChildren();
+
+  if (!archivos.length) {
+    lista.hidden = true;
+    barra.hidden = true;
+    return;
+  }
+
+  lista.hidden = false;
+  barra.hidden = false;
+
+  let totalBytes = 0;
+  for (let i = 0; i < archivos.length; i++) {
+    const f = archivos[i];
+    totalBytes += f.size;
+
+    const fila = h('div', {
+      style: 'display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02); border: 1px solid var(--regla); border-radius: 6px; padding: 6px 12px; font-size: 12px;'
+    },
+      h('div', { style: 'display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;' },
+        h('span', { style: 'font-size: 14px;' }, f.type.startsWith('audio') ? '🎙️' : f.type.startsWith('image') ? '🖼️' : '📄'),
+        h('strong', { style: 'color: var(--tinta);' }, f.name),
+        h('span', { style: 'color: var(--tinta-2); font-size: 11px;' }, `(${formatearTamanoBytes(f.size)})`)
+      ),
+      h('button', {
+        type: 'button',
+        title: 'Quitar archivo',
+        style: 'border: none; background: none; color: #dc2626; cursor: pointer; padding: 2px 8px; font-size: 15px; font-weight: bold; line-height: 1;',
+        onclick: (e) => {
+          e.stopPropagation();
+          archivos.splice(i, 1);
+          renderListaArchivosCaso();
+        }
+      }, '✕')
+    );
+    lista.append(fila);
+  }
+
+  const pesoMB = (totalBytes / (1024 * 1024)).toFixed(2);
+  const excede = totalBytes > 20 * 1024 * 1024;
+
+  lbl.textContent = `Total: ${pesoMB} MB de 20 MB máx. (${archivos.length} archivo${archivos.length === 1 ? '' : 's'})`;
+  if (excede) {
+    lbl.style.color = '#dc2626';
+    lbl.textContent += ' ⚠️ ¡Supera el límite de 20 MB!';
+    btn.disabled = true;
+  } else {
+    lbl.style.color = 'var(--tinta-2)';
+    btn.disabled = false;
+  }
+}
+
+async function ejecutarExtraccionDocumentos(tipo) {
+  const archivos = state.archivosCaso || [];
+  if (!archivos.length) {
+    toast('Adjunta al menos un archivo (PDF, imagen o audio) para extraer datos.', 'error');
+    return;
+  }
+
+  const btn = $('#btnExtraerDocs');
+  const progreso = $('#progresoExtraccionDocs');
+  const panel = $('#panelPropuestasExtraccion');
+
+  btn.disabled = true;
+  if (progreso) progreso.hidden = false;
+  if (panel) { panel.hidden = true; panel.replaceChildren(); }
+
+  const formData = new FormData();
+  formData.append('tipo', state.tipo);
+  for (const f of archivos) {
+    formData.append('archivos', f);
+  }
+
+  try {
+    const res = await apiFetch('/api/extraer', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error en la extracción con IA.');
+    }
+
+    const data = await res.json();
+    state.propuestasExtraidas = data.propuestas || [];
+
+    if (!state.propuestasExtraidas.length) {
+      toast('No se encontraron datos concluyentes en los documentos adjuntos.', 'error', 6000);
+      return;
+    }
+
+    toast(`¡Se extrajeron ${state.propuestasExtraidas.length} datos del caso!`, 'ok');
+    renderizarTablaPropuestas(state.propuestasExtraidas);
+  } catch (err) {
+    console.error('Error en extracción:', err);
+    toast(err.message || 'Error al procesar los documentos con IA.', 'error', 7000);
+  } finally {
+    btn.disabled = false;
+    if (progreso) progreso.hidden = true;
+  }
+}
+
+function renderizarTablaPropuestas(propuestas) {
+  const panel = $('#panelPropuestasExtraccion');
+  if (!panel) return;
+  panel.replaceChildren();
+  panel.hidden = false;
+
+  const cabTabla = h('div', {
+    style: 'background: #f8fafc; border: 1px solid var(--regla); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 8px;'
+  },
+    h('div', { style: 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;' },
+      h('h4', { style: 'margin: 0; font-size: 14px; font-weight: 750; color: var(--tinta); display: flex; align-items: center; gap: 8px;' },
+        '📋 Propuestas extraídas del caso',
+        h('span', { style: 'background: #0f172a; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 999px;' }, `${propuestas.length} datos`)
+      ),
+      h('div', { style: 'display: flex; gap: 8px;' },
+        h('button', {
+          type: 'button',
+          class: 'btn chico',
+          onclick: () => {
+            const chks = panel.querySelectorAll('input.chk-propuesta');
+            const todos = Array.from(chks).every(c => c.checked);
+            chks.forEach(c => { c.checked = !todos; });
+          }
+        }, 'Marcar / Desmarcar todos')
+      )
+    ),
+    h('p', { style: 'margin: 0; font-size: 12px; color: var(--tinta-2);' },
+      'Acepta campo por campo marcando su casilla. Por seguridad profesional, ningún campo con contenido previo se sobrescribirá sin tu confirmación explícita.'
+    )
+  );
+
+  const tablaWrap = h('div', { style: 'overflow-x: auto; background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r);' });
+  const tabla = h('table', { class: 'tabla-propuestas' },
+    h('thead', {},
+      h('tr', {},
+        h('th', { style: 'width: 38px; text-align: center;' }, '✓'),
+        h('th', { style: 'width: 140px;' }, 'Campo'),
+        h('th', { style: 'min-width: 220px;' }, 'Propuesta extraída'),
+        h('th', { style: 'width: 180px;' }, 'Origen y Cita'),
+        h('th', { style: 'width: 130px;' }, 'Estado actual')
+      )
+    ),
+    h('tbody', {},
+      ...propuestas.map(p => {
+        const valActual = state.datos[p.campo];
+        const tieneDato = valActual != null && String(valActual).trim() !== '' && !(Array.isArray(valActual) && !valActual.length);
+
+        const chk = h('input', {
+          type: 'checkbox',
+          class: 'chk-propuesta',
+          dataset: { campo: p.campo }
+        });
+        chk.checked = !tieneDato;
+
+        const badgeConfianza = p.confianza === 'alta'
+          ? h('span', { style: 'background: #dcfce7; color: #166534; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;' }, '✓ Alta')
+          : p.confianza === 'media'
+          ? h('span', { style: 'background: #fef9c3; color: #854d0e; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;' }, '⚠️ Media')
+          : h('span', { style: 'background: #f3f4f6; color: #4b5563; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px;' }, '❓ Baja');
+
+        const celdaPropuesta = h('div', { style: 'display: grid; gap: 4px;' },
+          h('div', { style: 'white-space: pre-wrap; font-size: 12.5px; color: var(--tinta); font-weight: 500; line-height: 1.4;' }, p.valor),
+          h('div', {}, badgeConfianza)
+        );
+
+        const celdaOrigen = h('div', { style: 'font-size: 11.5px; display: grid; gap: 3px;' },
+          h('div', { style: 'font-weight: 600; color: var(--tinta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;' },
+            `📄 ${p.archivo}` + (p.pagina ? ` (pág. ${p.pagina})` : '')
+          ),
+          p.cita_textual_corta ? h('div', { style: 'font-style: italic; color: var(--tinta-2); font-size: 11px; line-height: 1.3;' }, `“${p.cita_textual_corta}”`) : null
+        );
+
+        const celdaEstado = tieneDato
+          ? h('div', { style: 'background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 4px 6px; font-size: 11px; color: #92400e;' },
+              h('strong', {}, '⚠️ Ya tiene datos:'),
+              h('div', { style: 'color: var(--tinta-2); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;' }, String(valActual)),
+              h('span', { style: 'font-size: 10px; color: #b45309; display: block; margin-top: 2px;' }, 'Requiere confirmación')
+            )
+          : h('div', { style: 'color: #16a34a; font-size: 11.5px; font-weight: 600;' }, '⚪ Vacío (listo)');
+
+        return h('tr', { style: tieneDato ? 'background: rgba(254, 243, 199, 0.15);' : '' },
+          h('td', { style: 'text-align: center;' }, chk),
+          h('td', {},
+            h('strong', { style: 'color: var(--tinta); display: block;' }, p.etiqueta),
+            h('small', { style: 'color: var(--tinta-2); font-family: var(--mono); font-size: 10.5px;' }, p.campo)
+          ),
+          h('td', {}, celdaPropuesta),
+          h('td', {}, celdaOrigen),
+          h('td', {}, celdaEstado)
+        );
+      })
+    )
+  );
+  tablaWrap.append(tabla);
+
+  const barraBotones = h('div', {
+    style: 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 4px 0;'
+  },
+    h('div', { style: 'display: flex; gap: 10px; align-items: center;' },
+      h('button', {
+        type: 'button',
+        class: 'btn primario',
+        id: 'btnAplicarPropuestas',
+        style: 'padding: 8px 18px; font-size: 13.5px; font-weight: 650; display: inline-flex; align-items: center; gap: 6px;',
+        onclick: () => incorporarPropuestasSeleccionadas(propuestas)
+      }, '✓ Incorporar campos seleccionados al formulario'),
+      h('button', {
+        type: 'button',
+        class: 'btn enlace',
+        style: 'color: var(--tinta-2); font-size: 12.5px; text-decoration: underline;',
+        onclick: () => { panel.hidden = true; panel.replaceChildren(); }
+      }, 'Descartar propuestas')
+    )
+  );
+
+  panel.append(cabTabla, tablaWrap, barraBotones);
+}
+
+function incorporarPropuestasSeleccionadas(propuestas) {
+  const panel = $('#panelPropuestasExtraccion');
+  if (!panel) return;
+
+  const seleccionadas = [];
+  const sobrescrituras = [];
+
+  for (const p of propuestas) {
+    const chk = panel.querySelector(`input.chk-propuesta[data-campo="${p.campo}"]`);
+    if (chk && chk.checked) {
+      seleccionadas.push(p);
+      const valActual = state.datos[p.campo];
+      if (valActual != null && String(valActual).trim() !== '' && !(Array.isArray(valActual) && !valActual.length)) {
+        sobrescrituras.push({ p, valActual });
+      }
+    }
+  }
+
+  if (!seleccionadas.length) {
+    toast('Selecciona al menos una propuesta marcando su casilla.', 'error');
+    return;
+  }
+
+  // Regla fundamental: "Nunca sobrescribas un campo lleno sin confirmación."
+  if (sobrescrituras.length > 0) {
+    const detalleSobrescrituras = sobrescrituras.map(s => {
+      const actStr = String(s.valActual);
+      const valStr = String(s.p.valor);
+      const actCorta = actStr.length > 70 ? actStr.slice(0, 70) + '...' : actStr;
+      const valCorta = valStr.length > 70 ? valStr.slice(0, 70) + '...' : valStr;
+      return `• ${s.p.etiqueta} (${s.p.campo}):\n  - ACTUAL: "${actCorta}"\n  - NUEVA: "${valCorta}"`;
+    }).join('\n\n');
+
+    const mensaje = (
+      `⚠️ CONFIRMACIÓN DE SOBRESCRITURA DE DATOS\n\n` +
+      `Los siguientes ${sobrescrituras.length} campos ya contienen datos en el formulario:\n\n` +
+      `${detalleSobrescrituras}\n\n` +
+      `¿Deseas reemplazar el contenido existente por los datos extraídos de los documentos?`
+    );
+
+    const confirmado = window.confirm(mensaje);
+    if (!confirmado) {
+      toast('Operación cancelada. Se mantuvieron tus datos intactos.', 'info');
+      return;
+    }
+  }
+
+  // Aplicar campos seleccionados al formulario
+  let aplicados = 0;
+  for (const p of seleccionadas) {
+    state.datos[p.campo] = p.valor;
+    aplicados++;
+
+    const inp = $('#f_' + p.campo);
+    if (inp) {
+      inp.value = p.valor;
+      inp.dispatchEvent(new Event('input', { bubbles: true }));
+      inp.dispatchEvent(new Event('change', { bubbles: true }));
+      const wrap = inp.closest('.campo');
+      if (wrap) {
+        wrap.classList.add('campo-recien-aplicado');
+        setTimeout(() => wrap.classList.remove('campo-recien-aplicado'), 3000);
+      }
+    }
+  }
+
+  guardarBorrador();
+  toast(`¡${aplicados} datos incorporados con éxito al formulario!`, 'ok');
+
+  panel.replaceChildren(
+    h('div', {
+      style: 'padding: 14px 18px; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: var(--r); color: #166534; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;'
+    },
+      h('div', { style: 'display: flex; align-items: center; gap: 8px;' },
+        h('span', { style: 'font-size: 16px;' }, '✓'),
+        h('span', {}, `Se incorporaron ${aplicados} campos al formulario. Revisa los campos resaltados.`)
+      ),
+      h('button', {
+        type: 'button',
+        class: 'btn chico',
+        onclick: () => renderizarTablaPropuestas(propuestas)
+      }, 'Ver propuestas de nuevo')
+    )
+  );
+}
+
 function renderFormulario() {
   const form = $('#formCaso');
   form.replaceChildren();
   const tipo = TIPOS[state.tipo];
   if (!tipo) { form.hidden = true; return; }
+
+  // 1. Área: Sube los documentos del caso (PDF, imágenes, audio)
+  form.append(renderZonaSubidaDocumentos(tipo));
+
   for (const g of [...tipo.grupos, grupoRedaccion(tipo)]) {
     const sec = h('section', { class: 'grupo' }, h('h3', { class: 'leyenda' }, h('span', {}, g.n)));
     for (const c of g.campos) sec.append(renderCampo(c));
