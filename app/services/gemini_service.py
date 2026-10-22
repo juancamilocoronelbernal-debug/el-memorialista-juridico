@@ -57,7 +57,7 @@ def mensaje_ajuste(instruccion: str) -> str:
 
 
 # Se prueban siempre al final, aunque en Render hayan quedado nombres de modelos viejos en las variables.
-RESPALDO_SEGURO = ("gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite")
+RESPALDO_SEGURO = ("gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3-flash-preview")
 
 MOTIVOS_CONTINUAR = {"MAX_TOKENS", "length", "OTHER"}
 MOTIVOS_BLOQUEO = {
@@ -467,8 +467,15 @@ class GeminiService:
         if not degradado:
             if legado:
                 config["temperature"] = 0.3
-            elif motor.pensamiento:
-                config["thinkingConfig"] = {"thinkingLevel": motor.pensamiento}
+            else:
+                pensamiento = motor.pensamiento or s.GEMINI_THINKING_DEFAULT or "8192"
+                val = str(pensamiento).strip()
+                if val.isdigit():
+                    config["thinkingConfig"] = {"thinkingBudget": int(val)}
+                elif val.lower() in ["low", "medium", "high"]:
+                    config["thinkingConfig"] = {"thinkingLevel": val.lower()}
+                else:
+                    config["thinkingConfig"] = {"thinkingBudget": 8192}
         payload = {
             "systemInstruction": {"parts": [{"text": INSTRUCCION_SISTEMA}]},
             "contents": [{"role": rol, "parts": [{"text": texto}]} for rol, texto in mensajes],
