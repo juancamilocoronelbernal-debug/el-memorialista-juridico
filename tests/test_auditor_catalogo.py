@@ -14,7 +14,7 @@ def test_tipo_proceso_monitorio_estructura():
 
     assert data["id"] == "proceso_monitorio"
     assert "419" in data["norma"] and "421" in data["norma"]
-    assert data["area"] == "Civil"
+    assert data["area"] == "Civil y comercial"
     assert "revisado_por" in data
     assert "auditoria_ia" in data
     assert data["auditoria_ia"]["aprobado"] is True
