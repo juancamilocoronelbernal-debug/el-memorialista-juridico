@@ -178,5 +178,61 @@
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=2790",
     "https://www.corteconstitucional.gov.co/relatoria/"
+  ],
+  "requisitos": [
+    {
+      "id": "designacion_juez",
+      "texto": "Designación del juez de tutela a quien se dirige (Reparto)",
+      "norma": "Art. 86 CP, D. 2591/1991, D. 333/2021",
+      "critico": true
+    },
+    {
+      "id": "legitimacion_partes",
+      "texto": "Identificación del accionante y de la autoridad pública o particular accionado",
+      "norma": "Arts. 10 y 42 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "derechos_fundamentales",
+      "texto": "Individualización de los derechos fundamentales invocados como vulnerados o amenazados",
+      "norma": "Art. 86 CP",
+      "critico": true
+    },
+    {
+      "id": "hechos_cronologicos",
+      "texto": "Relación clara y cronológica de los hechos que configuran la vulneración",
+      "norma": "Art. 14 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "procedencia_subsidiariedad",
+      "texto": "Sustentación de procedencia: subsidiariedad (inexistencia de otro medio idóneo o perjuicio irremediable) e inmediatez",
+      "norma": "Art. 86 CP y jurisprudencia CC",
+      "critico": true
+    },
+    {
+      "id": "pretensiones_ordenes",
+      "texto": "Pretensiones expresadas como órdenes concretas, claras y verificables de tutela",
+      "norma": "Art. 14 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "juramento_no_otra_tutela",
+      "texto": "Manifestación expresa bajo juramento de no haber interpuesto otra tutela por los mismos hechos y derechos",
+      "norma": "Art. 37 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "pruebas",
+      "texto": "Relación de pruebas aportadas y solicitud de informes o documentos al accionado",
+      "norma": "Art. 19 D. 2591/1991",
+      "critico": false
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Direcciones y canales electrónicos de notificación de las partes",
+      "norma": "Art. 16 D. 2591/1991",
+      "critico": true
+    }
   ]
 }

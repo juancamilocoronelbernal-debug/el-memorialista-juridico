@@ -95,6 +95,8 @@ button{font:inherit}
 .btn.fantasma{border-color:transparent;background:transparent;color:var(--tinta-2)}
 .btn.fantasma:hover{color:var(--tinta);background:var(--superficie-2)}
 .btn.peligro{color:var(--error);border-color:var(--error)}
+.btn.peligro-relleno{background:#dc2626;border-color:#dc2626;color:#ffffff}
+.btn.peligro-relleno:hover{background:#b91c1c;border-color:#b91c1c}
 .btn.grande{padding:12px 18px;font-size:15px}
 .btn.chico{padding:5px 9px;font-size:13px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -201,7 +203,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .cita-badge.verde{background:#dcfce7;color:#166534}
 .cita-badge.amarillo{background:#fef9c3;color:#854d0e}
 .cita-badge.rojo{background:#fee2e2;color:#991b1b}
-.panel-verif{background:var(--superficie);border:1px solid var(--regla);border-radius:var(--r);padding:12px 14px;display:grid;gap:10px;max-height:32vh;overflow:auto}
+.panel-verif{background:var(--superficie);border:1px solid var(--regla);border-radius:var(--r);padding:12px 14px;display:grid;gap:10px;max-height:48vh;overflow-y:auto}
 .panel-verif h3{margin:0;font-size:13px;font-family:var(--f-maq);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2)}
 .panel-verif ol{margin:0;padding-left:20px;display:grid;gap:8px}
 .panel-verif li{font-size:13.5px}
@@ -1368,6 +1370,16 @@ function actualizarVerificacion() {
     verif.append(h('span', { class: 'vchip ok' }, '✓ Datos consistentes'));
   }
 
+  // 4. Requisitos procesales evaluados
+  if (state.revisionRequisitos && state.revisionRequisitos.length && state.textoRevisado === state.texto) {
+    const nCriticos = state.revisionRequisitos.filter(r => r.critico && r.estado === 'no_cumple').length;
+    if (nCriticos > 0) {
+      verif.append(h('button', { class: 'vchip rojo', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `✗ ${nCriticos} ${nCriticos === 1 ? 'requisito crítico' : 'requisitos críticos'}`));
+    } else {
+      verif.append(h('button', { class: 'vchip verde', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, '✓ Requisitos procesales'));
+    }
+  }
+
   if (!verif.children.length) verif.append(h('span', { class: 'vchip ok' }, '✓ Sin datos pendientes'));
   verif.hidden = false;
   if (panelAbierto) pintarPanel(items); else panel.hidden = true;
@@ -1378,6 +1390,50 @@ function alternarPanel() { panelAbierto = !panelAbierto; actualizarVerificacion(
 function pintarPanel(items) {
   const panel = $('#panelVerif');
   panel.replaceChildren();
+
+  // 0. Requisitos procesales evaluados
+  if (state.revisionRequisitos && state.revisionRequisitos.length && state.textoRevisado === state.texto) {
+    panel.append(h('h3', {}, 'Requisitos formales y procesales'));
+    const divReqs = h('div', { style: 'display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;' });
+    state.revisionRequisitos.forEach(r => {
+      const esCrit = r.critico && r.estado === 'no_cumple';
+      const esNoCrit = !r.critico && r.estado === 'no_cumple';
+      const cumple = r.estado === 'cumple';
+      const estiloCaja = esCrit
+        ? 'background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 6px; padding: 8px 10px;'
+        : esNoCrit
+        ? 'background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 8px 10px;'
+        : cumple
+        ? 'background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+        : 'background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 10px; font-size: 12.5px;';
+      const item = h('div', { style: estiloCaja });
+      const badgeClase = esCrit ? 'rojo' : esNoCrit ? 'amarillo' : cumple ? 'verde' : '';
+      const badgeTexto = esCrit ? '✗ No cumple · Crítico' : esNoCrit ? '⚠ No cumple · Recomendación' : cumple ? '✓ Cumple' : '— No aplica';
+
+      const fila = h('div', { style: 'display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap;' },
+        h('div', { style: 'flex: 1 1 240px;' },
+          h('div', { style: 'display: flex; align-items: center; gap: 6px; flex-wrap: wrap;' },
+            h('span', { class: `cita-badge ${badgeClase}` }, badgeTexto),
+            h('strong', {}, r.texto),
+            r.norma ? h('span', { style: 'font-size: 11.5px; opacity: 0.85;' }, `(${r.norma})`) : null
+          ),
+          r.evidencia ? h('div', { style: 'font-size: 12px; margin-top: 3px; opacity: 0.9;' }, h('strong', {}, 'Hallazgo: '), r.evidencia) : null,
+          r.sugerencia && (esCrit || esNoCrit) ? h('div', { style: 'font-size: 12px; background: rgba(0,0,0,0.04); padding: 4px 6px; border-radius: 4px; margin-top: 4px;' }, h('strong', {}, 'Sugerencia: '), r.sugerencia) : null
+        )
+      );
+      if (esCrit || esNoCrit) {
+        fila.append(h('button', {
+          class: `btn chico ${esCrit ? 'peligro-relleno' : 'fantasma'}`,
+          type: 'button',
+          style: esNoCrit ? 'border: 1px solid #d97706; color: #92400e;' : '',
+          onclick: () => corregirConIA(r.sugerencia || `Agrega el siguiente requisito: ${r.texto} (${r.norma || ''})`)
+        }, '🪄 Corregir con IA'));
+      }
+      item.append(fila);
+      divReqs.append(item);
+    });
+    panel.append(divReqs);
+  }
 
   // 1. Citas verificadas oficialmente
   if (state.citasVerificadas && state.citasVerificadas.length) {
@@ -2275,6 +2331,9 @@ function terminarRedaccion(texto, modo, aviso, fallo = false) {
   }
   state.texto = limpio;
   state.ejemplo = false;
+  state.revisionRequisitos = null;
+  state.textoRevisado = null;
+  state.tipoRevisado = null;
   if (modo === 'nuevo') { state.docId = null; state.creado = null; }
   renderHoja();
   ponerControles();
@@ -2624,38 +2683,213 @@ async function guardarArchivo(nombre, blob) {
 function sincronizarTexto() {
   if (!state.ejemplo && !state.generando && $('#cuerpo').contentEditable === 'true') state.texto = serializarCuerpo();
 }
-function pedirExportacion(tipo) {
+async function pedirExportacion(tipo) {
   sincronizarTexto();
+  if (!state.texto || state.ejemplo) {
+    toast('No hay un escrito redactado para exportar.', 'info');
+    return;
+  }
+
+  const caja = $('#panelVerif');
+  caja.hidden = false;
+  caja.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Si no se han verificado los requisitos para este texto y tipo, llamar a /api/revisar
+  const necesitaRevision = !state.revisionRequisitos || state.textoRevisado !== state.texto || state.tipoRevisado !== state.tipo;
+  if (necesitaRevision && state.tipo) {
+    caja.replaceChildren(
+      h('div', { style: 'padding: 10px 4px;' },
+        h('h3', { style: 'margin-bottom: 6px;' }, tipo === 'docx' ? 'Revisión antes de exportar a Word' : 'Revisión antes de exportar a PDF'),
+        h('p', { class: 'nota', style: 'color: var(--tinta-2);' }, '⏳ Verificando cumplimiento de requisitos formales y legales con IA…')
+      )
+    );
+    try {
+      const res = await apiFetch('/api/revisar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ escrito: state.texto, tipo: state.tipo })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        state.revisionRequisitos = Array.isArray(data) ? data : (data.requisitos || []);
+        state.textoRevisado = state.texto;
+        state.tipoRevisado = state.tipo;
+      }
+    } catch (e) {
+      console.warn('Error al verificar requisitos:', e);
+    }
+  }
+
+  renderizarPreExportacion(tipo);
+}
+
+function renderizarPreExportacion(tipo) {
+  const caja = $('#panelVerif');
+  const contenido = [];
+
+  contenido.push(h('h3', { style: 'margin-bottom: 8px;' },
+    `Requisitos formales y legales antes de exportar (${tipo === 'docx' ? 'Word' : 'PDF'})`
+  ));
+
   const marcas = recogerMarcas();
   const nv = marcas.filter(i => i.tipo === 'v').length, nc = marcas.filter(i => i.tipo === 'c').length;
   const citasRojas = (state.citasVerificadas || []).filter(c => c.color === 'rojo');
+  const reqs = state.revisionRequisitos || [];
 
-  if (!nv && !nc && !citasRojas.length) { exportar(tipo, false); return; }
+  const criticosFaltantes = reqs.filter(r => r.critico && r.estado === 'no_cumple');
+  const noCriticosFaltantes = reqs.filter(r => !r.critico && r.estado === 'no_cumple');
+  const cumplen = reqs.filter(r => r.estado === 'cumple');
+  const noAplican = reqs.filter(r => r.estado === 'no_aplica');
 
-  const caja = $('#panelVerif');
-  const contenido = [];
-  contenido.push(h('h3', {}, tipo === 'docx' ? 'Antes de exportar a Word' : 'Antes de exportar a PDF'));
-
-  if (citasRojas.length) {
-    contenido.push(h('div', { style: 'background: #fef2f2; border: 1px solid #f87171; border-radius: 6px; padding: 10px; margin-bottom: 10px;' },
-      h('p', { style: 'color: #991b1b; font-weight: 600; margin: 0 0 6px 0;' }, `⚠️ Advertencia: Hay ${citasRojas.length} ${citasRojas.length === 1 ? 'cita no encontrada' : 'citas no encontradas'} en las fuentes oficiales:`),
-      h('ul', { style: 'margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;' },
-        citasRojas.map(cr => h('li', {}, cr.nombre || cr.texto_original))
+  // Resumen de advertencia si hay requisitos críticos faltantes
+  if (criticosFaltantes.length > 0) {
+    contenido.push(h('div', { style: 'background: #fef2f2; border: 1px solid #f87171; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;' },
+      h('p', { style: 'color: #991b1b; font-weight: 700; margin: 0 0 4px 0;' },
+        `⚠️ Hay ${criticosFaltantes.length} ${criticosFaltantes.length === 1 ? 'requisito crítico pendiente' : 'requisitos críticos pendientes'}:`
       ),
-      h('p', { style: 'margin: 6px 0 0 0; color: #7f1d1d; font-size: 12px;' }, 'Exportar con citas inexistentes puede acarrear sanciones disciplinarias o el rechazo de pretensiones. ¿Deseas exportar de todos modos?')
+      h('p', { style: 'color: #7f1d1d; font-size: 12.5px; margin: 0;' },
+        'Los requisitos críticos en rojo pueden dar lugar a inadmisión o rechazo de la acción judicial. Puedes corregirlos con un clic mediante IA o decidir exportar de todos modos.'
+      )
     ));
   }
 
-  if (nc) contenido.push(h('p', { class: 'nota' }, `Quedan ${nc} ${nc === 1 ? 'dato' : 'datos'} por completar; saldrán resaltados en amarillo en el archivo.`));
-  if (nv && !citasRojas.length) contenido.push(h('p', { class: 'nota' }, `Hay ${nv} ${nv === 1 ? 'cita marcada' : 'citas marcadas'} con [VERIFICAR].`));
+  // Lista de requisitos procesales
+  if (reqs.length > 0) {
+    const contenedorReqs = h('div', { class: 'lista-requisitos', style: 'display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;' });
 
-  contenido.push(h('div', { class: 'ajuste-fila' },
-    h('button', { class: 'btn primario chico', type: 'button', onclick: () => { caja.hidden = true; exportar(tipo, false); } }, citasRojas.length ? 'Confirmar y exportar de todos modos' : (nv ? 'Exportar con las marcas' : 'Exportar')),
-    h('button', { class: 'btn chico fantasma', type: 'button', onclick: () => { caja.hidden = true; alternarPanel(); } }, 'Cancelar y revisar citas')
+    // 1. Críticos en no_cumple (ROJO con botón "Corregir con IA")
+    criticosFaltantes.forEach(r => {
+      const item = h('div', { style: 'background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 6px; padding: 10px 12px;' },
+        h('div', { style: 'display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;' },
+          h('div', { style: 'flex: 1 1 280px;' },
+            h('div', { style: 'display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;' },
+              h('span', { class: 'cita-badge rojo' }, '✗ No cumple · Crítico'),
+              h('strong', { style: 'color: #991b1b;' }, r.texto),
+              r.norma ? h('span', { style: 'font-size: 12px; color: #7f1d1d; font-weight: 600;' }, `(${r.norma})`) : null
+            ),
+            r.evidencia ? h('div', { style: 'font-size: 12.5px; color: #7f1d1d; margin-top: 3px;' }, h('strong', {}, 'Hallazgo: '), r.evidencia) : null,
+            r.sugerencia ? h('div', { style: 'font-size: 12.5px; color: #991b1b; background: rgba(239, 68, 68, 0.08); padding: 5px 8px; border-radius: 4px; margin-top: 5px;' },
+              h('strong', {}, 'Sugerencia: '), r.sugerencia
+            ) : null
+          ),
+          h('button', {
+            class: 'btn chico peligro-relleno',
+            type: 'button',
+            style: 'white-space: nowrap; margin-top: 2px;',
+            title: 'Lanzar ajuste con IA aplicando esta sugerencia',
+            onclick: () => corregirConIA(r.sugerencia || `Agrega el siguiente requisito procesal: ${r.texto} (${r.norma || ''})`)
+          }, '🪄 Corregir con IA')
+        )
+      );
+      contenedorReqs.append(item);
+    });
+
+    // 2. No críticos en no_cumple (AMARILLO)
+    noCriticosFaltantes.forEach(r => {
+      const item = h('div', { style: 'background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 8px 12px;' },
+        h('div', { style: 'display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;' },
+          h('div', { style: 'flex: 1 1 280px;' },
+            h('div', { style: 'display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;' },
+              h('span', { class: 'cita-badge amarillo' }, '⚠ No cumple · Recomendación'),
+              h('strong', { style: 'color: #92400e;' }, r.texto),
+              r.norma ? h('span', { style: 'font-size: 12px; color: #78350f;' }, `(${r.norma})`) : null
+            ),
+            r.evidencia ? h('div', { style: 'font-size: 12px; color: #78350f; margin-top: 2px;' }, h('strong', {}, 'Hallazgo: '), r.evidencia) : null,
+            r.sugerencia ? h('div', { style: 'font-size: 12px; color: #92400e; background: rgba(245, 158, 11, 0.1); padding: 4px 6px; border-radius: 4px; margin-top: 4px;' },
+              h('strong', {}, 'Sugerencia: '), r.sugerencia
+            ) : null
+          ),
+          h('button', {
+            class: 'btn chico fantasma',
+            type: 'button',
+            style: 'border: 1px solid #d97706; color: #92400e; white-space: nowrap; margin-top: 2px;',
+            onclick: () => corregirConIA(r.sugerencia || `Agrega o ajusta: ${r.texto}`)
+          }, '🪄 Corregir con IA')
+        )
+      );
+      contenedorReqs.append(item);
+    });
+
+    // 3. Requisitos cumplidos (VERDE)
+    cumplen.forEach(r => {
+      const item = h('div', { style: 'background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 6px 10px; font-size: 13px; color: #166534;' },
+        h('div', { style: 'display: flex; align-items: center; gap: 6px; flex-wrap: wrap;' },
+          h('span', { class: 'cita-badge verde' }, '✓ Cumple'),
+          h('strong', {}, r.texto),
+          r.norma ? h('span', { style: 'font-size: 11.5px; color: #15803d;' }, `(${r.norma})`) : null
+        ),
+        r.evidencia ? h('div', { style: 'font-size: 12px; color: #14532d; margin-top: 2px; opacity: 0.9;' }, r.evidencia) : null
+      );
+      contenedorReqs.append(item);
+    });
+
+    // 4. Requisitos que no aplican (GRIS)
+    noAplican.forEach(r => {
+      const item = h('div', { style: 'background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; color: #4b5563;' },
+        h('div', { style: 'display: flex; align-items: center; gap: 6px; flex-wrap: wrap;' },
+          h('span', { class: 'cita-badge', style: 'background: #e5e7eb; color: #4b5563;' }, '— No aplica'),
+          h('span', {}, r.texto),
+          r.norma ? h('span', { style: 'font-size: 11.5px; color: #6b7280;' }, `(${r.norma})`) : null
+        )
+      );
+      contenedorReqs.append(item);
+    });
+
+    contenido.push(contenedorReqs);
+  }
+
+  // Citas inexistentes
+  if (citasRojas.length) {
+    contenido.push(h('div', { style: 'background: #fef2f2; border: 1px solid #f87171; border-radius: 6px; padding: 10px; margin-bottom: 10px;' },
+      h('p', { style: 'color: #991b1b; font-weight: 600; margin: 0 0 6px 0;' }, `⚠️ Citas jurisprudenciales: Hay ${citasRojas.length} ${citasRojas.length === 1 ? 'cita no encontrada' : 'citas no encontradas'} en fuentes oficiales:`),
+      h('ul', { style: 'margin: 0; padding-left: 18px; color: #b91c1c; font-size: 13px;' },
+        citasRojas.map(cr => h('li', {}, cr.nombre || cr.texto_original))
+      ),
+      h('p', { style: 'margin: 6px 0 0 0; color: #7f1d1d; font-size: 12px;' }, 'Exportar con citas inexistentes puede acarrear sanciones disciplinarias o rechazo de pretensiones.')
+    ));
+  }
+
+  // Marcas [COMPLETAR]
+  if (nc) {
+    contenido.push(h('p', { class: 'nota', style: 'margin-bottom: 6px;' }, `Quedan ${nc} ${nc === 1 ? 'dato' : 'datos'} por completar; saldrán resaltados en amarillo en el archivo.`));
+  }
+  if (nv && !citasRojas.length) {
+    contenido.push(h('p', { class: 'nota', style: 'margin-bottom: 6px;' }, `Hay ${nv} ${nv === 1 ? 'cita marcada' : 'citas marcadas'} con [VERIFICAR].`));
+  }
+
+  // Nota de decisión del abogado (no bloquea)
+  contenido.push(h('p', { class: 'nota', style: 'font-size: 12px; color: var(--tinta-2); margin: 6px 0 10px 0;' },
+    'El Memorialista no bloquea la exportación: como abogado responsable, tú decides el momento oportuno de radicación.'
+  ));
+
+  // Botones de acción
+  const textoBotonExport = (criticosFaltantes.length || citasRojas.length)
+    ? `Confirmar y exportar de todos modos (${tipo === 'docx' ? 'Word' : 'PDF'})`
+    : `Confirmar y exportar (${tipo === 'docx' ? 'Word' : 'PDF'})`;
+
+  contenido.push(h('div', { class: 'ajuste-fila', style: 'margin-top: 10px;' },
+    h('button', {
+      class: 'btn primario chico',
+      type: 'button',
+      onclick: () => { caja.hidden = true; exportar(tipo, false); }
+    }, textoBotonExport),
+    h('button', {
+      class: 'btn chico fantasma',
+      type: 'button',
+      onclick: () => { caja.hidden = true; }
+    }, 'Seguir editando')
   ));
 
   caja.replaceChildren(...contenido);
   caja.hidden = false;
+}
+
+function corregirConIA(sugerencia) {
+  const caja = $('#panelVerif');
+  if (caja) caja.hidden = true;
+  if (!sugerencia) return;
+  toast('Aplicando ajuste con IA para cumplir el requisito…', 'info', 4000);
+  redactar('ajuste', sugerencia);
 }
 async function exportar(tipo, sinVerificar) {
   const btn = tipo === 'docx' ? $('#btnWord') : $('#btnPdf');

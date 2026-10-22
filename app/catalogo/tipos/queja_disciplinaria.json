@@ -118,5 +118,43 @@
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=90940",
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=23118"
+  ],
+  "requisitos": [
+    {
+      "id": "autoridad_disciplinaria",
+      "texto": "Designación de la Comisión Seccional de Disciplina Judicial o Procuraduría General",
+      "norma": "Ley 1952 de 2019 / Ley 1123 de 2007",
+      "critico": true
+    },
+    {
+      "id": "quejoso_identificacion",
+      "texto": "Identificación plena del quejoso y domicilio",
+      "norma": "Art. 165 Ley 1952 de 2019",
+      "critico": true
+    },
+    {
+      "id": "disciplinado_cargo",
+      "texto": "Individualización del funcionario o abogado investigado y cargo o calidad que ejerce",
+      "norma": "Ley 1952 de 2019 / Ley 1123 de 2007",
+      "critico": true
+    },
+    {
+      "id": "hechos_falta",
+      "texto": "Narración cronológica y detallada de los hechos constitutivos de presunta falta disciplinaria",
+      "norma": "Ley 1952 de 2019",
+      "critico": true
+    },
+    {
+      "id": "pruebas_soporte",
+      "texto": "Relación de pruebas documentales o testimoniales aportadas",
+      "norma": "Ley 1952 de 2019",
+      "critico": false
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Dirección física y electrónica para notificaciones",
+      "norma": "Regla general de trámite",
+      "critico": true
+    }
   ]
 }

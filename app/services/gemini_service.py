@@ -93,6 +93,19 @@ ESQUEMA_PERTINENCIA = {
     },
     "required": ["respalda", "fragmento"],
 }
+ESQUEMA_REVISION = {
+    "type": "ARRAY",
+    "items": {
+        "type": "OBJECT",
+        "properties": {
+            "id": {"type": "STRING"},
+            "estado": {"type": "STRING", "enum": ["cumple", "no_cumple", "no_aplica"]},
+            "evidencia": {"type": "STRING"},
+            "sugerencia": {"type": "STRING"},
+        },
+        "required": ["id", "estado", "evidencia", "sugerencia"],
+    },
+}
 PROMPT_ESTILO = (
     "Analiza el estilo de redacción del siguiente escrito jurídico de un abogado colombiano para que otro "
     "redactor pueda imitarlo fielmente. Responde ÚNICAMENTE con un objeto JSON válido con estas claves y "
@@ -277,11 +290,14 @@ def _convertir_excepcion(exc: Exception) -> ErrorIA:
 
 
 def _primer_objeto(texto: str) -> str:
-    inicio, fin = texto.find("{"), texto.rfind("}")
-    return texto[inicio:fin + 1] if inicio >= 0 and fin > inicio else ""
+    i_obj, f_obj = texto.find("{"), texto.rfind("}")
+    i_arr, f_arr = texto.find("["), texto.rfind("]")
+    if i_arr >= 0 and f_arr > i_arr and (i_obj < 0 or i_arr < i_obj):
+        return texto[i_arr:f_arr + 1]
+    return texto[i_obj:f_obj + 1] if i_obj >= 0 and f_obj > i_obj else ""
 
 
-def extraer_json(texto: str) -> Optional[dict]:
+def extraer_json(texto: str) -> Optional[Any]:
     if not texto:
         return None
     limpio = re.sub(r"^\s*```(?:json)?\s*", "", texto.strip())
@@ -293,7 +309,7 @@ def extraer_json(texto: str) -> Optional[dict]:
             datos = json.loads(candidato)
         except (ValueError, TypeError):
             continue
-        if isinstance(datos, dict):
+        if isinstance(datos, (dict, list)):
             return datos
     return None
 
@@ -791,6 +807,31 @@ class GeminiService:
                 datos = extraer_json(texto)
                 if datos and "respalda" in datos:
                     return datos
+                break
+        return None
+
+    # ------------------------------------------------------------------ evaluación de requisitos normativos
+    async def evaluar_requisitos_json(self, prompt: str) -> Optional[list]:
+        candidatos = []
+        if self.s.GEMINI_API_KEY.strip():
+            candidatos.append(Motor("gemini", "gemini-3.5-flash-lite"))
+        candidatos.extend(self.candidatos("default"))
+
+        for motor in candidatos:
+            for degradado in (False, True):
+                try:
+                    texto = await self._completar_json(motor, prompt, degradado, esquema=ESQUEMA_REVISION)
+                except Exception as exc:  # noqa: BLE001
+                    error = exc if isinstance(exc, ErrorIA) else _convertir_excepcion(exc)
+                    log.debug("Evaluación de requisitos con %s/%s falló (%s).", motor.proveedor, motor.modelo, error.codigo)
+                    if error.parametros and not degradado:
+                        continue
+                    break
+                datos = extraer_json(texto)
+                if isinstance(datos, list):
+                    return datos
+                if isinstance(datos, dict) and "requisitos" in datos and isinstance(datos["requisitos"], list):
+                    return datos["requisitos"]
                 break
         return None
 

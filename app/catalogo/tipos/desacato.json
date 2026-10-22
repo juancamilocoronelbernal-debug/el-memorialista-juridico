@@ -104,5 +104,37 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=2790"
+  ],
+  "requisitos": [
+    {
+      "id": "juez_tutela",
+      "texto": "Dirigido al juez que profirió la orden de tutela en primera instancia",
+      "norma": "Art. 52 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "orden_incumplida",
+      "texto": "Identificación exacta de la sentencia de tutela, fecha y órdenes no acatadas",
+      "norma": "Art. 27 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "responsable_desacato",
+      "texto": "Individualización del funcionario o particular obligado al cumplimiento y su superior jerárquico",
+      "norma": "Art. 27 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "hechos_incumplimiento",
+      "texto": "Hechos que acreditan que venció el plazo otorgado y persiste el incumplimiento subjetivo",
+      "norma": "Art. 52 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "solicitud_sancion",
+      "texto": "Solicitud de apertura del incidente de desacato y aplicación de sanciones de arresto y multa",
+      "norma": "Art. 52 D. 2591/1991",
+      "critico": true
+    }
   ]
 }

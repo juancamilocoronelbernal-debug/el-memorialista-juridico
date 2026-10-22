@@ -143,5 +143,43 @@
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=250873",
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ],
+  "requisitos": [
+    {
+      "id": "juez_familia",
+      "texto": "Designación del juez de familia competente",
+      "norma": "Art. 82 CGP",
+      "critico": true
+    },
+    {
+      "id": "causal_invocada",
+      "texto": "Invocación y fundamentación de las causales taxativas de divorcio o acuerdo mutuo",
+      "norma": "Art. 154 Código Civil",
+      "critico": true
+    },
+    {
+      "id": "hijos_medidas",
+      "texto": "Relación de hijos menores e indicación de medidas sobre custodia, alimentos y visitas",
+      "norma": "Art. 388 CGP",
+      "critico": true
+    },
+    {
+      "id": "liquidacion_sociedad",
+      "texto": "Petición sobre la disolución y liquidación de la sociedad conyugal",
+      "norma": "Art. 388 CGP",
+      "critico": true
+    },
+    {
+      "id": "pruebas_matrimonio",
+      "texto": "Aporte de registro civil de matrimonio y registros civiles de nacimiento de los hijos",
+      "norma": "Art. 84 CGP",
+      "critico": true
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Notificaciones y canal digital conforme a la Ley 2213 de 2022",
+      "norma": "Arts. 6 y 8 Ley 2213 de 2022",
+      "critico": true
+    }
   ]
 }

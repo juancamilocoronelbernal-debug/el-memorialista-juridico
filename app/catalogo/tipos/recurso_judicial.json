@@ -164,5 +164,37 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ],
+  "requisitos": [
+    {
+      "id": "despacho_radicado",
+      "texto": "Identificación del juez o tribunal, radicado de 23 dígitos y partes",
+      "norma": "Art. 318 CGP",
+      "critico": true
+    },
+    {
+      "id": "providencia_recurrida",
+      "texto": "Identificación precisa del auto recurrido y fecha de notificación por estado",
+      "norma": "Art. 318 CGP",
+      "critico": true
+    },
+    {
+      "id": "oportunidad_3dias",
+      "texto": "Presentación dentro de los 3 días siguientes a la notificación de la providencia",
+      "norma": "Art. 318 CGP",
+      "critico": true
+    },
+    {
+      "id": "sustentacion_motivos",
+      "texto": "Sustentación clara de las razones de hecho y derecho de inconformidad",
+      "norma": "Art. 318 CGP",
+      "critico": true
+    },
+    {
+      "id": "peticion_subsidio_apelacion",
+      "texto": "Petición de reposición y, si procede, apelación o queja en subsidio",
+      "norma": "Arts. 318 y 322 CGP",
+      "critico": true
+    }
   ]
 }

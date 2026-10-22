@@ -104,5 +104,31 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=2790"
+  ],
+  "requisitos": [
+    {
+      "id": "juez_primera_instancia",
+      "texto": "Dirigido al juez que profirió el fallo de primera instancia dentro de los 3 días siguientes a la notificación",
+      "norma": "Art. 31 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "fallo_impugnado",
+      "texto": "Identificación precisa de la sentencia de tutela que se impugna",
+      "norma": "Art. 31 D. 2591/1991",
+      "critico": true
+    },
+    {
+      "id": "motivos_inconformidad",
+      "texto": "Exposición de los motivos de inconformidad y agravio de la decisión",
+      "norma": "Art. 31 D. 2591/1991",
+      "critico": false
+    },
+    {
+      "id": "solicitud_revocatoria",
+      "texto": "Petición de conceder la impugnación ante el superior jerárquico y revocar el fallo",
+      "norma": "Art. 32 D. 2591/1991",
+      "critico": true
+    }
   ]
 }

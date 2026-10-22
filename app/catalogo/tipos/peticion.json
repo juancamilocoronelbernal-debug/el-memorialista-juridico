@@ -137,5 +137,43 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=65334"
+  ],
+  "requisitos": [
+    {
+      "id": "autoridad_destinatario",
+      "texto": "Designación de la autoridad o entidad a la que se dirige",
+      "norma": "Art. 16 num. 1 CPACA / Ley 1755 de 2015",
+      "critico": true
+    },
+    {
+      "id": "peticionario_identificacion",
+      "texto": "Nombres y apellidos completos del solicitante y su representante, con documento de identidad",
+      "norma": "Art. 16 num. 2 CPACA / Ley 1755 de 2015",
+      "critico": true
+    },
+    {
+      "id": "objeto_peticion",
+      "texto": "Objeto de la petición expresado con claridad y precisión",
+      "norma": "Art. 16 num. 3 CPACA / Ley 1755 de 2015",
+      "critico": true
+    },
+    {
+      "id": "razones_hechos",
+      "texto": "Razones de hecho y fundamentos en que se apoya la solicitud",
+      "norma": "Art. 16 num. 4 CPACA / Ley 1755 de 2015",
+      "critico": false
+    },
+    {
+      "id": "relacion_documentos",
+      "texto": "Relación de documentos y pruebas que se acompañan",
+      "norma": "Art. 16 num. 5 CPACA / Ley 1755 de 2015",
+      "critico": false
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Dirección física o canal electrónico para recibir la respuesta",
+      "norma": "Art. 16 num. 6 CPACA / Ley 1755 de 2015",
+      "critico": true
+    }
   ]
 }

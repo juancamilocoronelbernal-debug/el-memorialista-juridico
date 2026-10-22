@@ -140,5 +140,61 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=42691"
+  ],
+  "requisitos": [
+    {
+      "id": "tribunal_administrativo",
+      "texto": "Designación del tribunal o juez contencioso administrativo competente",
+      "norma": "Art. 162 CPACA",
+      "critico": true
+    },
+    {
+      "id": "identificacion_demandantes",
+      "texto": "Identificación de demandantes y determinación de su calidad (víctimas directas o indirectas)",
+      "norma": "Art. 162 CPACA",
+      "critico": true
+    },
+    {
+      "id": "entidad_demandada",
+      "texto": "Determinación de la entidad pública responsable del daño antijurídico",
+      "norma": "Art. 90 CP / Art. 140 CPACA",
+      "critico": true
+    },
+    {
+      "id": "pretensiones_perjuicios",
+      "texto": "Pretensiones de perjuicios materiales (pesos) e inmateriales en smmlv discriminados por demandante",
+      "norma": "Art. 140 CPACA y jurisprudencia CE",
+      "critico": true
+    },
+    {
+      "id": "hechos_dano",
+      "texto": "Hechos que demuestran el hecho dañoso, el daño antijurídico y el nexo de imputación",
+      "norma": "Art. 140 CPACA",
+      "critico": true
+    },
+    {
+      "id": "titulo_imputacion",
+      "texto": "Fundamentación del título de imputación (falla del servicio, daño especial o riesgo excepcional)",
+      "norma": "Art. 90 CP / jurisprudencia CE",
+      "critico": true
+    },
+    {
+      "id": "caducidad_2anos",
+      "texto": "Demostración de oportunidad procesal frente al término de caducidad de 2 años",
+      "norma": "Art. 164 num. 2 lit. i CPACA",
+      "critico": true
+    },
+    {
+      "id": "conciliacion_prejudicial",
+      "texto": "Acreditación de la conciliación prejudicial como requisito de procedibilidad",
+      "norma": "Art. 161 CPACA / Ley 2220 de 2022",
+      "critico": true
+    },
+    {
+      "id": "canales_digitales",
+      "texto": "Canales digitales y juramento del art. 8 de la Ley 2213 de 2022",
+      "norma": "Ley 2213 de 2022",
+      "critico": true
+    }
   ]
 }

@@ -154,5 +154,49 @@
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=22106",
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ],
+  "requisitos": [
+    {
+      "id": "designacion_juez",
+      "texto": "Designación del juez de familia o municipal del domicilio del menor",
+      "norma": "Art. 397 CGP / Ley 1098 de 2006",
+      "critico": true
+    },
+    {
+      "id": "representacion_menor",
+      "texto": "Acreditación del parentesco o título con registro civil y representación legal del menor",
+      "norma": "Arts. 411 CC y Ley 1098 de 2006",
+      "critico": true
+    },
+    {
+      "id": "hechos_necesidad_capacidad",
+      "texto": "Hechos que demuestran las necesidades del alimentario y la capacidad económica del alimentante",
+      "norma": "Art. 129 Ley 1098 de 2006",
+      "critico": true
+    },
+    {
+      "id": "pretension_cuota",
+      "texto": "Pretensión de cuota periódica en dinero, reajuste legal y gastos extraordinarios (salud, educación, vestuario)",
+      "norma": "Art. 129 Ley 1098 de 2006",
+      "critico": true
+    },
+    {
+      "id": "alimentos_provisionales",
+      "texto": "Solicitud de fijación de cuota provisional mientras se tramita el proceso",
+      "norma": "Art. 397 CGP / Art. 129 Ley 1098",
+      "critico": false
+    },
+    {
+      "id": "conciliacion_previa",
+      "texto": "Constancia de conciliación prejudicial o solicitud de medidas cautelares que exceptúan el requisito",
+      "norma": "Ley 2220 de 2022",
+      "critico": true
+    },
+    {
+      "id": "canal_digital_notificaciones",
+      "texto": "Canales digitales y notificación conforme a la Ley 2213 de 2022",
+      "norma": "Arts. 6 y 8 Ley 2213 de 2022",
+      "critico": true
+    }
   ]
 }

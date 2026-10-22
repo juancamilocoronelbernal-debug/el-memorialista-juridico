@@ -112,5 +112,37 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=341"
+  ],
+  "requisitos": [
+    {
+      "id": "autoridad_renuente",
+      "texto": "Identificación de la autoridad o particular que ejerce funciones públicas obligado a cumplir",
+      "norma": "Ley 393 de 1997",
+      "critico": true
+    },
+    {
+      "id": "norma_acto_incumplido",
+      "texto": "Determinación precisa de la ley o acto administrativo con fuerza material de ley incumplido",
+      "norma": "Art. 1 Ley 393 de 1997",
+      "critico": true
+    },
+    {
+      "id": "requisito_renuencia",
+      "texto": "Acreditación previa del reclamo de cumplimiento y constitución en renuencia",
+      "norma": "Art. 8 Ley 393 de 1997",
+      "critico": true
+    },
+    {
+      "id": "pretension_cumplimiento",
+      "texto": "Orden perentoria de dar cumplimiento inmediato a la norma o acto omitido",
+      "norma": "Art. 21 Ley 393 de 1997",
+      "critico": true
+    },
+    {
+      "id": "juramento_renuencia",
+      "texto": "Manifestación bajo juramento de no haber instaurado otra acción respecto de la misma norma y autoridad",
+      "norma": "Art. 10 Ley 393 de 1997",
+      "critico": true
+    }
   ]
 }

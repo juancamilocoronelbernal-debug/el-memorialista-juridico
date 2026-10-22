@@ -156,5 +156,79 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ],
+  "requisitos": [
+    {
+      "id": "designacion_juez",
+      "texto": "Designación del juez a quien se dirija",
+      "norma": "Art. 82 num. 1 CGP",
+      "critico": true
+    },
+    {
+      "id": "partes_identificacion",
+      "texto": "Nombre, domicilio e identificación de las partes y apoderados",
+      "norma": "Art. 82 num. 2 CGP",
+      "critico": true
+    },
+    {
+      "id": "pretensiones_claras",
+      "texto": "Pretensiones expresadas con precisión y claridad, clasificadas y numeradas",
+      "norma": "Art. 82 num. 4 CGP",
+      "critico": true
+    },
+    {
+      "id": "hechos_numerados",
+      "texto": "Hechos determinados, clasificados y numerados cronológicamente",
+      "norma": "Art. 82 num. 5 CGP",
+      "critico": true
+    },
+    {
+      "id": "pruebas_peticion",
+      "texto": "Petición individualizada de medios de prueba documentales, testimoniales o periciales",
+      "norma": "Art. 82 num. 6 CGP",
+      "critico": false
+    },
+    {
+      "id": "juramento_estimatorio",
+      "texto": "Juramento estimatorio discriminando cada concepto cuando se reclamen perjuicios, frutos o mejoras",
+      "norma": "Art. 206 CGP",
+      "critico": true
+    },
+    {
+      "id": "fundamentos_derecho",
+      "texto": "Fundamentos de derecho y normas aplicables al litigio",
+      "norma": "Art. 82 num. 7 CGP",
+      "critico": false
+    },
+    {
+      "id": "cuantia_competencia",
+      "texto": "Estimación de la cuantía para determinar la competencia y el trámite procesal",
+      "norma": "Arts. 25 y 82 num. 8 CGP",
+      "critico": true
+    },
+    {
+      "id": "conciliacion_procedibilidad",
+      "texto": "Constancia de conciliación prejudicial como requisito de procedibilidad (salvo si se piden medidas cautelares)",
+      "norma": "Ley 2220 de 2022 / Art. 590 CGP",
+      "critico": true
+    },
+    {
+      "id": "canal_digital_partes",
+      "texto": "Indicación de los canales digitales de partes, testigos y peritos",
+      "norma": "Art. 6 Ley 2213 de 2022",
+      "critico": true
+    },
+    {
+      "id": "juramento_canal_demandado",
+      "texto": "Afirmación bajo juramento de que la dirección electrónica del demandado es la que utiliza, cómo se obtuvo y evidencias",
+      "norma": "Art. 8 Ley 2213 de 2022",
+      "critico": true
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Dirección física y electrónica para notificaciones personales",
+      "norma": "Art. 82 num. 10 CGP",
+      "critico": true
+    }
   ]
 }

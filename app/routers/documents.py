@@ -21,6 +21,7 @@ from app.services.prompt import (
     validar_datos_tipo,
 )
 from app.services.verificador_citas import verificar_citas
+from app.services.revisor_requisitos import revisar_requisitos
 
 router = APIRouter(prefix="/api", tags=["Documentos"])
 
@@ -89,6 +90,11 @@ class AnalizarEstiloRequest(BaseModel):
 
 class VerificarCitasRequest(BaseModel):
     texto: str = Field(..., min_length=1, max_length=500_000)
+
+
+class RevisarRequest(BaseModel):
+    escrito: str = Field(..., min_length=1, max_length=500_000)
+    tipo: str = Field(..., min_length=1, max_length=100)
 
 
 @router.get("/health")
@@ -178,6 +184,15 @@ async def endpoint_verificar_citas(req: VerificarCitasRequest, request: Request)
     verificar_acceso(request)
     limitador.verificar(request, "citas")
     return await verificar_citas(req.texto)
+
+
+@router.post("/revisar")
+async def endpoint_revisar(req: RevisarRequest, request: Request):
+    verificar_acceso(request)
+    limitador.verificar(request, "revisar")
+    if not req.escrito.strip():
+        raise HTTPException(status_code=400, detail="El escrito no puede estar vacío.")
+    return await revisar_requisitos(req.escrito, req.tipo)
 
 
 def _linea(evento: Evento) -> str:

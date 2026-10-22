@@ -125,5 +125,55 @@
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=254181",
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=33104"
+  ],
+  "requisitos": [
+    {
+      "id": "designacion_juez",
+      "texto": "Designación del juez laboral del circuito o municipal competente",
+      "norma": "Art. 25 CPTSS",
+      "critico": true
+    },
+    {
+      "id": "partes_identificacion",
+      "texto": "Identificación y domicilio de trabajador y empleador",
+      "norma": "Art. 25 num. 2 CPTSS",
+      "critico": true
+    },
+    {
+      "id": "hechos_relacion_laboral",
+      "texto": "Hechos clasificados y enumerados: extremos temporales, salario, cargo y jornada",
+      "norma": "Art. 25 num. 4 CPTSS",
+      "critico": true
+    },
+    {
+      "id": "pretensiones_clasificadas",
+      "texto": "Pretensiones expresadas por separado: prestaciones, indemnizaciones, acreencias",
+      "norma": "Art. 25 num. 3 CPTSS",
+      "critico": true
+    },
+    {
+      "id": "cuantia_competencia",
+      "texto": "Estimación de la cuantía para fijar la competencia (mínima o primera instancia)",
+      "norma": "Art. 25 num. 7 CPTSS",
+      "critico": true
+    },
+    {
+      "id": "agotamiento_reclamo",
+      "texto": "Agotamiento de la reclamación administrativa previa si el empleador es entidad pública",
+      "norma": "Art. 6 CPTSS",
+      "critico": true
+    },
+    {
+      "id": "canales_digitales",
+      "texto": "Canales digitales de partes y juramento de obtención de la Ley 2213 de 2022",
+      "norma": "Arts. 6 y 8 Ley 2213 de 2022",
+      "critico": true
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Dirección de notificaciones física y electrónica",
+      "norma": "Art. 25 num. 8 CPTSS",
+      "critico": true
+    }
   ]
 }

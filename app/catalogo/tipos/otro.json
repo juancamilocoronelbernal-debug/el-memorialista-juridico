@@ -106,5 +106,37 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.secretariasenado.gov.co/senado/basedoc/constitucion_politica_1991.html"
+  ],
+  "requisitos": [
+    {
+      "id": "destinatario",
+      "texto": "Designación de la autoridad o persona a quien se dirige",
+      "norma": "Regla general de técnica procesal",
+      "critico": true
+    },
+    {
+      "id": "identificacion",
+      "texto": "Identificación completa del solicitante o firmante",
+      "norma": "Regla general de técnica procesal",
+      "critico": true
+    },
+    {
+      "id": "objeto_solicitud",
+      "texto": "Petición u objeto central expuesto con claridad",
+      "norma": "Regla general de técnica procesal",
+      "critico": true
+    },
+    {
+      "id": "fundamentos",
+      "texto": "Fundamentos fácticos o jurídicos que sustentan el escrito",
+      "norma": "Regla general de técnica procesal",
+      "critico": false
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Datos de contacto o notificación",
+      "norma": "Regla general de técnica procesal",
+      "critico": true
+    }
   ]
 }

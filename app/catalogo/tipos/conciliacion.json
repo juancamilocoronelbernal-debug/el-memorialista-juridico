@@ -137,5 +137,43 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=189689"
+  ],
+  "requisitos": [
+    {
+      "id": "centro_destinatario",
+      "texto": "Designación del centro de conciliación o procuraduría competente",
+      "norma": "Ley 2220 de 2022",
+      "critico": true
+    },
+    {
+      "id": "partes_identificacion",
+      "texto": "Identificación completa de convocante y convocado con canales digitales",
+      "norma": "Ley 2220 de 2022",
+      "critico": true
+    },
+    {
+      "id": "hechos",
+      "texto": "Relación clara y precisa de los hechos objeto de controversia",
+      "norma": "Ley 2220 de 2022",
+      "critico": true
+    },
+    {
+      "id": "pretensiones_cuantia",
+      "texto": "Pretensiones expresas y estimación razonada de la cuantía",
+      "norma": "Ley 2220 de 2022",
+      "critico": true
+    },
+    {
+      "id": "manifestacion_no_proceso",
+      "texto": "Manifestación de no haber presentado otra solicitud o demanda sobre los mismos hechos",
+      "norma": "Ley 2220 de 2022",
+      "critico": true
+    },
+    {
+      "id": "pruebas_anexos",
+      "texto": "Relación de pruebas aportadas y documentos soporte",
+      "norma": "Ley 2220 de 2022",
+      "critico": false
+    }
   ]
 }

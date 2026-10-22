@@ -127,5 +127,43 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=14787"
+  ],
+  "requisitos": [
+    {
+      "id": "autoridad_fiscalia",
+      "texto": "Designación de la Fiscalía General de la Nación o autoridad de policía judicial",
+      "norma": "Ley 906 de 2004",
+      "critico": true
+    },
+    {
+      "id": "denunciante_identificacion",
+      "texto": "Identificación del denunciante, condición de víctima o tercero y datos de contacto",
+      "norma": "Art. 69 Ley 906 de 2004",
+      "critico": true
+    },
+    {
+      "id": "hechos_delictivos",
+      "texto": "Narración circunstanciada de los hechos con tiempo, modo y lugar",
+      "norma": "Art. 69 Ley 906 de 2004",
+      "critico": true
+    },
+    {
+      "id": "presunto_autor",
+      "texto": "Individualización o datos para identificar al presunto responsable o declaración de autor indeterminado",
+      "norma": "Art. 69 Ley 906 de 2004",
+      "critico": false
+    },
+    {
+      "id": "compromiso_juramento",
+      "texto": "Constancia de juramento y advertencia sobre las sanciones del falso testimonio y la falsa denuncia",
+      "norma": "Arts. 69 y 70 Ley 906 de 2004",
+      "critico": true
+    },
+    {
+      "id": "pruebas",
+      "texto": "Relación de elementos materiales probatorios y evidencia física aportada",
+      "norma": "Ley 906 de 2004",
+      "critico": false
+    }
   ]
 }

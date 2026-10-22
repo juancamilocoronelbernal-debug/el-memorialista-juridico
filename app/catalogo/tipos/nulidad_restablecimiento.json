@@ -164,5 +164,61 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=42691"
+  ],
+  "requisitos": [
+    {
+      "id": "juez_administrativo",
+      "texto": "Designación del tribunal o juez administrativo competente",
+      "norma": "Art. 162 CPACA",
+      "critico": true
+    },
+    {
+      "id": "identificacion_partes",
+      "texto": "Identificación de la parte demandante y de la entidad pública demandada",
+      "norma": "Art. 162 num. 2 CPACA",
+      "critico": true
+    },
+    {
+      "id": "individualizacion_actos",
+      "texto": "Individualización precisa de los actos administrativos demandados (expresos y fictos)",
+      "norma": "Art. 162 num. 3 CPACA",
+      "critico": true
+    },
+    {
+      "id": "pretensiones_restablecimiento",
+      "texto": "Pretensiones de nulidad y restablecimiento económico del derecho discriminadas",
+      "norma": "Art. 138 CPACA",
+      "critico": true
+    },
+    {
+      "id": "hechos",
+      "texto": "Hechos claros, cronológicos y clasificados",
+      "norma": "Art. 162 num. 4 CPACA",
+      "critico": true
+    },
+    {
+      "id": "normas_violadas_concepto",
+      "texto": "Normas violadas y concepto de la violación explicado cargo por cargo",
+      "norma": "Art. 162 num. 5 CPACA",
+      "critico": true
+    },
+    {
+      "id": "cuantia_estimacion",
+      "texto": "Estimación razonada de la cuantía",
+      "norma": "Art. 162 num. 6 CPACA",
+      "critico": true
+    },
+    {
+      "id": "conciliacion_caducidad",
+      "texto": "Constancia de conciliación extrajudicial previa y acreditación de oportunidad frente al término de caducidad (4 meses)",
+      "norma": "Arts. 161 y 164 CPACA",
+      "critico": true
+    },
+    {
+      "id": "canales_digitales",
+      "texto": "Canal digital y juramento del art. 8 de la Ley 2213 de 2022",
+      "norma": "Ley 2213 de 2022",
+      "critico": true
+    }
   ]
 }

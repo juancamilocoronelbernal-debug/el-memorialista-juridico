@@ -112,5 +112,43 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=42691"
+  ],
+  "requisitos": [
+    {
+      "id": "autoridad_competente",
+      "texto": "Dirigido a la autoridad que expidió el acto o a su superior jerárquico",
+      "norma": "Art. 93 CPACA",
+      "critico": true
+    },
+    {
+      "id": "acto_revocable",
+      "texto": "Identificación precisa del acto administrativo cuya revocatoria se solicita",
+      "norma": "Art. 93 CPACA",
+      "critico": true
+    },
+    {
+      "id": "causal_taxativa",
+      "texto": "Invocación expresa y fundamentación de una de las causales taxativas del art. 93 del CPACA",
+      "norma": "Art. 93 CPACA",
+      "critico": true
+    },
+    {
+      "id": "no_recursos_o_consentimiento",
+      "texto": "Demostración de procedencia: no haberse interpuesto recursos (causal 1) o consentimiento escrito si es acto particular",
+      "norma": "Arts. 94 y 97 CPACA",
+      "critico": true
+    },
+    {
+      "id": "peticion_revocatoria",
+      "texto": "Petición formal y categórica de revocar totalmente o parcialmente el acto",
+      "norma": "Art. 93 CPACA",
+      "critico": true
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Dirección física y electrónica para notificaciones",
+      "norma": "CPACA",
+      "critico": true
+    }
   ]
 }

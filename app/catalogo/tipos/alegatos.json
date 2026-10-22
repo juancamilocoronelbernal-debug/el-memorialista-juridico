@@ -140,5 +140,37 @@
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425",
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=42691"
+  ],
+  "requisitos": [
+    {
+      "id": "oportunidad_radicado",
+      "texto": "Identificación del proceso, partes y radicado judicial",
+      "norma": "Art. 373 CGP / Art. 181 CPACA",
+      "critico": true
+    },
+    {
+      "id": "sintesis_litigio",
+      "texto": "Síntesis del litigio y fijación del problema jurídico debatido",
+      "norma": "Art. 373 CGP",
+      "critico": false
+    },
+    {
+      "id": "hechos_probados",
+      "texto": "Relación de los hechos probados con indicación concreta del medio probatorio que los respalda",
+      "norma": "Arts. 167 y 176 CGP",
+      "critico": true
+    },
+    {
+      "id": "valoracion_probatoria",
+      "texto": "Análisis crítico de las pruebas conforme a las reglas de la sana crítica",
+      "norma": "Art. 176 CGP",
+      "critico": false
+    },
+    {
+      "id": "peticion_conclusiva",
+      "texto": "Solicitud clara y congruente de la decisión de fondo esperada",
+      "norma": "Art. 281 CGP",
+      "critico": true
+    }
   ]
 }

@@ -160,5 +160,43 @@
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425",
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=254181"
+  ],
+  "requisitos": [
+    {
+      "id": "juez_referencia",
+      "texto": "Designación del juez, radicado del proceso y partes",
+      "norma": "Art. 96 num. 1 CGP",
+      "critico": true
+    },
+    {
+      "id": "pronunciamiento_hechos",
+      "texto": "Pronunciamiento expreso sobre cada hecho: si es cierto, no es cierto o no le consta, con las razones pertinentes",
+      "norma": "Art. 96 num. 2 CGP",
+      "critico": true
+    },
+    {
+      "id": "oposicion_pretensiones",
+      "texto": "Pronunciamiento expreso sobre las pretensiones de la demanda",
+      "norma": "Art. 96 num. 3 CGP",
+      "critico": true
+    },
+    {
+      "id": "excepciones_merito",
+      "texto": "Fundamentos de hecho y de derecho de las excepciones de mérito formuladas",
+      "norma": "Art. 96 num. 3 CGP",
+      "critico": true
+    },
+    {
+      "id": "pruebas",
+      "texto": "Petición individualizada de las pruebas que se pretenden hacer valer",
+      "norma": "Art. 96 num. 4 CGP",
+      "critico": false
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Dirección física y electrónica de notificaciones de demandado y apoderado",
+      "norma": "Art. 96 num. 5 CGP",
+      "critico": true
+    }
   ]
 }

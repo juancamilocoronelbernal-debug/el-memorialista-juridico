@@ -123,5 +123,49 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=188"
+  ],
+  "requisitos": [
+    {
+      "id": "juez_administrativo_circuito",
+      "texto": "Designación del juez administrativo o civil del circuito según la entidad demandada",
+      "norma": "Ley 472 de 1998",
+      "critico": true
+    },
+    {
+      "id": "derecho_colectivo",
+      "texto": "Indicación precisa del derecho o interés colectivo amenazado o vulnerado",
+      "norma": "Art. 18 Ley 472 de 1998",
+      "critico": true
+    },
+    {
+      "id": "hechos_amenaza",
+      "texto": "Hechos que demuestran la acción u omisión causante de la vulneración o amenaza",
+      "norma": "Art. 18 Ley 472 de 1998",
+      "critico": true
+    },
+    {
+      "id": "entidad_accionada",
+      "texto": "Determinación de la entidad pública o particular responsable",
+      "norma": "Art. 18 Ley 472 de 1998",
+      "critico": true
+    },
+    {
+      "id": "pretensiones_preventivas",
+      "texto": "Pretensiones dirigidas a cesar el daño o restituir las cosas a su estado anterior",
+      "norma": "Art. 18 Ley 472 de 1998",
+      "critico": true
+    },
+    {
+      "id": "solicitud_previa_autoridad",
+      "texto": "Acreditación de la solicitud previa a la autoridad para que adopte las medidas requeridas",
+      "norma": "Art. 144 CPACA / Ley 472 de 1998",
+      "critico": true
+    },
+    {
+      "id": "pruebas_notificaciones",
+      "texto": "Pruebas y direcciones de notificación con canales digitales",
+      "norma": "Ley 2213 de 2022",
+      "critico": false
+    }
   ]
 }

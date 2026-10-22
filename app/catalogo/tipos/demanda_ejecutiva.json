@@ -125,5 +125,55 @@
   "revisado_por": "Comité Jurídico El Memorialista",
   "fuentes": [
     "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425"
+  ],
+  "requisitos": [
+    {
+      "id": "designacion_juez",
+      "texto": "Designación del juez civil competente",
+      "norma": "Art. 82 num. 1 CGP",
+      "critico": true
+    },
+    {
+      "id": "identificacion_partes",
+      "texto": "Identificación y domicilio de ejecutante y ejecutado",
+      "norma": "Art. 82 num. 2 CGP",
+      "critico": true
+    },
+    {
+      "id": "titulo_ejecutivo",
+      "texto": "Determinación y aporte del título ejecutivo con obligación clara, expresa y exigible",
+      "norma": "Art. 422 CGP",
+      "critico": true
+    },
+    {
+      "id": "mandamiento_pago",
+      "texto": "Pretensión de mandamiento ejecutivo de pago por capital, intereses discriminados y costas",
+      "norma": "Art. 430 CGP",
+      "critico": true
+    },
+    {
+      "id": "hechos_exigibilidad",
+      "texto": "Hechos del negocio o título y mora en el cumplimiento de la obligación",
+      "norma": "Art. 82 num. 5 CGP",
+      "critico": true
+    },
+    {
+      "id": "cuantia_competencia",
+      "texto": "Estimación de la cuantía para determinar la competencia",
+      "norma": "Arts. 25 y 82 num. 8 CGP",
+      "critico": true
+    },
+    {
+      "id": "canal_digital",
+      "texto": "Canal digital de las partes y afirmación bajo juramento del art. 8 de la Ley 2213 de 2022",
+      "norma": "Arts. 6 y 8 Ley 2213 de 2022",
+      "critico": true
+    },
+    {
+      "id": "notificaciones",
+      "texto": "Dirección física y electrónica para notificaciones personales",
+      "norma": "Art. 82 num. 10 CGP",
+      "critico": true
+    }
   ]
 }
