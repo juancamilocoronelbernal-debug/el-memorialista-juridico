@@ -1,0 +1,116 @@
+[
+  {
+    "id": "alimentos_01_caso_estandar",
+    "tipo": "alimentos",
+    "descripcion": "Caso 1 de prueba formal y procesal para el trámite de Fijación de cuota alimentaria en Bogotá, D.C..",
+    "datos": {
+      "destinatario": "Señor Juez Competente de Bogotá, D.C.",
+      "ciudad": "Bogotá, D.C.",
+      "cliente": "Persona Natural Ejemplo 1, C.C. 1.010.201.301",
+      "alimentarios": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Fijación de cuota alimentaria en la ciudad de Bogotá, D.C..",
+      "contraparte": "Entidad o Empresa Demandada 1 S.A.S., NIT 900.121.341-8",
+      "necesidades": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Fijación de cuota alimentaria en la ciudad de Bogotá, D.C..",
+      "capacidad": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Fijación de cuota alimentaria en la ciudad de Bogotá, D.C..",
+      "hechos": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Fijación de cuota alimentaria en la ciudad de Bogotá, D.C..",
+      "pretensiones": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Fijación de cuota alimentaria en la ciudad de Bogotá, D.C..",
+      "conciliacion": "agotada",
+      "medidas": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Fijación de cuota alimentaria en la ciudad de Bogotá, D.C..",
+      "pruebas": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Fijación de cuota alimentaria en la ciudad de Bogotá, D.C..",
+      "notificaciones": "Demandante: Calle 10 # 20-30, Bogotá, D.C.; cliente1@correo.com. Demandado: Carrera 15 # 10-20; notificaciones1@empresa.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Persona Natural Ejemplo 1",
+        "Entidad o Empresa Demandada 1"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Empresa Ficticia Extranjera Inexistente",
+        "Ciudad Inexistente Desconocida"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 18000
+    }
+  },
+  {
+    "id": "alimentos_02_caso_estandar",
+    "tipo": "alimentos",
+    "descripcion": "Caso 2 de prueba formal y procesal para el trámite de Fijación de cuota alimentaria en Medellín (Antioquia).",
+    "datos": {
+      "destinatario": "Señor Juez Competente de Medellín (Antioquia)",
+      "ciudad": "Medellín (Antioquia)",
+      "cliente": "Persona Natural Ejemplo 2, C.C. 1.010.202.302",
+      "alimentarios": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Fijación de cuota alimentaria en la ciudad de Medellín (Antioquia).",
+      "contraparte": "Entidad o Empresa Demandada 2 S.A.S., NIT 900.122.342-8",
+      "necesidades": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Fijación de cuota alimentaria en la ciudad de Medellín (Antioquia).",
+      "capacidad": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Fijación de cuota alimentaria en la ciudad de Medellín (Antioquia).",
+      "hechos": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Fijación de cuota alimentaria en la ciudad de Medellín (Antioquia).",
+      "pretensiones": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Fijación de cuota alimentaria en la ciudad de Medellín (Antioquia).",
+      "conciliacion": "agotada",
+      "medidas": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Fijación de cuota alimentaria en la ciudad de Medellín (Antioquia).",
+      "pruebas": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Fijación de cuota alimentaria en la ciudad de Medellín (Antioquia).",
+      "notificaciones": "Demandante: Calle 20 # 20-30, Medellín (Antioquia); cliente2@correo.com. Demandado: Carrera 25 # 10-20; notificaciones2@empresa.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Persona Natural Ejemplo 2",
+        "Entidad o Empresa Demandada 2"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Empresa Ficticia Extranjera Inexistente",
+        "Ciudad Inexistente Desconocida"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 18000
+    }
+  },
+  {
+    "id": "alimentos_03_caso_estandar",
+    "tipo": "alimentos",
+    "descripcion": "Caso 3 de prueba formal y procesal para el trámite de Fijación de cuota alimentaria en Cali (Valle del Cauca).",
+    "datos": {
+      "destinatario": "Señor Juez Competente de Cali (Valle del Cauca)",
+      "ciudad": "Cali (Valle del Cauca)",
+      "cliente": "Persona Natural Ejemplo 3, C.C. 1.010.203.303",
+      "alimentarios": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Fijación de cuota alimentaria en la ciudad de Cali (Valle del Cauca).",
+      "contraparte": "Entidad o Empresa Demandada 3 S.A.S., NIT 900.123.343-8",
+      "necesidades": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Fijación de cuota alimentaria en la ciudad de Cali (Valle del Cauca).",
+      "capacidad": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Fijación de cuota alimentaria en la ciudad de Cali (Valle del Cauca).",
+      "hechos": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Fijación de cuota alimentaria en la ciudad de Cali (Valle del Cauca).",
+      "pretensiones": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Fijación de cuota alimentaria en la ciudad de Cali (Valle del Cauca).",
+      "conciliacion": "agotada",
+      "medidas": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Fijación de cuota alimentaria en la ciudad de Cali (Valle del Cauca).",
+      "pruebas": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Fijación de cuota alimentaria en la ciudad de Cali (Valle del Cauca).",
+      "notificaciones": "Demandante: Calle 30 # 20-30, Cali (Valle del Cauca); cliente3@correo.com. Demandado: Carrera 35 # 10-20; notificaciones3@empresa.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Persona Natural Ejemplo 3",
+        "Entidad o Empresa Demandada 3"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Empresa Ficticia Extranjera Inexistente",
+        "Ciudad Inexistente Desconocida"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 18000
+    }
+  }
+]

@@ -1,0 +1,130 @@
+[
+  {
+    "id": "demanda_verbal_01_suministro_incumplimiento",
+    "tipo": "demanda_verbal",
+    "descripcion": "Demanda verbal de mayor cuantía por incumplimiento de contrato de suministro industrial.",
+    "datos": {
+      "destinatario": "Juez Civil del Circuito de Bogotá (Reparto)",
+      "ciudad": "Bogotá, D.C.",
+      "cliente": "Industrias Metalmecánicas Andinas S.A.S., NIT 900.234.567-8, rep. por Camilo Torres C.C. 79.890.123",
+      "contraparte": "Maquinarias e Insumos de Colombia S.A., NIT 890.123.456-9",
+      "asunto": "Incumplimiento de contrato de suministro de tubería de acero con indemnización de perjuicios",
+      "cuantia": "$ 120.000.000",
+      "hechos": "1. El 15 de marzo de 2025 las partes suscribieron contrato de suministro comercial de tubería de acero.\n2. La demandante canceló el anticipo pactado por $60.000.000 el 20 de marzo de 2025.\n3. La demandada debía entregar el primer lote el 1 de junio de 2025 y a la fecha no ha realizado ninguna entrega.\n4. El incumplimiento causó daño emergente y lucro cesante por paralización de obras.",
+      "pretensiones": "1. Declarar que Maquinarias e Insumos de Colombia S.A. incumplió el contrato de suministro.\n2. Condenar a la demandada a pagar por concepto de perjuicios materiales la suma de $120.000.000 M/CTE.\n3. Condenar en costas y agencias en derecho.",
+      "pruebas": "Contrato de suministro, comprobante de pago del anticipo por $60.000.000, requerimientos de fecha 15/07/2025.",
+      "notificaciones": "Demandante: Avenida Calle 26 # 69-70, Bogotá; gerencia@metalmecanicas.com.co. Demandada: Carrera 7 # 100-20, Bogotá; notificaciones@maquinariascol.com",
+      "juramento_estimatorio": "Bajo la gravedad del juramento estimatorio (art. 206 CGP), se estiman los perjuicios en $120.000.000 ($60.000.000 daño emergente y $60.000.000 lucro cesante).",
+      "conciliacion_agotada": true,
+      "canal_digital_demandado": "La dirección electrónica notificaciones@maquinariascol.com corresponde a la inscrita en el registro mercantil de la demandada (art. 8 Ley 2213 de 2022)."
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "FUNDAMENTOS",
+        "JURAMENTO ESTIMATORIO",
+        "PRUEBAS",
+        "CUANTÍA",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Industrias Metalmecánicas",
+        "900.234.567-8",
+        "Maquinarias e Insumos",
+        "120.000.000"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Nueva EPS",
+        "Sanitas",
+        "Colpensiones"
+      ],
+      "longitud_minima": 1500,
+      "longitud_maxima": 18000
+    }
+  },
+  {
+    "id": "demanda_verbal_02_responsabilidad_extracontractual_transito",
+    "tipo": "demanda_verbal",
+    "descripcion": "Demanda verbal por responsabilidad civil extracontractual por accidente de tránsito.",
+    "datos": {
+      "destinatario": "Juez Civil del Circuito de Barranquilla (Reparto)",
+      "ciudad": "Barranquilla (Atlántico)",
+      "cliente": "Andrés Felipe Mendoza Castro, C.C. 1.045.678.901",
+      "contraparte": "Transportes del Caribe S.A.S., NIT 890.456.789-0, y conductor Jorge Mario Pérez, C.C. 8.765.432",
+      "asunto": "Responsabilidad civil extracontractual por colisión de automotor de servicio público",
+      "cuantia": "$ 85.000.000",
+      "hechos": "1. El 10 de febrero de 2026, el vehículo buseta de placas UVC-123 de propiedad de la demandada colisionó contra el automóvil del demandante.\n2. El informe policial de accidentes de tránsito (IPAT) determinó exceso de velocidad e invasión de carril del conductor demandado.\n3. El demandante sufrió lesiones físicas y pérdida total de su vehículo evaluada en $55.000.000.",
+      "pretensiones": "1. Declarar civil y solidariamente responsables a Transportes del Caribe S.A.S. y a Jorge Mario Pérez.\n2. Condenar al pago de $55.000.000 por daño emergente y $30.000.000 por lucro cesante y daño a la salud.\n3. Condenar en costas.",
+      "pruebas": "Informe IPAT No. 45678, peritaje de avalúo de daños de Fasecolda, dictamen médico de Medicina Legal.",
+      "notificaciones": "Demandante: Carrera 54 # 72-10, Barranquilla; andres.mendoza@email.com. Demandada: Calle 30 # 40-12, Barranquilla; juridica@transcaribe.com.co",
+      "juramento_estimatorio": "Conforme al artículo 206 del CGP, se estiman los perjuicios materiales en $85.000.000 M/CTE.",
+      "conciliacion_agotada": true,
+      "canal_digital_demandado": "La dirección electrónica fue informada en la audiencia de conciliación prejudicial fallida."
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "FUNDAMENTOS",
+        "JURAMENTO ESTIMATORIO",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Andrés Felipe Mendoza",
+        "Transportes del Caribe",
+        "UVC-123",
+        "85.000.000"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Ecopetrol",
+        "Clínica del Country",
+        "Bogotá"
+      ],
+      "longitud_minima": 1500,
+      "longitud_maxima": 18000
+    }
+  },
+  {
+    "id": "demanda_verbal_03_resolucion_compraventa_inmueble",
+    "tipo": "demanda_verbal",
+    "descripcion": "Demanda de resolución de contrato de compraventa de bien inmueble por no pago del saldo del precio.",
+    "datos": {
+      "destinatario": "Juez Civil del Circuito de Bucaramanga (Reparto)",
+      "ciudad": "Bucaramanga (Santander)",
+      "cliente": "Gloria Esperanza Duarte Gómez, C.C. 63.456.789",
+      "contraparte": "Constructora Santander Siglo XXI S.A.S., NIT 900.876.543-2",
+      "asunto": "Resolución de contrato de promesa de compraventa de apartamento con restitución del bien y cláusula penal",
+      "cuantia": "$ 95.000.000",
+      "hechos": "1. El 12 de enero de 2025 las partes suscribieron contrato de promesa de compraventa sobre el apartamento 502 del Edificio Mirador del Parque.\n2. La compradora demandada se comprometió a pagar el saldo de $95.000.000 el 1 de junio de 2025 en la Notaría 3 de Bucaramanga.\n3. La demandante compareció y la demandada no asistió ni pagó el precio pactado, levantándose acta de comparecencia.",
+      "pretensiones": "1. Declarar resuelto el contrato de compraventa por incumplimiento culpable de la demandada.\n2. Ordenar la restitución del inmueble a favor de la demandante.\n3. Condenar al pago de la cláusula penal moratoria pactada en $25.000.000.",
+      "pruebas": "Contrato de promesa de compraventa, copia de escritura pública, acta de comparecencia notarial del 1/06/2025.",
+      "notificaciones": "Demandante: Carrera 33 # 48-20, Bucaramanga; gloria.duarte@email.com. Demandada: Calle 36 # 15-40, Bucaramanga; notificaciones@constructorsantander.com",
+      "conciliacion_agotada": true,
+      "canal_digital_demandado": "Canal digital obtenido del certificado de existencia y representación legal de la Cámara de Comercio de Bucaramanga."
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "FUNDAMENTOS",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Gloria Esperanza Duarte",
+        "Constructora Santander",
+        "Apartamento 502",
+        "95.000.000"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Sanitas",
+        "Policía Nacional",
+        "Arrendamiento"
+      ],
+      "longitud_minima": 1500,
+      "longitud_maxima": 18000
+    }
+  }
+]

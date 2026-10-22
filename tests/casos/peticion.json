@@ -1,0 +1,107 @@
+[
+  {
+    "id": "peticion_01_copias_expediente_curaduria",
+    "tipo": "peticion",
+    "descripcion": "Derecho de petición solicitando copias y estado de trámite de licencia de construcción.",
+    "datos": {
+      "destinatario": "Curador Urbano No. 2 de Bogotá D.C.",
+      "ciudad": "Bogotá, D.C.",
+      "cliente": "Héctor Jaime Pardo Castro, C.C. 19.456.789",
+      "pretensiones": "1. Expedir copia completa del expediente de radicación No. 2026-00456 correspondiente a la solicitud de licencia de construcción del predio Calle 85 # 14-30.\n2. Informar el estado actual del trámite y fecha de resolución estimada.",
+      "fundamentos": "Artículo 23 de la Constitución Política y Ley 1755 de 2015 (arts. 13 a 17 del CPACA sobre derecho a obtener copias e información pública).",
+      "notificaciones": "Calle 85 # 14-20, Bogotá; hector.pardo@email.com; teléfono 3102345678"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "OBJETO DE LA PETICIÓN",
+        "FUNDAMENTOS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Héctor Jaime Pardo",
+        "Curador Urbano",
+        "2026-00456",
+        "Ley 1755 de 2015"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Sanitas",
+        "Demanda verbal",
+        "Pretensiones condenatorias"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 8000
+    }
+  },
+  {
+    "id": "peticion_02_reclamacion_reliquidacion_colpensiones",
+    "tipo": "peticion",
+    "descripcion": "Derecho de petición a Colpensiones solicitando reliquidación pensional e inclusión de semanas cotizadas.",
+    "datos": {
+      "destinatario": "Administradora Colombiana de Pensiones - COLPENSIONES",
+      "ciudad": "Bogotá, D.C.",
+      "cliente": "Luis Alfonso Cárdenas Niño, C.C. 13.890.123",
+      "pretensiones": "1. Reliquidar la pensión de vejez reconocida mediante Resolución SUB-45678 de 2024.\n2. Incluir en la historia laboral 114 semanas cotizadas en la empresa Hilados Andinos entre 1988 y 1991.\n3. Pagar el retroactivo pensional derivado del reajuste.",
+      "fundamentos": "Art. 23 C.P., Ley 1755 de 2015, Ley 100 de 1993, Sentencia SU-769 de 2014 sobre custodia de historia laboral.",
+      "pruebas": "Resolución SUB-45678, certificados de pago y planillas históricas de Hilados Andinos.",
+      "notificaciones": "Transversal 22 # 53-40, Bogotá; luis.cardenas@email.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "PETICIÓN",
+        "HECHOS",
+        "FUNDAMENTOS",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Luis Alfonso Cárdenas",
+        "COLPENSIONES",
+        "Resolución SUB-45678",
+        "114 semanas"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Divorcio",
+        "Pagaré",
+        "Alimentos"
+      ],
+      "longitud_minima": 900,
+      "longitud_maxima": 9000
+    }
+  },
+  {
+    "id": "peticion_03_servicios_publicos_desviacion",
+    "tipo": "peticion",
+    "descripcion": "Petición y reclamo a empresa de acueducto por desviación significativa en la facturación.",
+    "datos": {
+      "destinatario": "Empresa de Acueducto y Alcantarillado de Pereira - Aguas y Aguas",
+      "ciudad": "Pereira (Risaralda)",
+      "cliente": "Marta Elena Quintero Solorza, C.C. 42.567.890",
+      "pretensiones": "1. Investigar y corregir la desviación significativa en el consumo facturado en el mes de septiembre de 2026 (cuenta contrato 987654).\n2. Practicar visita técnica de inspección al medidor No. 45892.\n3. Reliquidar la factura cobrando el consumo promedio histórico mientras se resuelve la reclamación.",
+      "fundamentos": "Artículo 23 de la Constitución, artículos 149 y 150 de la Ley 142 de 1994 (Régimen de Servicios Públicos Domiciliarios).",
+      "pruebas": "Facturas de los últimos 6 periodos donde consta consumo promedio de 14 m3 y factura reclamada con 85 m3.",
+      "notificaciones": "Avenida Circunvalar # 12-45, Pereira; marta.quintero@email.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "PETICIÓN",
+        "HECHOS",
+        "FUNDAMENTOS",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Marta Elena Quintero",
+        "Aguas y Aguas",
+        "987654",
+        "Ley 142 de 1994"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Demanda penal",
+        "Corte Suprema",
+        "Fiscalía"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 8000
+    }
+  }
+]

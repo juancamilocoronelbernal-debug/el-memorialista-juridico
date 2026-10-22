@@ -15,3 +15,7 @@ __pycache__/
 *.log
 *.sqlite3
 .DS_Store
+
+# Reportes de evaluación generados dinámicamente
+reporte_evaluacion*.html
+reporte_evaluacion*.json

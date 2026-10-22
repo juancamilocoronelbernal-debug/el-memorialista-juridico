@@ -462,7 +462,7 @@
       'defensori', 'consejo', 'centro de conciliacion', 'atentamente', 'cordialmente',
       'articulo', 'ley ', 'decreto', 'constitucion', 'acuerdo', 'resolucion', 'circulo',
       'primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'septimo', 'octavo', 'noveno', 'decimo',
-      'paragrafo', 'capitulo', 'seccion', 'numeral', 'inciso', 'acapite', 'asunto',
+      'paragrafo', 'capitulo', 'seccion', 'numeral', 'inciso', 'acapite', 'asunto', 'referencia', 'canal digital', 'parte actora', 'parte demandada',
       'por medio del cual', 'en contra de', 'al tenor de', 'en merito de lo expuesto',
       'sentencia', 'ejecucion', 'mandamiento', 'proceso', 'contrato', 'arrendamiento', 'promesa', 'compraventa'
     ];

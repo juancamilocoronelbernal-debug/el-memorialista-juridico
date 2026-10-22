@@ -1,0 +1,107 @@
+[
+  {
+    "id": "impugnacion_tutela_01_caso_estandar",
+    "tipo": "impugnacion_tutela",
+    "descripcion": "Caso 1 de prueba formal y procesal para el trámite de Impugnación de fallo de tutela en Bogotá, D.C..",
+    "datos": {
+      "destinatario": "Señor Juez Competente de Bogotá, D.C.",
+      "radicado": "11001-40-03-010-2026-00101-00",
+      "ciudad": "Bogotá, D.C.",
+      "cliente": "Persona Natural Ejemplo 1, C.C. 1.010.201.301",
+      "contraparte": "Entidad o Empresa Demandada 1 S.A.S., NIT 900.121.341-8",
+      "fallo": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Impugnación de fallo de tutela en la ciudad de Bogotá, D.C..",
+      "notificacion_fecha": "2026-10-01",
+      "razones": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Impugnación de fallo de tutela en la ciudad de Bogotá, D.C..",
+      "pretensiones": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Impugnación de fallo de tutela en la ciudad de Bogotá, D.C..",
+      "pruebas": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Impugnación de fallo de tutela en la ciudad de Bogotá, D.C.."
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Persona Natural Ejemplo 1",
+        "Entidad o Empresa Demandada 1"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Empresa Ficticia Extranjera Inexistente",
+        "Ciudad Inexistente Desconocida"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 18000
+    }
+  },
+  {
+    "id": "impugnacion_tutela_02_caso_estandar",
+    "tipo": "impugnacion_tutela",
+    "descripcion": "Caso 2 de prueba formal y procesal para el trámite de Impugnación de fallo de tutela en Medellín (Antioquia).",
+    "datos": {
+      "destinatario": "Señor Juez Competente de Medellín (Antioquia)",
+      "radicado": "05001-31-03-005-2025-00202-00",
+      "ciudad": "Medellín (Antioquia)",
+      "cliente": "Persona Natural Ejemplo 2, C.C. 1.010.202.302",
+      "contraparte": "Entidad o Empresa Demandada 2 S.A.S., NIT 900.122.342-8",
+      "fallo": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Impugnación de fallo de tutela en la ciudad de Medellín (Antioquia).",
+      "notificacion_fecha": "2026-10-01",
+      "razones": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Impugnación de fallo de tutela en la ciudad de Medellín (Antioquia).",
+      "pretensiones": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Impugnación de fallo de tutela en la ciudad de Medellín (Antioquia).",
+      "pruebas": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Impugnación de fallo de tutela en la ciudad de Medellín (Antioquia)."
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Persona Natural Ejemplo 2",
+        "Entidad o Empresa Demandada 2"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Empresa Ficticia Extranjera Inexistente",
+        "Ciudad Inexistente Desconocida"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 18000
+    }
+  },
+  {
+    "id": "impugnacion_tutela_03_caso_estandar",
+    "tipo": "impugnacion_tutela",
+    "descripcion": "Caso 3 de prueba formal y procesal para el trámite de Impugnación de fallo de tutela en Cali (Valle del Cauca).",
+    "datos": {
+      "destinatario": "Señor Juez Competente de Cali (Valle del Cauca)",
+      "radicado": "76001-22-01-008-2024-00303-00",
+      "ciudad": "Cali (Valle del Cauca)",
+      "cliente": "Persona Natural Ejemplo 3, C.C. 1.010.203.303",
+      "contraparte": "Entidad o Empresa Demandada 3 S.A.S., NIT 900.123.343-8",
+      "fallo": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Impugnación de fallo de tutela en la ciudad de Cali (Valle del Cauca).",
+      "notificacion_fecha": "2026-10-01",
+      "razones": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Impugnación de fallo de tutela en la ciudad de Cali (Valle del Cauca).",
+      "pretensiones": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Impugnación de fallo de tutela en la ciudad de Cali (Valle del Cauca).",
+      "pruebas": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Impugnación de fallo de tutela en la ciudad de Cali (Valle del Cauca)."
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Persona Natural Ejemplo 3",
+        "Entidad o Empresa Demandada 3"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Empresa Ficticia Extranjera Inexistente",
+        "Ciudad Inexistente Desconocida"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 18000
+    }
+  }
+]

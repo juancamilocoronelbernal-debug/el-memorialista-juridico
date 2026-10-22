@@ -1,0 +1,117 @@
+[
+  {
+    "id": "demanda_ejecutiva_01_pagare_bancario",
+    "tipo": "demanda_ejecutiva",
+    "descripcion": "Demanda ejecutiva singular de menor cuantía para cobro de pagaré de crédito comercial.",
+    "datos": {
+      "destinatario": "Juez Civil Municipal de Bogotá (Reparto)",
+      "ciudad": "Bogotá, D.C.",
+      "cliente": "Banco Comercial de Colombia S.A., NIT 860.001.234-5",
+      "contraparte": "Servicios Logísticos del Oriente S.A.S., NIT 901.234.567-1, y avalista Jorge Enrique Prada C.C. 19.345.678",
+      "titulo": "Pagaré No. 450982 con carta de instrucciones, suscrito el 10 de enero de 2025 por capital de $42.000.000",
+      "valores": "Capital: $42.000.000 M/CTE más intereses corrientes y moratorios a la tasa máxima legal de la Superfinanciera desde el 1 de julio de 2025.",
+      "cuantia": "$ 51.500.000",
+      "medidas": "Embargo y retención de dineros en cuentas corrientes y de ahorros de los demandados en entidades bancarias.",
+      "notificaciones": "Demandante: Calle 72 # 10-07, Bogotá; juridico@bancocomercial.com.co. Demandados: Carrera 15 # 85-30, Bogotá; contacto@logisticasoriente.com",
+      "canal_digital_demandado": "Dirección electrónica reportada en la solicitud de crédito y en el registro mercantil."
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "MANDAMIENTO DE PAGO",
+        "TITULO EJECUTIVO",
+        "FUNDAMENTOS",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Banco Comercial de Colombia",
+        "Pagaré No. 450982",
+        "42.000.000",
+        "Jorge Enrique Prada"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Tutela",
+        "Nueva EPS",
+        "Contrato realidad"
+      ],
+      "longitud_minima": 1200,
+      "longitud_maxima": 14000
+    }
+  },
+  {
+    "id": "demanda_ejecutiva_02_cuotas_administracion",
+    "tipo": "demanda_ejecutiva",
+    "descripcion": "Cobro ejecutivo de expensas comunes ordinarias y extraordinarias en propiedad horizontal.",
+    "datos": {
+      "destinatario": "Juez Civil Municipal de Cali (Reparto)",
+      "ciudad": "Cali (Valle del Cauca)",
+      "cliente": "Edificio Residencial Las Palmas P.H., NIT 805.123.456-7, rep. por su Administradora Claudia Silva C.C. 31.890.123",
+      "contraparte": "Alonso Mendoza Guerrero, C.C. 16.789.012, propietario del Apartamento 401",
+      "titulo": "Certificación de deuda expedida por la administradora de fecha 5 de octubre de 2026 (art. 48 Ley 675 de 2001)",
+      "valores": "Cuotas ordinarias y extraordinarias adeudadas: $14.200.000 más intereses de mora del 1.5 veces el interés bancario corriente.",
+      "cuantia": "$ 16.800.000",
+      "medidas": "Embargo y secuestro del Apartamento 401, matrícula inmobiliaria 370-123456 de la ORIP de Cali.",
+      "notificaciones": "Demandante: Calle 5 # 66-20, Cali; admin@edificiolaspalmas.com. Demandado: Calle 5 # 66-20 Apto 401, Cali; alonso.mendoza@email.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "MANDAMIENTO",
+        "TITULO",
+        "MEDIDAS CAUTELARES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Edificio Residencial Las Palmas",
+        "Alonso Mendoza Guerrero",
+        "Apartamento 401",
+        "14.200.000"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Sanitas",
+        "Despido injusto",
+        "DIAN"
+      ],
+      "longitud_minima": 1200,
+      "longitud_maxima": 14000
+    }
+  },
+  {
+    "id": "demanda_ejecutiva_03_acta_conciliacion",
+    "tipo": "demanda_ejecutiva",
+    "descripcion": "Demanda ejecutiva por incumplimiento de acuerdo en acta de conciliación extrajudicial.",
+    "datos": {
+      "destinatario": "Juez Civil Municipal de Medellín (Reparto)",
+      "ciudad": "Medellín (Antioquia)",
+      "cliente": "Beatriz Eugenia Morales Ríos, C.C. 43.123.456",
+      "contraparte": "Constructores e Inmobiliarios del Valle S.A.S., NIT 900.678.901-3",
+      "titulo": "Acta de Conciliación No. 120-2025 del Centro de Conciliación de la Personería de Medellín del 14/08/2025",
+      "valores": "Saldo insoluto de acuerdo conciliatorio por valor de $28.000.000 pagaderos en dos cuotas vencidas el 15/10/2025 y 15/12/2025.",
+      "cuantia": "$ 32.400.000",
+      "medidas": "Embargo de cuentas corrientes y del vehículo de placas TKR-456 de propiedad de la demandada.",
+      "notificaciones": "Demandante: Circular 4 # 73-10, Medellín; beatriz.morales@email.com. Demandada: Carrera 43A # 1-50, Medellín; gerencia@constructoresvalle.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "MANDAMIENTO DE PAGO",
+        "TITULO EJECUTIVO",
+        "FUNDAMENTOS",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Beatriz Eugenia Morales",
+        "Constructores e Inmobiliarios",
+        "Acta de Conciliación No. 120-2025",
+        "28.000.000"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Ecopetrol",
+        "Poder",
+        "Tutela"
+      ],
+      "longitud_minima": 1200,
+      "longitud_maxima": 14000
+    }
+  }
+]

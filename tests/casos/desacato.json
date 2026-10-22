@@ -1,0 +1,113 @@
+[
+  {
+    "id": "desacato_01_salud_cirugia",
+    "tipo": "desacato",
+    "descripcion": "Incidente de desacato por no realización de procedimiento quirúrgico ordenado en sentencia de tutela.",
+    "datos": {
+      "destinatario": "Juez Cuarto Civil Municipal de Bogotá",
+      "ciudad": "Bogotá, D.C.",
+      "radicado": "11001-40-03-004-2026-00120-00",
+      "cliente": "Rosa María Valencia de Gómez, C.C. 24.567.890",
+      "contraparte": "EPS Sanitas S.A.S., Representante Legal Dr. Juan Pablo Restrepo",
+      "fallo": "Sentencia de tutela del 15 de agosto de 2026 que concedió el amparo y ordenó practicar artroplastia total de rodilla en 10 días.",
+      "incumplimiento": "Han transcurrido más de 45 días sin que la EPS asigne quirófano ni especialista, desacatando abiertamente la orden judicial.",
+      "pretensiones": "1. Abrir incidente de desacato conforme al artículo 52 del Decreto 2591 de 1991.\n2. Requerir al superior jerárquico del obligado según el artículo 27.\n3. Imponer las sanciones de arresto hasta por 6 meses y multa de hasta 20 salarios mínimos legales.",
+      "pruebas": "Copia de sentencia de tutela del 15/08/2026, requerimientos reiterados radicados ante la EPS el 25/08 y 15/09/2026.",
+      "notificaciones": "Accionante: Calle 127 # 45-20, Bogotá; rosa.valencia@email.com. Accionada: notificaciones@epssanitas.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "ANTECEDENTES",
+        "HECHOS DEL INCUMPLIMIENTO",
+        "SOLICITUDES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Rosa María Valencia",
+        "EPS Sanitas",
+        "11001-40-03-004-2026-00120-00",
+        "Decreto 2591 de 1991"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Contrato de trabajo",
+        "Prescripción adquisitiva"
+      ],
+      "longitud_minima": 1000,
+      "longitud_maxima": 10000
+    }
+  },
+  {
+    "id": "desacato_02_peticion_sin_respuesta",
+    "tipo": "desacato",
+    "descripcion": "Incidente de desacato contra Secretaría de Movilidad por no contestar derecho de petición tutelado.",
+    "datos": {
+      "destinatario": "Juez Diez Administrativo de Medellín",
+      "ciudad": "Medellín (Antioquia)",
+      "radicado": "05001-33-33-010-2026-00215-00",
+      "cliente": "Carlos Alberto Osorio Mesa, C.C. 71.234.567",
+      "contraparte": "Secretaría de Movilidad de Medellín, Secretario de Despacho",
+      "fallo": "Fallo de tutela No. 145 del 1 de septiembre de 2026 que ordenó responder de fondo la petición en 48 horas.",
+      "incumplimiento": "Vencido con creces el término perentorio, la entidad accionada no ha emitido respuesta alguna.",
+      "pretensiones": "1. Iniciar trámite incidental de desacato (arts. 27 y 52 Decreto 2591 de 1991).\n2. Sancionar al funcionario responsable con multa y arresto por desacato continuo.",
+      "pruebas": "Fallo de tutela notificado el 2/09/2026, constancia de no respuesta.",
+      "notificaciones": "Accionante: Calle 50 # 45-12, Medellín; carlos.osorio@email.com. Accionada: notificacionesmovilidad@medellin.gov.co"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "ANTECEDENTES",
+        "INCUMPLIMIENTO",
+        "SOLICITUDES",
+        "PRUEBAS"
+      ],
+      "entidades_deben_aparecer": [
+        "Carlos Alberto Osorio",
+        "Secretaría de Movilidad",
+        "05001-33-33-010-2026-00215-00"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Colpensiones",
+        "Clínica Medellín"
+      ],
+      "longitud_minima": 900,
+      "longitud_maxima": 9000
+    }
+  },
+  {
+    "id": "desacato_03_reintegro_fueromaterno",
+    "tipo": "desacato",
+    "descripcion": "Desacato por omisión en reintegro laboral ordenado en fallo de tutela a madre lactante.",
+    "datos": {
+      "destinatario": "Juez Séptimo Laboral del Circuito de Cali",
+      "ciudad": "Cali (Valle del Cauca)",
+      "radicado": "76001-31-05-007-2026-00088-00",
+      "cliente": "Lorena Patricia Benítez Rojas, C.C. 1.130.456.789",
+      "contraparte": "Empresas Textiles de Occidente S.A., Gerente General",
+      "fallo": "Sentencia de tutela del 20 de julio de 2026 que ordenó reintegrar a la trabajadora en 48 horas a su cargo habitual.",
+      "incumplimiento": "La empresa se negó a recibirla en sus instalaciones y no ha pagado los salarios ordenados.",
+      "pretensiones": "1. Abrir incidente de desacato y requerir al representante legal.\n2. Imponer sanción de arresto y multa pecuniaria hasta tanto se cumpla efectivamente la orden de reintegro.",
+      "pruebas": "Sentencia judicial, acta de presentación a laborar del 25/07/2026 rechazada por la empresa.",
+      "notificaciones": "Accionante: Calle 15 # 30-40, Cali; lorena.benitez@email.com. Accionada: legal@textilesoccidente.com.co"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "ANTECEDENTES",
+        "INCUMPLIMIENTO",
+        "SOLICITUDES",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Lorena Patricia Benítez",
+        "Empresas Textiles",
+        "76001-31-05-007-2026-00088-00"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Pensiones",
+        "DIAN",
+        "Hospital"
+      ],
+      "longitud_minima": 900,
+      "longitud_maxima": 9000
+    }
+  }
+]

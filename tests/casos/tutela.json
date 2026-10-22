@@ -1,0 +1,136 @@
+[
+  {
+    "id": "tutela_01_salud_medicamentos",
+    "tipo": "tutela",
+    "descripcion": "Acción de tutela por negación de medicamento oncológico y tratamiento integral a adulto mayor.",
+    "datos": {
+      "destinatario": "Juez Civil Municipal de Bogotá (Reparto)",
+      "ciudad": "Bogotá, D.C.",
+      "cliente": "María Fernanda López Rincón, mayor de edad, identificada con C.C. 1.020.304.050",
+      "contraparte": "Nueva EPS S.A., NIT 900.156.264-2, representante legal o quien haga sus veces",
+      "derechos": [
+        "Salud",
+        "Vida digna",
+        "Seguridad social"
+      ],
+      "hechos": "1. La accionante tiene 68 años y fue diagnosticada con adenocarcinoma pulmonar en etapa III.\n2. Su médico tratante adscrito ordenó el medicamento Pembrolizumab 100 mg cada 3 semanas.\n3. El 10 de octubre de 2026 Nueva EPS negó el suministro alegando trámite administrativo.\n4. La accionante carece de recursos económicos para costear el tratamiento privadamente.",
+      "pretensiones": "1. Amparar los derechos fundamentales a la salud, vida digna e integridad personal.\n2. Ordenar a Nueva EPS autorizar y entregar el medicamento Pembrolizumab 100 mg en 48 horas.\n3. Ordenar el tratamiento integral derivado de su patología oncológica.",
+      "pruebas": "Historia clínica No. 1020304050, fórmula médica del 5/10/2026, negación de Nueva EPS del 10/10/2026.",
+      "notificaciones": "Accionante: Calle 45 # 13-20, Bogotá; maria.lopez@email.com. Accionada: notificaciones@nuevaeps.com.co",
+      "juramento": true
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "FUNDAMENTOS",
+        "PRUEBAS",
+        "JURAMENTO",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "María Fernanda López",
+        "1.020.304.050",
+        "Nueva EPS",
+        "Pembrolizumab"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Sanitas",
+        "Sura",
+        "Bancolombia",
+        "Juzgado 50 Penal"
+      ],
+      "longitud_minima": 1200,
+      "longitud_maxima": 15000
+    }
+  },
+  {
+    "id": "tutela_02_debido_proceso_universidad",
+    "tipo": "tutela",
+    "descripcion": "Tutela por vulneración del derecho fundamental al debido proceso por expulsión universitaria sin procedimiento.",
+    "datos": {
+      "destinatario": "Juez del Circuito de Medellín (Reparto)",
+      "ciudad": "Medellín (Antioquia)",
+      "cliente": "Santiago Restrepo Henao, estudiante de Derecho, C.C. 1.152.430.890",
+      "contraparte": "Universidad Bolivariana de Antioquia, NIT 890.901.234-5",
+      "derechos": [
+        "Debido proceso",
+        "Educación",
+        "Defensa"
+      ],
+      "hechos": "1. El estudiante cursaba noveno semestre con promedio académico de 4.2.\n2. Mediante Resolución Rectoral 085 del 12 de septiembre de 2026 fue expulsado sumariamente.\n3. No se abrió pliego de cargos ni se permitió rendir descargos ni controvertir pruebas.",
+      "pretensiones": "1. Tutelar los derechos fundamentales al debido proceso y a la educación.\n2. Dejar sin efecto la Resolución Rectoral 085 de 2026.\n3. Ordenar el reintegro inmediato al programa académico y la reprogramación de exámenes.",
+      "pruebas": "Resolución Rectoral 085, récord de notas, constancia de matrícula 2026-2.",
+      "notificaciones": "Accionante: Carrera 70 # 32-15, Medellín; santiago.restrepo@email.com. Accionada: juridica@ubolivariana.edu.co",
+      "juramento": true
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "FUNDAMENTOS",
+        "PRUEBAS",
+        "JURAMENTO",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Santiago Restrepo",
+        "1.152.430.890",
+        "Universidad Bolivariana",
+        "Resolución Rectoral 085"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Nueva EPS",
+        "Clínica Medellín",
+        "Ecopetrol"
+      ],
+      "longitud_minima": 1200,
+      "longitud_maxima": 15000
+    }
+  },
+  {
+    "id": "tutela_03_estabilidad_laboral_embarazo",
+    "tipo": "tutela",
+    "descripcion": "Protección de la estabilidad laboral reforzada por despido de trabajadora en estado de embarazo.",
+    "datos": {
+      "destinatario": "Juez Laboral del Circuito de Cali (Reparto)",
+      "ciudad": "Cali (Valle del Cauca)",
+      "cliente": "Daniela Morales Castillo, C.C. 1.144.123.456",
+      "contraparte": "Distribuidora del Pacífico S.A.S., NIT 900.567.890-1",
+      "derechos": [
+        "Estabilidad laboral reforzada",
+        "Mínimo vital",
+        "Igualdad",
+        "Protección a la maternidad"
+      ],
+      "hechos": "1. La accionante laboraba como asistente contable desde el 15 de enero de 2024 con contrato a término indefinido.\n2. El 1 de agosto de 2026 notificó por escrito su estado de embarazo de 12 semanas con prueba médica.\n3. El 28 de septiembre de 2026 el empleador le notificó la terminación del contrato sin autorización del Ministerio del Trabajo.",
+      "pretensiones": "1. Proteger el derecho a la estabilidad laboral reforzada y al mínimo vital de la madre gestante y del que está por nacer.\n2. Ordenar el reintegro inmediato al mismo cargo o a uno de superior jerarquía.\n3. Ordenar el pago de salarios y prestaciones sociales causadas desde el despido.",
+      "pruebas": "Contrato de trabajo, comunicación de embarazo radicada el 1/08/2026, ecografía obstétrica, carta de despido.",
+      "notificaciones": "Accionante: Carrera 100 # 15-30, Cali; daniela.morales@email.com. Accionada: rrhh@distribuidorapacifico.com",
+      "juramento": true
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "FUNDAMENTOS",
+        "PRUEBAS",
+        "JURAMENTO",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Daniela Morales",
+        "1.144.123.456",
+        "Distribuidora del Pacífico",
+        "Ministerio del Trabajo"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Sanitas",
+        "Universidad",
+        "Colpensiones"
+      ],
+      "longitud_minima": 1200,
+      "longitud_maxima": 15000
+    }
+  }
+]

@@ -1,0 +1,113 @@
+[
+  {
+    "id": "reparacion_directa_01_caso_estandar",
+    "tipo": "reparacion_directa",
+    "descripcion": "Caso 1 de prueba formal y procesal para el trámite de Reparación directa en Bogotá, D.C..",
+    "datos": {
+      "destinatario": "Señor Juez Competente de Bogotá, D.C.",
+      "ciudad": "Bogotá, D.C.",
+      "cliente": "Persona Natural Ejemplo 1, C.C. 1.010.201.301",
+      "contraparte": "Entidad o Empresa Demandada 1 S.A.S., NIT 900.121.341-8",
+      "hecho_danoso": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Reparación directa en la ciudad de Bogotá, D.C..",
+      "hechos": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Reparación directa en la ciudad de Bogotá, D.C..",
+      "perjuicios": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Reparación directa en la ciudad de Bogotá, D.C..",
+      "pretensiones": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Reparación directa en la ciudad de Bogotá, D.C..",
+      "cuantia": "$ 30.000.000",
+      "conciliacion": "agotada",
+      "pruebas": "Detalle de hechos y circunstancias fácticas del caso 1 correspondiente a Reparación directa en la ciudad de Bogotá, D.C..",
+      "notificaciones": "Demandante: Calle 10 # 20-30, Bogotá, D.C.; cliente1@correo.com. Demandado: Carrera 15 # 10-20; notificaciones1@empresa.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Persona Natural Ejemplo 1",
+        "Entidad o Empresa Demandada 1"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Empresa Ficticia Extranjera Inexistente",
+        "Ciudad Inexistente Desconocida"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 18000
+    }
+  },
+  {
+    "id": "reparacion_directa_02_caso_estandar",
+    "tipo": "reparacion_directa",
+    "descripcion": "Caso 2 de prueba formal y procesal para el trámite de Reparación directa en Medellín (Antioquia).",
+    "datos": {
+      "destinatario": "Señor Juez Competente de Medellín (Antioquia)",
+      "ciudad": "Medellín (Antioquia)",
+      "cliente": "Persona Natural Ejemplo 2, C.C. 1.010.202.302",
+      "contraparte": "Entidad o Empresa Demandada 2 S.A.S., NIT 900.122.342-8",
+      "hecho_danoso": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Reparación directa en la ciudad de Medellín (Antioquia).",
+      "hechos": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Reparación directa en la ciudad de Medellín (Antioquia).",
+      "perjuicios": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Reparación directa en la ciudad de Medellín (Antioquia).",
+      "pretensiones": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Reparación directa en la ciudad de Medellín (Antioquia).",
+      "cuantia": "$ 60.000.000",
+      "conciliacion": "agotada",
+      "pruebas": "Detalle de hechos y circunstancias fácticas del caso 2 correspondiente a Reparación directa en la ciudad de Medellín (Antioquia).",
+      "notificaciones": "Demandante: Calle 20 # 20-30, Medellín (Antioquia); cliente2@correo.com. Demandado: Carrera 25 # 10-20; notificaciones2@empresa.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Persona Natural Ejemplo 2",
+        "Entidad o Empresa Demandada 2"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Empresa Ficticia Extranjera Inexistente",
+        "Ciudad Inexistente Desconocida"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 18000
+    }
+  },
+  {
+    "id": "reparacion_directa_03_caso_estandar",
+    "tipo": "reparacion_directa",
+    "descripcion": "Caso 3 de prueba formal y procesal para el trámite de Reparación directa en Cali (Valle del Cauca).",
+    "datos": {
+      "destinatario": "Señor Juez Competente de Cali (Valle del Cauca)",
+      "ciudad": "Cali (Valle del Cauca)",
+      "cliente": "Persona Natural Ejemplo 3, C.C. 1.010.203.303",
+      "contraparte": "Entidad o Empresa Demandada 3 S.A.S., NIT 900.123.343-8",
+      "hecho_danoso": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Reparación directa en la ciudad de Cali (Valle del Cauca).",
+      "hechos": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Reparación directa en la ciudad de Cali (Valle del Cauca).",
+      "perjuicios": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Reparación directa en la ciudad de Cali (Valle del Cauca).",
+      "pretensiones": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Reparación directa en la ciudad de Cali (Valle del Cauca).",
+      "cuantia": "$ 90.000.000",
+      "conciliacion": "agotada",
+      "pruebas": "Detalle de hechos y circunstancias fácticas del caso 3 correspondiente a Reparación directa en la ciudad de Cali (Valle del Cauca).",
+      "notificaciones": "Demandante: Calle 30 # 20-30, Cali (Valle del Cauca); cliente3@correo.com. Demandado: Carrera 35 # 10-20; notificaciones3@empresa.com"
+    },
+    "expectativas": {
+      "secciones_obligatorias": [
+        "HECHOS",
+        "PRETENSIONES",
+        "PRUEBAS",
+        "NOTIFICACIONES"
+      ],
+      "entidades_deben_aparecer": [
+        "Persona Natural Ejemplo 3",
+        "Entidad o Empresa Demandada 3"
+      ],
+      "entidades_no_deben_aparecer": [
+        "Empresa Ficticia Extranjera Inexistente",
+        "Ciudad Inexistente Desconocida"
+      ],
+      "longitud_minima": 800,
+      "longitud_maxima": 18000
+    }
+  }
+]
