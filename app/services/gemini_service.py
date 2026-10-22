@@ -431,9 +431,12 @@ class GeminiService:
                 if not (self.disponibles and n not in self.disponibles)
                 and ahora - self.no_disponibles.get(n, -1e9) > 3600
             ]
-            pensamiento = (s.GEMINI_THINKING_COMPLEX if calidad == "complex" else s.GEMINI_THINKING_DEFAULT).strip()
             for nombre in filtrados or unicos:
-                motores.append(Motor("gemini", nombre, pensamiento))
+                if "argon" in nombre.lower() or nombre == s.GEMINI_MODEL_PRO.strip():
+                    nivel_pensamiento = s.GEMINI_THINKING_COMPLEX.strip() or "medium"
+                else:
+                    nivel_pensamiento = s.GEMINI_THINKING_DEFAULT.strip() or "high"
+                motores.append(Motor("gemini", nombre, nivel_pensamiento))
         if s.GROQ_API_KEY.strip():
             motores.append(Motor("groq", s.GROQ_MODEL.strip() or "openai/gpt-oss-120b"))
         return motores
