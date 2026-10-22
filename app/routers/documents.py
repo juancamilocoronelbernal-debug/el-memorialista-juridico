@@ -258,7 +258,7 @@ async def endpoint_extraer_documentos(
     PRIVACIDAD: Los archivos se procesan 100% en memoria y se descartan tras el análisis.
     """
     if request:
-        verificar_acceso(request)
+        await verificar_acceso(request)
 
     tipo_info = obtener_tipo(tipo)
     if not tipo_info:
@@ -307,7 +307,7 @@ async def endpoint_extraer_documentos(
 
 @router.post("/redactar")
 async def redactar_documento(req: RedactarRequest, request: Request):
-    verificar_acceso(request)
+    await verificar_acceso(request)
     limitador.verificar(request, "redactar")
 
     settings = get_settings()
@@ -359,7 +359,7 @@ async def redactar_documento(req: RedactarRequest, request: Request):
 
 @router.post("/analizar-estilo")
 async def analizar_estilo(req: AnalizarEstiloRequest, request: Request):
-    verificar_acceso(request)
+    await verificar_acceso(request)
     limitador.verificar(request, "estilo")
     resultado = await gemini_service.analizar_estilo(req.muestra)
     if not resultado.get("ok"):
@@ -369,14 +369,14 @@ async def analizar_estilo(req: AnalizarEstiloRequest, request: Request):
 
 @router.post("/verificar-citas")
 async def endpoint_verificar_citas(req: VerificarCitasRequest, request: Request):
-    verificar_acceso(request)
+    await verificar_acceso(request)
     limitador.verificar(request, "citas")
     return await verificar_citas(req.texto)
 
 
 @router.post("/revisar")
 async def endpoint_revisar(req: RevisarRequest, request: Request):
-    verificar_acceso(request)
+    await verificar_acceso(request)
     limitador.verificar(request, "revisar")
     if not req.escrito.strip():
         raise HTTPException(status_code=400, detail="El escrito no puede estar vacío.")

@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.datastructures import MutableHeaders
 
 from app.config import get_settings
-from app.routers import documents
+from app.routers import auth, documents
 from app.services.gemini_service import gemini_service
 
 settings = get_settings()
@@ -100,8 +100,8 @@ if origenes:
         CORSMiddleware,
         allow_origins=origenes,
         allow_credentials=False,
-        allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type", "X-Codigo-Acceso"],
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization", "X-Codigo-Acceso"],
     )
 
 
@@ -114,6 +114,7 @@ async def solicitud_invalida(request: Request, exc: RequestValidationError):
     )
 
 
+app.include_router(auth.router)
 app.include_router(documents.router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"

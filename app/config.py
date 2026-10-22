@@ -53,11 +53,19 @@ class Settings(BaseSettings):
     TIMEOUT_LECTURA_S: float = 300.0
     PING_NDJSON_S: float = 15.0
 
-    # Acceso y límites de uso (mientras no haya cuentas de usuario)
-    APP_ACCESS_CODE: str = ""        # si se define, la app pide este código
+    # Supabase (Auth Magic Link, Postgres RLS, Storage privado)
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_JWT_SECRET: str = ""
+    SUPABASE_STORAGE_BUCKET: str = "archivos-privados"
+
+    # Acceso y límites de uso (por usuario y por IP)
+    APP_ACCESS_CODE: str = ""        # respaldo legado si no se usa Supabase
     ALLOWED_ORIGINS: str = ""        # vacío = solo el mismo dominio (recomendado)
-    LIMITE_POR_VENTANA: int = 15     # redacciones y ajustes por IP dentro de la ventana
+    LIMITE_POR_VENTANA: int = 15     # redacciones y ajustes por usuario/IP dentro de la ventana
     VENTANA_MINUTOS: int = 10
+    LIMITE_DIA_USUARIO: int = 50     # tope diario de redacciones por usuario autenticado
     LIMITE_DIA_IP: int = 150         # una oficina con varios abogados comparte la misma IP
     LIMITE_DIA_GLOBAL: int = 500     # tope diario de todo el servidor (controla el gasto)
     LIMITE_ESTILO_HORA: int = 10

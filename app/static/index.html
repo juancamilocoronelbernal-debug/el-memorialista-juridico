@@ -4,6 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
 <link id="fuenteHojaCss" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   /* Layout: mesa del memorialista. Expediente (formulario) a la izquierda, hoja membreteada a la derecha; el sello violeta es la única nota de color. */
@@ -397,6 +398,26 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .asistente-hecho-razon{font-size:12px;padding:6px 8px;border:1px solid var(--regla);border-radius:4px;resize:vertical;min-height:36px;font-family:inherit;width:100%;box-sizing:border-box}
 .asistente-hecho-del{border:none;background:none;color:#94a3b8;cursor:pointer;padding:4px 8px;font-size:15px;border-radius:4px;align-self:center}
 .asistente-hecho-del:hover{color:#dc2626;background:rgba(220,38,38,.08)}
+
+/* ---------- autenticación y cuenta con supabase ---------- */
+.modal-dialog{border:none;border-radius:var(--r);background:var(--superficie);box-shadow:0 20px 40px rgba(0,0,0,.25);max-width:480px;width:calc(100vw - 32px);padding:0;overflow:hidden}
+.modal-dialog::backdrop{background:rgba(15,23,42,.65);backdrop-filter:blur(3px)}
+.modal-cab{padding:16px 20px;border-bottom:1px solid var(--regla);display:flex;justify-content:space-between;align-items:center;background:#f8fafc}
+.modal-cab h3{margin:0;font-size:16px;font-weight:750;color:var(--tinta);display:flex;align-items:center;gap:8px}
+.modal-cuerpo{padding:20px;display:grid;gap:16px}
+.modal-pie{padding:14px 20px;background:#f8fafc;border-top:1px solid var(--regla);display:flex;justify-content:flex-end;gap:10px}
+.btn-cerrar-modal{background:none;border:none;font-size:18px;color:#94a3b8;cursor:pointer;padding:4px 8px;border-radius:4px}
+.btn-cerrar-modal:hover{color:#dc2626;background:rgba(220,38,38,.08)}
+.perfil-chip.autenticado{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+.perfil-chip.auth-pendiente{background:#f8fafc;border-color:#cbd5e1;color:var(--tinta-2)}
+.tarjeta-usuario{background:#f8fafc;border:1px solid var(--regla);border-radius:6px;padding:12px 14px;display:grid;gap:6px}
+.linea-dato-usuario{display:flex;justify-content:space-between;font-size:12.5px}
+.linea-dato-usuario strong{color:var(--tinta)}
+.linea-dato-usuario span{color:var(--tinta-2)}
+.barra-cuota-uso{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:4px}
+.barra-cuota-progreso{height:100%;background:#2563eb;border-radius:999px;transition:width .3s}
+.btn-peligro{background:#dc2626;color:#fff;border:none;border-radius:var(--r);padding:8px 14px;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-peligro:hover{background:#b91c1c}
 </style>
 
 <header class="barra" id="barra">
@@ -408,7 +429,10 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
       <button role="tab" id="tab-historial" data-vista="historial" aria-selected="false" aria-controls="vista-historial">Historial</button>
       <button role="tab" id="tab-plazos" data-vista="plazos" aria-selected="false" aria-controls="vista-plazos">⏱️ Términos y plazos</button>
     </nav>
-    <button class="perfil-chip pendiente" id="perfilChip" type="button"><span class="ini" aria-hidden="true">?</span><span class="txt">Configura tu membrete</span></button>
+    <div class="barra-derecha" style="display: flex; align-items: center; gap: 8px;">
+      <button class="perfil-chip pendiente" id="perfilChip" type="button"><span class="ini" aria-hidden="true">?</span><span class="txt">Configura tu membrete</span></button>
+      <button class="btn chico" id="btnAuthHeader" type="button" style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600; padding: 6px 12px; font-size: 12.5px;">🔒 Iniciar sesión</button>
+    </div>
   </div>
 </header>
 
@@ -918,6 +942,11 @@ const state = {
   propuestasExtraidas: [],
   extrayendoDocs: false,
   hechosContestacion: [],
+  usuario: null,
+  session: null,
+  perfil: null,
+  firma: null,
+  supabaseConfig: null,
 };
 const IMG = { logo: null, firma: null };
 const CAP = { sample: true, db: null, user: null, downloads: true, permissions: null, uid: null, listo: true };
@@ -932,6 +961,431 @@ async function iniciarCapacidades() {
     console.log('[Memorialista] Conectado al backend:', data);
   } catch (e) {
     console.warn('[Memorialista] Backend:', e);
+  }
+}
+
+/* =========================================================
+   Supabase Auth (Magic Link), Base de Datos y Storage Privado
+   ========================================================= */
+let supabase = null;
+
+function dataUrlABlob(dataUrl) {
+  if (!dataUrl) return null;
+  if (dataUrl instanceof Blob) return dataUrl;
+  if (typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
+    try {
+      const partes = dataUrl.split(',');
+      const mime = partes[0].match(/:(.*?);/)[1];
+      const bstr = atob(partes[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    } catch (e) {
+      console.warn('Error convirtiendo dataURL a Blob:', e);
+      return null;
+    }
+  }
+  return new Blob([dataUrl]);
+}
+
+async function iniciarSupabase() {
+  try {
+    const res = await fetch('/api/auth/config');
+    if (!res.ok) return;
+    const config = await res.json();
+    state.supabaseConfig = config;
+
+    if (window.supabase && config.supabase_url && config.supabase_anon_key) {
+      supabase = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+      window.supabaseClient = supabase;
+
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        state.session = session;
+        state.usuario = session?.user || null;
+        actualizarUiAuth();
+        if (event === 'SIGNED_IN' && session?.user) {
+          toast(`¡Bienvenido, ${session.user.email}!`, 'ok');
+          await migrarDatosNavegadorASupabase(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          toast('Sesión cerrada.', 'info');
+        }
+      });
+
+      const { data: { session } } = await supabase.auth.getSession();
+      state.session = session;
+      state.usuario = session?.user || null;
+      actualizarUiAuth();
+      if (session?.user) {
+        await migrarDatosNavegadorASupabase(session.user);
+      }
+    } else {
+      actualizarUiAuth();
+    }
+  } catch (err) {
+    console.warn('[Memorialista] Inicialización Supabase:', err);
+    actualizarUiAuth();
+  }
+}
+
+function actualizarUiAuth() {
+  const btnAuth = $('#btnAuthHeader');
+  if (!btnAuth) return;
+
+  if (state.usuario) {
+    const nombre = (state.usuario.email || 'abogado').split('@')[0];
+    btnAuth.textContent = `⚖️ ${nombre}`;
+    btnAuth.className = 'btn chico primario';
+    btnAuth.title = `Conectado como ${state.usuario.email} · Clic para ver tu cuenta`;
+    btnAuth.onclick = () => abrirModalCuenta();
+
+    const elEmail = $('#cuentaUserEmail');
+    const elFirma = $('#cuentaUserFirma');
+    const elRol = $('#cuentaUserRol');
+    const elCuota = $('#cuentaUserCuota');
+    const elProgreso = $('#cuentaProgresoCuota');
+
+    if (elEmail) elEmail.textContent = state.usuario.email;
+    if (elFirma) elFirma.textContent = state.perfil?.nombre_firma || 'Despacho personal';
+    if (elRol) elRol.textContent = (state.usuario.user_metadata?.rol || 'Abogado').toUpperCase();
+    if (elCuota) {
+      const limite = state.supabaseConfig?.limite_diario_usuario || 50;
+      elCuota.textContent = `Activo (${limite} redacciones/día)`;
+      if (elProgreso) elProgreso.style.width = '20%';
+    }
+  } else {
+    btnAuth.textContent = '🔒 Iniciar sesión';
+    btnAuth.className = 'btn chico';
+    btnAuth.title = 'Inicia sesión con tu enlace mágico para respaldar tus memoriales';
+    btnAuth.onclick = () => abrirModalAuth();
+  }
+}
+
+function abrirModalAuth(mensaje = '') {
+  const dlg = $('#modalAuth');
+  if (!dlg) return;
+  const msg = $('#msgAuthEstado');
+  if (msg) {
+    if (mensaje) {
+      msg.style.display = 'block';
+      msg.style.background = '#fffbeb';
+      msg.style.border = '1px solid #fde68a';
+      msg.style.color = '#92400e';
+      msg.textContent = mensaje;
+    } else {
+      msg.style.display = 'none';
+      msg.textContent = '';
+    }
+  }
+  const emailInp = $('#authEmail');
+  if (emailInp) emailInp.value = '';
+  dlg.showModal();
+}
+
+function cerrarModalAuth() {
+  const dlg = $('#modalAuth');
+  if (dlg) dlg.close();
+}
+
+function abrirModalCuenta() {
+  const dlg = $('#modalCuenta');
+  if (!dlg) return;
+  actualizarUiAuth();
+  dlg.showModal();
+}
+
+function cerrarModalCuenta() {
+  const dlg = $('#modalCuenta');
+  if (dlg) dlg.close();
+}
+
+async function manejarSubmitMagicLink(e) {
+  e.preventDefault();
+  const inpEmail = $('#authEmail');
+  const btn = $('#btnEnviarMagicLink');
+  const msg = $('#msgAuthEstado');
+  const email = (inpEmail.value || '').trim();
+  if (!email) return;
+
+  btn.disabled = true;
+  msg.style.display = 'block';
+  msg.style.background = '#eff6ff';
+  msg.style.border = '1px solid #bfdbfe';
+  msg.style.color = '#1e40af';
+  msg.textContent = '⏳ Enviando enlace mágico a tu correo...';
+
+  try {
+    if (supabase) {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+
+      msg.style.background = '#f0fdf4';
+      msg.style.border = '1px solid #bbf7d0';
+      msg.style.color = '#166534';
+      msg.innerHTML = `📬 <strong>¡Enlace mágico enviado con éxito!</strong><br>Revisa tu correo en <u>${email}</u> y haz clic en el enlace para ingresar de inmediato.`;
+    } else {
+      // Modo local / sin Supabase remoto: sesión simulada para desarrollo y pruebas
+      state.usuario = { id: 'dev-user-local', email: email, role: 'authenticated' };
+      state.session = { access_token: 'mock-' + email.replace(/[^a-zA-Z0-9]/g, '') + '-token', user: state.usuario };
+      actualizarUiAuth();
+      cerrarModalAuth();
+      toast(`Sesión iniciada como ${email}`, 'ok');
+      await migrarDatosNavegadorASupabase(state.usuario);
+    }
+  } catch (err) {
+    console.error('Error enviando enlace mágico:', err);
+    msg.style.background = '#fef2f2';
+    msg.style.border = '1px solid #fecaca';
+    msg.style.color = '#991b1b';
+    msg.textContent = 'Error al enviar enlace mágico: ' + (err.message || err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function migrarDatosNavegadorASupabase(user) {
+  if (!user || !user.id) return;
+  const claveMigracion = 'supabase_migrado_' + user.id;
+  if (localStorage.getItem(claveMigracion)) {
+    return;
+  }
+
+  try {
+    const membrete = lsGet('membrete');
+    const logoData = await IDB.get('almacen', 'logo');
+    const firmaData = await IDB.get('almacen', 'firma');
+    const plantillaData = await IDB.get('almacen', 'plantilla');
+    const historial = (await IDB.getAll('historial')) || [];
+
+    const tieneDatos = membrete || logoData || firmaData || plantillaData || (historial && historial.length > 0);
+    if (!tieneDatos) {
+      localStorage.setItem(claveMigracion, new Date().toISOString());
+      return;
+    }
+
+    toast('🔄 Migrando tus datos locales del navegador a tu cuenta en la nube...', 'info', 5000);
+
+    let logoPath = null;
+    let firmaPath = null;
+    let plantillaPath = null;
+
+    if (supabase) {
+      // 1. Storage privado para logo, firma y plantilla
+      if (logoData) {
+        const logoBlob = dataUrlABlob(logoData);
+        if (logoBlob) {
+          logoPath = `logo/${user.id}/logo.png`;
+          await supabase.storage.from('archivos-privados').upload(logoPath, logoBlob, { upsert: true }).catch(e => console.warn(e));
+        }
+      }
+      if (firmaData) {
+        const firmaBlob = dataUrlABlob(firmaData);
+        if (firmaBlob) {
+          firmaPath = `firma/${user.id}/firma.png`;
+          await supabase.storage.from('archivos-privados').upload(firmaPath, firmaBlob, { upsert: true }).catch(e => console.warn(e));
+        }
+      }
+      if (plantillaData) {
+        plantillaPath = `plantilla/${user.id}/plantilla.docx`;
+        await supabase.storage.from('archivos-privados').upload(plantillaPath, plantillaData, { upsert: true }).catch(e => console.warn(e));
+      }
+
+      // 2. Perfil del abogado
+      const nombreUsuario = membrete?.nombre || user.email.split('@')[0];
+      await supabase.from('perfiles').upsert({
+        id: user.id,
+        email: user.email,
+        nombre_completo: nombreUsuario,
+        tarjeta_profesional: membrete?.tarjeta || '',
+        telefono: membrete?.celular || '',
+        direccion: membrete?.direccion || '',
+        ciudad: membrete?.ciudad || 'Bogotá D.C.',
+        firma_grafica_path: firmaPath
+      }).catch(e => console.warn('Error perfil:', e));
+
+      // 3. Migrar historial a clientes, casos, documentos y versiones
+      let migrados = 0;
+      for (const item of historial) {
+        const nomCliente = (item.cliente || item.datos?.cliente || 'Cliente ' + (migrados + 1)).split(/[,\n]/)[0].trim();
+        const contraparte = (item.datos?.contraparte || '').split(/[,\n]/)[0].trim();
+        const radicado = item.datos?.radicado || '';
+        const despacho = item.datos?.destinatario || '';
+
+        const { data: clienteCreado } = await supabase.from('clientes').insert({
+          user_id: user.id,
+          nombre_razon_social: nomCliente || 'Cliente sin nombre',
+          numero_documento: 'Por registrar',
+          tipo_persona: 'natural',
+          domicilio: item.datos?.ciudad || 'Bogotá D.C.'
+        }).select().single().catch(() => ({ data: null }));
+
+        const { data: casoCreado } = await supabase.from('casos').insert({
+          user_id: user.id,
+          cliente_id: clienteCreado ? clienteCreado.id : null,
+          nombre_caso: item.titulo || `Caso ${nomCliente} vs ${contraparte || 'Contraparte'}`,
+          contraparte: contraparte,
+          radicado: radicado,
+          despacho: despacho,
+          tipo_proceso: item.tipo,
+          estado: 'activo'
+        }).select().single().catch(() => ({ data: null }));
+
+        const { data: docCreado } = await supabase.from('documentos').insert({
+          caso_id: casoCreado ? casoCreado.id : null,
+          tipo: item.tipo || 'memorial',
+          titulo: item.titulo || 'Memorial judicial',
+          datos: item.datos || {},
+          texto: item.texto || '',
+          version: 1,
+          creado_por: user.id
+        }).select().single().catch(() => ({ data: null }));
+
+        if (docCreado) {
+          await supabase.from('versiones').insert({
+            documento_id: docCreado.id,
+            version: 1,
+            texto: item.texto || '',
+            datos: item.datos || {},
+            creado_por: user.id,
+            comentario: 'Migrado automáticamente desde el navegador'
+          }).catch(e => console.warn(e));
+          migrados++;
+        }
+      }
+
+      toast(`✓ ¡Migración completada! ${migrados} escritos, tu membrete y archivos se guardaron en Supabase.`, 'ok', 6000);
+    }
+
+    localStorage.setItem(claveMigracion, new Date().toISOString());
+  } catch (err) {
+    console.error('Error migrando datos a Supabase:', err);
+    toast('Nota: algunos datos locales no pudieron sincronizarse a la nube: ' + err.message, 'error', 6000);
+  }
+}
+
+async function sincronizarDocumentoConSupabase(docId, data) {
+  if (!supabase || !state.usuario) return;
+  try {
+    const user = state.usuario;
+    const nomCliente = (data.datos?.cliente || 'Cliente').split(/[,\n]/)[0].trim();
+    const contraparte = (data.datos?.contraparte || '').split(/[,\n]/)[0].trim();
+
+    const { data: casoCreado } = await supabase.from('casos').insert({
+      user_id: user.id,
+      nombre_caso: data.titulo || `Expediente ${nomCliente}`,
+      contraparte: contraparte,
+      radicado: data.datos?.radicado || '',
+      despacho: data.datos?.destinatario || '',
+      tipo_proceso: data.tipo,
+      estado: 'activo'
+    }).select().single();
+
+    const { data: docCreado } = await supabase.from('documentos').insert({
+      caso_id: casoCreado ? casoCreado.id : null,
+      tipo: data.tipo,
+      titulo: data.titulo || 'Memorial',
+      datos: data.datos || {},
+      texto: data.texto || '',
+      version: 1,
+      creado_por: user.id
+    }).select().single();
+
+    if (docCreado) {
+      await supabase.from('versiones').insert({
+        documento_id: docCreado.id,
+        version: 1,
+        texto: data.texto || '',
+        datos: data.datos || {},
+        creado_por: user.id,
+        comentario: 'Versión guardada desde el editor'
+      });
+    }
+  } catch (err) {
+    console.warn('Error sincronizando documento individual:', err);
+  }
+}
+
+async function exportarTodosMisDatos() {
+  toast('Preparando exportación completa de tus datos...', 'info', 3000);
+  try {
+    const res = await apiFetch('/api/usuario/exportar-datos');
+    if (!res.ok) {
+      throw new Error('No se pudo generar la exportación en el servidor.');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `el_memorialista_mis_datos_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('✓ ¡Tus datos se exportaron exitosamente en formato JSON!', 'ok');
+  } catch (err) {
+    console.error('Error exportando datos:', err);
+    toast('Error exportando datos: ' + err.message, 'error');
+  }
+}
+
+async function eliminarMiCuenta() {
+  const confirmacion = window.confirm(
+    '⚠️ ADVERTENCIA CRÍTICA: ELIMINACIÓN PERMANENTE DE CUENTA\n\n' +
+    'Esta acción borrará de forma definitiva e irreversible:\n' +
+    '• Tu cuenta de usuario y perfil de abogado.\n' +
+    '• Todos tus clientes registrados.\n' +
+    '• Todos tus casos y expedientes.\n' +
+    '• Todos los memoriales redactados y su historial de versiones.\n' +
+    '• Tu logo, firma y plantilla en el almacenamiento privado.\n\n' +
+    '¿Estás completamente seguro de que deseas proceder?'
+  );
+
+  if (!confirmacion) return;
+
+  const confirmacion2 = window.prompt(
+    'Para confirmar la eliminación definitiva, escribe "ELIMINAR MI CUENTA":', ''
+  );
+
+  if (confirmacion2 !== 'ELIMINAR MI CUENTA') {
+    toast('Confirmación incorrecta. Tu cuenta permanece segura.', 'info');
+    return;
+  }
+
+  try {
+    toast('Eliminando cuenta y datos...', 'info', 4000);
+    const res = await apiFetch('/api/usuario/eliminar-cuenta', { method: 'DELETE' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error en el servidor al eliminar cuenta.');
+    }
+
+    if (supabase) {
+      await supabase.auth.signOut().catch(() => {});
+    }
+
+    const keysBorrar = Object.keys(localStorage).filter(k => k.startsWith('supabase_migrado_') || k === 'codigoAcceso');
+    keysBorrar.forEach(k => localStorage.removeItem(k));
+    await IDB.del('almacen', 'logo').catch(() => {});
+    await IDB.del('almacen', 'firma').catch(() => {});
+    await IDB.del('almacen', 'plantilla').catch(() => {});
+    await IDB.clear('historial').catch(() => {});
+
+    state.session = null;
+    state.usuario = null;
+    actualizarUiAuth();
+    cerrarModalCuenta();
+
+    toast('Tu cuenta y todos tus datos fueron eliminados definitivamente.', 'ok', 7000);
+  } catch (err) {
+    console.error('Error eliminando cuenta:', err);
+    toast('Error al eliminar cuenta: ' + err.message, 'error', 7000);
   }
 }
 
@@ -2357,16 +2811,14 @@ function crearLectorNdjson(alEvento) {
   };
 }
 async function apiFetch(url, opciones = {}, segundoIntento = false) {
-  const codigo = lsGet('codigoAcceso') || '';
   const headers = { ...(opciones.headers || {}) };
-  if (codigo) headers['X-Codigo-Acceso'] = codigo;
+  const token = state.session?.access_token || (window.supabaseClient ? (await window.supabaseClient.auth.getSession().then(r => r.data?.session?.access_token).catch(() => null)) : null);
+  if (token) {
+    headers['Authorization'] = 'Bearer ' + token;
+  }
   const res = await fetch(url, { ...opciones, headers });
   if (res.status === 401) {
-    lsDel('codigoAcceso');
-    if (!segundoIntento) {
-      const nuevo = window.prompt('Esta versión de El Memorialista requiere un código de acceso. Escríbelo para continuar:', '');
-      if (nuevo && nuevo.trim()) { lsSet('codigoAcceso', nuevo.trim()); return apiFetch(url, opciones, true); }
-    }
+    abrirModalAuth('Se requiere una sesión activa con Supabase para acceder a esta función.');
   }
   return res;
 }
@@ -3725,7 +4177,14 @@ async function guardarEnHistorial() {
   const ahora = Date.now();
   if (!state.docId) { state.docId = 'd' + ahora.toString(36) + Math.random().toString(36).slice(2, 6); state.creado = ahora; }
   const data = { titulo: tituloDoc(), tipo: state.tipo, creado: state.creado || ahora, actualizado: ahora, datos: state.datos, texto: state.texto };
-  try { await Almacen.guardarHist(state.docId, data); guardarBorrador(); return true; }
+  try {
+    await Almacen.guardarHist(state.docId, data);
+    guardarBorrador();
+    if (supabase && state.usuario) {
+      sincronizarDocumentoConSupabase(state.docId, data).catch(() => {});
+    }
+    return true;
+  }
   catch (e) { toast(mensajeAlmacen(e), 'error', 6000); return false; }
 }
 const guardarEdicion = debounce(async () => {
@@ -4303,6 +4762,13 @@ async function subirImagen(k, file) {
     toast(k === 'logo' ? 'Logo guardado.' : 'Firma guardada.', 'ok');
     if (k === 'firma') refrescarFirmas();
     if (k === 'logo' && state.vista === 'redactar') renderMembreteHoja();
+    if (supabase && state.usuario) {
+      const blob = dataUrlABlob(r);
+      if (blob) {
+        const ruta = `${k}/${state.usuario.id}/${k}.png`;
+        supabase.storage.from('archivos-privados').upload(ruta, blob, { upsert: true }).catch(() => {});
+      }
+    }
   } catch (e) {
     toast(e && e.message === 'grande' ? 'La imagen es demasiado pesada aun reducida. Prueba con otra más sencilla.' : (e && e.code ? mensajeAlmacen(e) : 'No se pudo leer la imagen. Usa PNG o JPG.'), 'error', 6000);
   }
@@ -4310,7 +4776,13 @@ async function subirImagen(k, file) {
 async function quitarImagen(k) {
   IMG[k] = null; lsDel('img:' + k);
   pintarImagenesAjustes(); renderPreviaLuego();
-  try { await Almacen.borrar(k); } catch (e) { toast(mensajeAlmacen(e), 'error'); }
+  try {
+    await Almacen.borrar(k);
+    if (supabase && state.usuario) {
+      const ruta = `${k}/${state.usuario.id}/${k}.png`;
+      supabase.storage.from('archivos-privados').remove([ruta]).catch(() => {});
+    }
+  } catch (e) { toast(mensajeAlmacen(e), 'error'); }
 }
 
 /* Plantilla de Word */
@@ -4352,6 +4824,10 @@ async function subirPlantilla(file) {
     pintarEstadoGuardado('Guardando plantilla…');
     for (let i = 0; i < trozos.length; i++) await Almacen.escribir('plantilla_' + i, { d: trozos[i] });
     guardarPerfil.ya();
+    if (supabase && state.usuario && file) {
+      const ruta = `plantilla/${state.usuario.id}/plantilla.docx`;
+      supabase.storage.from('archivos-privados').upload(ruta, file, { upsert: true }).catch(() => {});
+    }
     toast('Plantilla lista. Tus escritos en Word usarán su encabezado y pie de página.', 'ok', 6000);
   } catch (e) {
     if (e && e.code) toast(mensajeAlmacen(e), 'error', 7000);
@@ -4363,6 +4839,10 @@ async function quitarPlantilla() {
   state.plantilla = null; state.perfil.plantilla = null; state.perfil.membrete.modo = 'diseno';
   cargarAjustesEnFormulario(); renderPreviaLuego(); guardarPerfil();
   for (let i = 0; i < partes; i++) Almacen.borrar('plantilla_' + i).catch(() => {});
+  if (supabase && state.usuario) {
+    const ruta = `plantilla/${state.usuario.id}/plantilla.docx`;
+    supabase.storage.from('archivos-privados').remove([ruta]).catch(() => {});
+  }
 }
 async function cargarPlantillaGuardada() {
   const meta = state.perfil.plantilla;
@@ -4948,8 +5428,130 @@ function iniciar() {
   if (!state.ejemplo) estadoHoja('listo', 'Borrador recuperado');
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { ajustarZoom(); if (state.vista === 'redactar') renderMembreteHoja(); });
   iniciarCapacidades().then(cargarDesdeAlmacen).catch(() => cargarAjustesEnFormulario());
+
+  // Controles de Supabase Auth, Cuenta y Privacidad
+  const btnCerrarAuth = $('#btnCerrarModalAuth');
+  if (btnCerrarAuth) btnCerrarAuth.addEventListener('click', cerrarModalAuth);
+
+  const btnCerrarCuenta = $('#btnCerrarModalCuenta');
+  if (btnCerrarCuenta) btnCerrarCuenta.addEventListener('click', cerrarModalCuenta);
+
+  const btnCerrarCuentaDlg = $('#btnCerrarCuentaDialog');
+  if (btnCerrarCuentaDlg) btnCerrarCuentaDlg.addEventListener('click', cerrarModalCuenta);
+
+  const formAuth = $('#formAuthMagicLink');
+  if (formAuth) formAuth.addEventListener('submit', manejarSubmitMagicLink);
+
+  const btnExp = $('#btnExportarDatosCuenta');
+  if (btnExp) btnExp.addEventListener('click', exportarTodosMisDatos);
+
+  const btnSinc = $('#btnSincronizarNube');
+  if (btnSinc) btnSinc.addEventListener('click', () => {
+    if (state.usuario) {
+      localStorage.removeItem('supabase_migrado_' + state.usuario.id);
+      migrarDatosNavegadorASupabase(state.usuario);
+    } else {
+      abrirModalAuth('Inicia sesión para sincronizar tus datos con la nube.');
+    }
+  });
+
+  const btnElim = $('#btnEliminarCuentaModal');
+  if (btnElim) btnElim.addEventListener('click', eliminarMiCuenta);
+
+  const btnCerrarSesion = $('#btnCerrarSesionCuenta');
+  if (btnCerrarSesion) btnCerrarSesion.addEventListener('click', async () => {
+    if (supabase) await supabase.auth.signOut().catch(() => {});
+    state.session = null;
+    state.usuario = null;
+    actualizarUiAuth();
+    cerrarModalCuenta();
+    toast('Has cerrado sesión.', 'info');
+  });
+
+  iniciarSupabase();
 }
 iniciar();
 </script>
+
+<!-- Modal de Autenticación con Enlace Mágico -->
+<dialog id="modalAuth" class="modal-dialog">
+  <div class="modal-cab">
+    <h3><span>⚖️</span> Iniciar sesión con enlace mágico</h3>
+    <button type="button" class="btn-cerrar-modal" id="btnCerrarModalAuth" title="Cerrar">✕</button>
+  </div>
+  <form id="formAuthMagicLink" class="modal-cuerpo" autocomplete="on">
+    <p style="margin: 0; font-size: 13px; color: var(--tinta-2); line-height: 1.45;">
+      Accede con tu correo electrónico. Te enviaremos un <strong>enlace mágico seguro</strong> para ingresar sin contraseñas. Tus datos, clientes, casos y memoriales se resguardarán en la nube con Row Level Security y cifrado.
+    </p>
+    <div class="campo" style="margin: 0;">
+      <label for="authEmail" style="font-weight: 600; font-size: 13px; color: var(--tinta); display: block; margin-bottom: 4px;">Tu correo electrónico</label>
+      <input type="email" id="authEmail" required placeholder="abogado@tufirma.com" style="width: 100%; box-sizing: border-box; font-size: 14px; padding: 8px 10px; border: 1.5px solid var(--regla); border-radius: 4px;">
+    </div>
+    <div id="msgAuthEstado" style="display: none; padding: 10px 12px; border-radius: 6px; font-size: 12.5px; line-height: 1.4;"></div>
+    <button type="submit" class="btn primario grande" id="btnEnviarMagicLink" style="width: 100%; justify-content: center; font-size: 14px; padding: 10px 16px;">
+      ✉️ Enviar enlace mágico a mi correo
+    </button>
+    <p style="margin: 0; font-size: 11.5px; color: var(--tinta-2); text-align: center;">
+      Si ya tienes memoriales o membrete en este navegador, se migrarán automáticamente a tu cuenta la primera vez que ingreses.
+    </p>
+  </form>
+</dialog>
+
+<!-- Modal de Mi Cuenta / Sesión y Datos -->
+<dialog id="modalCuenta" class="modal-dialog">
+  <div class="modal-cab">
+    <h3><span>👤</span> Mi Cuenta en El Memorialista</h3>
+    <button type="button" class="btn-cerrar-modal" id="btnCerrarModalCuenta" title="Cerrar">✕</button>
+  </div>
+  <div class="modal-cuerpo">
+    <div class="tarjeta-usuario">
+      <div class="linea-dato-usuario">
+        <strong>Correo:</strong>
+        <span id="cuentaUserEmail">—</span>
+      </div>
+      <div class="linea-dato-usuario">
+        <strong>Firma / Despacho:</strong>
+        <span id="cuentaUserFirma">—</span>
+      </div>
+      <div class="linea-dato-usuario">
+        <strong>Rol:</strong>
+        <span id="cuentaUserRol">Abogado</span>
+      </div>
+      <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--regla);">
+        <div class="linea-dato-usuario">
+          <strong>Límite de uso diario:</strong>
+          <span id="cuentaUserCuota">0 / 50 redacciones</span>
+        </div>
+        <div class="barra-cuota-uso">
+          <div class="barra-cuota-progreso" id="cuentaProgresoCuota" style="width: 0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; gap: 10px;">
+      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: var(--tinta);">Gestión de datos y privacidad</h4>
+      <button type="button" class="btn chico" id="btnExportarDatosCuenta" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; font-weight: 600;">
+        📦 Exportar todos mis datos (JSON)
+      </button>
+      <button type="button" class="btn chico fantasma" id="btnSincronizarNube" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px;">
+        🔄 Sincronizar datos locales con la nube
+      </button>
+    </div>
+
+    <div style="border-top: 1px solid #fee2e2; padding-top: 14px; margin-top: 4px; display: grid; gap: 8px;">
+      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: #dc2626;">Zona de peligro</h4>
+      <p style="margin: 0; font-size: 11.5px; color: var(--tinta-2);">
+        Borra tu cuenta en Supabase y elimina definitivamente todos tus clientes, casos, memoriales, versiones y archivos privados.
+      </p>
+      <button type="button" class="btn-peligro" id="btnEliminarCuentaModal" style="justify-content: center;">
+        🗑️ Eliminar mi cuenta y mis datos
+      </button>
+    </div>
+  </div>
+  <div class="modal-pie" style="justify-content: space-between;">
+    <button type="button" class="btn fantasma" id="btnCerrarSesionCuenta">🚪 Cerrar sesión</button>
+    <button type="button" class="btn" id="btnCerrarCuentaDialog">Cerrar</button>
+  </div>
+</dialog>
 
 </body></html>
