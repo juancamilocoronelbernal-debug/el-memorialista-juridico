@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
 <link id="fuenteHojaCss" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400;1,700&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
 <style>
 :root{
   /* Layout: mesa del memorialista. Expediente (formulario) a la izquierda, hoja membreteada a la derecha; el sello violeta es la única nota de color. */
@@ -902,6 +902,87 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 </main>
 <div id="toasts" aria-live="polite"></div>
 
+<!-- Modal de Autenticación con Enlace Mágico -->
+<dialog id="modalAuth" class="modal-dialog">
+  <div class="modal-cab">
+    <h3><span>⚖️</span> Iniciar sesión con enlace mágico</h3>
+    <button type="button" class="btn-cerrar-modal" id="btnCerrarModalAuth" title="Cerrar">✕</button>
+  </div>
+  <form id="formAuthMagicLink" class="modal-cuerpo" autocomplete="on">
+    <p style="margin: 0; font-size: 13px; color: var(--tinta-2); line-height: 1.45;">
+      Accede con tu correo electrónico. Te enviaremos un <strong>enlace mágico seguro</strong> para ingresar sin contraseñas. Tus datos, clientes, casos y memoriales se resguardarán en la nube con Row Level Security y cifrado.
+    </p>
+    <div class="campo" style="margin: 0;">
+      <label for="authEmail" style="font-weight: 600; font-size: 13px; color: var(--tinta); display: block; margin-bottom: 4px;">Tu correo electrónico</label>
+      <input type="email" id="authEmail" required placeholder="abogado@tufirma.com" style="width: 100%; box-sizing: border-box; font-size: 14px; padding: 8px 10px; border: 1.5px solid var(--regla); border-radius: 4px;">
+    </div>
+    <div id="msgAuthEstado" style="display: none; padding: 10px 12px; border-radius: 6px; font-size: 12.5px; line-height: 1.4;"></div>
+    <button type="submit" class="btn primario grande" id="btnEnviarMagicLink" style="width: 100%; justify-content: center; font-size: 14px; padding: 10px 16px;">
+      ✉️ Enviar enlace mágico a mi correo
+    </button>
+    <p style="margin: 0; font-size: 11.5px; color: var(--tinta-2); text-align: center;">
+      Si ya tienes memoriales o membrete en este navegador, se migrarán automáticamente a tu cuenta la primera vez que ingreses.
+    </p>
+  </form>
+</dialog>
+
+<!-- Modal de Mi Cuenta / Sesión y Datos -->
+<dialog id="modalCuenta" class="modal-dialog">
+  <div class="modal-cab">
+    <h3><span>👤</span> Mi Cuenta en El Memorialista</h3>
+    <button type="button" class="btn-cerrar-modal" id="btnCerrarModalCuenta" title="Cerrar">✕</button>
+  </div>
+  <div class="modal-cuerpo">
+    <div class="tarjeta-usuario">
+      <div class="linea-dato-usuario">
+        <strong>Correo:</strong>
+        <span id="cuentaUserEmail">—</span>
+      </div>
+      <div class="linea-dato-usuario">
+        <strong>Firma / Despacho:</strong>
+        <span id="cuentaUserFirma">—</span>
+      </div>
+      <div class="linea-dato-usuario">
+        <strong>Rol:</strong>
+        <span id="cuentaUserRol">Abogado</span>
+      </div>
+      <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--regla);">
+        <div class="linea-dato-usuario">
+          <strong>Límite de uso diario:</strong>
+          <span id="cuentaUserCuota">0 / 50 redacciones</span>
+        </div>
+        <div class="barra-cuota-uso">
+          <div class="barra-cuota-progreso" id="cuentaProgresoCuota" style="width: 0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; gap: 10px;">
+      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: var(--tinta);">Gestión de datos y privacidad</h4>
+      <button type="button" class="btn chico" id="btnExportarDatosCuenta" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; font-weight: 600;">
+        📦 Exportar todos mis datos (JSON)
+      </button>
+      <button type="button" class="btn chico fantasma" id="btnSincronizarNube" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px;">
+        🔄 Sincronizar datos locales con la nube
+      </button>
+    </div>
+
+    <div style="border-top: 1px solid #fee2e2; padding-top: 14px; margin-top: 4px; display: grid; gap: 8px;">
+      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: #dc2626;">Zona de peligro</h4>
+      <p style="margin: 0; font-size: 11.5px; color: var(--tinta-2);">
+        Borra tu cuenta en Supabase y elimina definitivamente todos tus clientes, casos, memoriales, versiones y archivos privados.
+      </p>
+      <button type="button" class="btn-peligro" id="btnEliminarCuentaModal" style="justify-content: center;">
+        🗑️ Eliminar mi cuenta y mis datos
+      </button>
+    </div>
+  </div>
+  <div class="modal-pie" style="justify-content: space-between;">
+    <button type="button" class="btn fantasma" id="btnCerrarSesionCuenta">🚪 Cerrar sesión</button>
+    <button type="button" class="btn" id="btnCerrarCuentaDialog">Cerrar</button>
+  </div>
+</dialog>
+
 <script src="auditor.js"></script>
 <script>
 'use strict';
@@ -1121,7 +1202,7 @@ const state = {
   hechosContestacion: [],
   usuario: null,
   session: null,
-  perfil: null,
+  perfilCloud: null,
   firma: null,
   supabaseConfig: null,
 };
@@ -5081,7 +5162,7 @@ const renderPreviaLuego = debounce(() => { renderPrevia(); actualizarChip(); if 
    ========================================================= */
 function cargarEspejoLocal() {
   const p = lsGet('perfil');
-  if (p) state.perfil = mezclar(clon(PERFIL_BASE), p);
+  state.perfil = p ? mezclar(clon(PERFIL_BASE), p) : clon(PERFIL_BASE);
   IMG.logo = lsGet('img:logo'); IMG.firma = lsGet('img:firma');
   const b = lsGet('borrador');
   if (b && b.tipo && TIPOS[b.tipo]) {
@@ -6124,86 +6205,4 @@ function iniciar() {
 }
 iniciar();
 </script>
-
-<!-- Modal de Autenticación con Enlace Mágico -->
-<dialog id="modalAuth" class="modal-dialog">
-  <div class="modal-cab">
-    <h3><span>⚖️</span> Iniciar sesión con enlace mágico</h3>
-    <button type="button" class="btn-cerrar-modal" id="btnCerrarModalAuth" title="Cerrar">✕</button>
-  </div>
-  <form id="formAuthMagicLink" class="modal-cuerpo" autocomplete="on">
-    <p style="margin: 0; font-size: 13px; color: var(--tinta-2); line-height: 1.45;">
-      Accede con tu correo electrónico. Te enviaremos un <strong>enlace mágico seguro</strong> para ingresar sin contraseñas. Tus datos, clientes, casos y memoriales se resguardarán en la nube con Row Level Security y cifrado.
-    </p>
-    <div class="campo" style="margin: 0;">
-      <label for="authEmail" style="font-weight: 600; font-size: 13px; color: var(--tinta); display: block; margin-bottom: 4px;">Tu correo electrónico</label>
-      <input type="email" id="authEmail" required placeholder="abogado@tufirma.com" style="width: 100%; box-sizing: border-box; font-size: 14px; padding: 8px 10px; border: 1.5px solid var(--regla); border-radius: 4px;">
-    </div>
-    <div id="msgAuthEstado" style="display: none; padding: 10px 12px; border-radius: 6px; font-size: 12.5px; line-height: 1.4;"></div>
-    <button type="submit" class="btn primario grande" id="btnEnviarMagicLink" style="width: 100%; justify-content: center; font-size: 14px; padding: 10px 16px;">
-      ✉️ Enviar enlace mágico a mi correo
-    </button>
-    <p style="margin: 0; font-size: 11.5px; color: var(--tinta-2); text-align: center;">
-      Si ya tienes memoriales o membrete en este navegador, se migrarán automáticamente a tu cuenta la primera vez que ingreses.
-    </p>
-  </form>
-</dialog>
-
-<!-- Modal de Mi Cuenta / Sesión y Datos -->
-<dialog id="modalCuenta" class="modal-dialog">
-  <div class="modal-cab">
-    <h3><span>👤</span> Mi Cuenta en El Memorialista</h3>
-    <button type="button" class="btn-cerrar-modal" id="btnCerrarModalCuenta" title="Cerrar">✕</button>
-  </div>
-  <div class="modal-cuerpo">
-    <div class="tarjeta-usuario">
-      <div class="linea-dato-usuario">
-        <strong>Correo:</strong>
-        <span id="cuentaUserEmail">—</span>
-      </div>
-      <div class="linea-dato-usuario">
-        <strong>Firma / Despacho:</strong>
-        <span id="cuentaUserFirma">—</span>
-      </div>
-      <div class="linea-dato-usuario">
-        <strong>Rol:</strong>
-        <span id="cuentaUserRol">Abogado</span>
-      </div>
-      <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--regla);">
-        <div class="linea-dato-usuario">
-          <strong>Límite de uso diario:</strong>
-          <span id="cuentaUserCuota">0 / 50 redacciones</span>
-        </div>
-        <div class="barra-cuota-uso">
-          <div class="barra-cuota-progreso" id="cuentaProgresoCuota" style="width: 0%;"></div>
-        </div>
-      </div>
-    </div>
-
-    <div style="display: grid; gap: 10px;">
-      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: var(--tinta);">Gestión de datos y privacidad</h4>
-      <button type="button" class="btn chico" id="btnExportarDatosCuenta" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; font-weight: 600;">
-        📦 Exportar todos mis datos (JSON)
-      </button>
-      <button type="button" class="btn chico fantasma" id="btnSincronizarNube" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px;">
-        🔄 Sincronizar datos locales con la nube
-      </button>
-    </div>
-
-    <div style="border-top: 1px solid #fee2e2; padding-top: 14px; margin-top: 4px; display: grid; gap: 8px;">
-      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: #dc2626;">Zona de peligro</h4>
-      <p style="margin: 0; font-size: 11.5px; color: var(--tinta-2);">
-        Borra tu cuenta en Supabase y elimina definitivamente todos tus clientes, casos, memoriales, versiones y archivos privados.
-      </p>
-      <button type="button" class="btn-peligro" id="btnEliminarCuentaModal" style="justify-content: center;">
-        🗑️ Eliminar mi cuenta y mis datos
-      </button>
-    </div>
-  </div>
-  <div class="modal-pie" style="justify-content: space-between;">
-    <button type="button" class="btn fantasma" id="btnCerrarSesionCuenta">🚪 Cerrar sesión</button>
-    <button type="button" class="btn" id="btnCerrarCuentaDialog">Cerrar</button>
-  </div>
-</dialog>
-
 </body></html>
