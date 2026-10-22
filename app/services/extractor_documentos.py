@@ -157,7 +157,7 @@ def extraer_campos_relevantes_tipo(tipo_info: dict[str, Any]) -> list[dict[str, 
     return campos
 
 
-def construir_esquema_extraccion(campos: list[dict[str, Any]]) -> dict[str, Any]:
+def construir_esquema_extraccion(campos: list[dict[str, Any]], tipo_id: Optional[str] = None) -> dict[str, Any]:
     """Construye el esquema JSON estricto requerido a Gemini para los campos del tipo elegido."""
     properties: dict[str, Any] = {}
     for c in campos:
@@ -197,13 +197,44 @@ def construir_esquema_extraccion(campos: list[dict[str, Any]]) -> dict[str, Any]
             "required": ["valor", "archivo", "cita_textual_corta", "confianza"],
         }
 
+    # Para contestación: extraer lista estructurada de hechos numerados de la demanda
+    if tipo_id == "contestacion":
+        properties["hechos_numerados"] = {
+            "type": "ARRAY",
+            "description": "Lista de hechos numerados de la demanda formulada por la contraparte (art. 96 CGP)",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "numero": {"type": "INTEGER", "description": "Número correlativo del hecho (1, 2, 3...)"},
+                    "texto": {"type": "STRING", "description": "Texto del hecho tal como fue afirmado en la demanda"},
+                },
+                "required": ["numero", "texto"],
+            },
+        }
+
+    # Para providencias judiciales (impugnación tutela, recurso autos, apelación sentencia):
+    if tipo_id in ("impugnacion_tutela", "recurso_judicial", "apelacion_sentencia"):
+        properties["decision_providencia"] = {
+            "type": "OBJECT",
+            "description": "Decisión de la parte resolutiva del fallo o auto, y su fecha de expedición",
+            "properties": {
+                "decision": {"type": "STRING", "description": "Resumen claro de lo que resolvió el despacho judicial"},
+                "fecha": {"type": "STRING", "description": "Fecha de la providencia judicial (AAAA-MM-DD o texto formal)"},
+                "archivo": {"type": "STRING", "description": "Archivo del cual se extrajo la decisión"},
+                "pagina": {"type": "INTEGER", "description": "Página donde consta la parte resolutiva"},
+                "cita_textual_corta": {"type": "STRING", "description": "Cita textual de la parte resolutiva"},
+                "confianza": {"type": "STRING", "enum": ["alta", "media", "baja"]},
+            },
+            "required": ["decision", "fecha", "archivo", "cita_textual_corta", "confianza"],
+        }
+
     return {
         "type": "OBJECT",
         "properties": properties,
     }
 
 
-def construir_prompt_extraccion(nombre_tipo: str, campos: list[dict[str, Any]], archivos: list[dict[str, Any]]) -> str:
+def construir_prompt_extraccion(tipo_id: str, nombre_tipo: str, campos: list[dict[str, Any]], archivos: list[dict[str, Any]]) -> str:
     """Genera las instrucciones jurídicas para que Gemini analice los archivos y extraiga datos."""
     lineas_archivos = [
         f"- Archivo {i}: '{f['nombre']}' ({f['mime']}, {f['tamano'] / 1024:.1f} KB)"
@@ -217,6 +248,26 @@ def construir_prompt_extraccion(nombre_tipo: str, campos: list[dict[str, Any]], 
     ]
     lista_campos_str = "\n".join(lineas_campos)
 
+    instrucciones_especiales = ""
+    if tipo_id == "contestacion":
+        instrucciones_especiales = (
+            "\n\nINSTRUCCIONES OBLIGATORIAS PARA CONTESTACIÓN DE DEMANDA:\n"
+            "1. En 'hechos_numerados', extrae uno a uno todos los hechos numerados de la demanda con su número ordinal (1, 2, 3...)\n"
+            "   y el texto fáctico tal como lo formuló la contraparte (art. 96 CGP).\n"
+            "2. En 'respuesta_pretensiones', extrae las pretensiones reclamadas en la demanda para permitir la oposición.\n"
+            "3. En 'notificacion_fecha', extrae la fecha de notificación del auto admisorio (AAAA-MM-DD) si consta en los documentos."
+        )
+    elif tipo_id in ("impugnacion_tutela", "recurso_judicial", "apelacion_sentencia"):
+        instrucciones_especiales = (
+            f"\n\nINSTRUCCIONES OBLIGATORIAS PARA PROVIDENCIAS JUDICIALES ({nombre_tipo}):\n"
+            "1. Identifica la DECISIÓN judicial de la parte resolutiva y la FECHA de la providencia.\n"
+            "2. Completa 'decision_providencia' con la fecha y decisión adoptada.\n"
+            "3. Asigna la decisión al campo respectivo ('fallo' en tutela, 'providencia' en auto, 'sentencia' en apelación),\n"
+            "   ejemplo: 'Sentencia del 10/10/2026 que negó la tutela por improcedente' o 'Auto del 9/10/2026 que rechazó la demanda'.\n"
+            "4. En 'notificacion_fecha', extrae con precisión la fecha en que se notificó la providencia (por estado, personal o\n"
+            "   mensaje de datos) en formato AAAA-MM-DD para calcular el término legal de vencimiento."
+        )
+
     return (
         f"Eres un asistente pericial jurídico de alta precisión especializado en derecho procesal colombiano.\n"
         f"Tu labor es examinar minuciosamente los documentos del caso adjuntos (archivos en línea: PDF, imágenes o audio)\n"
@@ -224,7 +275,8 @@ def construir_prompt_extraccion(nombre_tipo: str, campos: list[dict[str, Any]], 
         f"ARCHIVOS APORTADOS POR EL ABOGADO:\n"
         f"{lista_archivos_str}\n\n"
         f"CAMPOS DEL FORMULARIO A COMPLETAR:\n"
-        f"{lista_campos_str}\n\n"
+        f"{lista_campos_str}"
+        f"{instrucciones_especiales}\n\n"
         f"REGLAS OBLIGATORIAS DE EXTRACCIÓN:\n"
         f"1. FIDELIDAD ESTRICTA: Extrae únicamente datos que tengan respaldo claro en los documentos aportados.\n"
         f"   NUNCA inventes nombres de partes, números de cédula, NIT, radicados de 23 dígitos ni fechas.\n"
@@ -246,14 +298,14 @@ async def extraer_datos_con_gemini(
     tipo_id: str,
     tipo_info: dict[str, Any],
     archivos: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """Envía los archivos como partes en línea a gemini-3.8-flash y extrae los campos."""
     s = get_settings()
     nombre_tipo = tipo_info.get("nombre", tipo_id)
     campos = extraer_campos_relevantes_tipo(tipo_info)
     campos_dict = {c["k"]: c for c in campos}
-    esquema = construir_esquema_extraccion(campos)
-    prompt = construir_prompt_extraccion(nombre_tipo, campos, archivos)
+    esquema = construir_esquema_extraccion(campos, tipo_id=tipo_id)
+    prompt = construir_prompt_extraccion(tipo_id, nombre_tipo, campos, archivos)
 
     # 1. Construir las partes en línea (inlineData) en memoria
     partes: list[dict[str, Any]] = []
@@ -341,7 +393,14 @@ async def extraer_datos_con_gemini(
     # 3. Parsear y normalizar la salida JSON
     datos_extraidos = extraer_json(texto_respuesta)
     if not datos_extraidos:
-        return []
+        return {
+            "propuestas": [],
+            "hechos_numerados": [],
+            "decision_providencia": None,
+            "fecha_notificacion_detectada": None,
+        }
+
+    raw_extraidos = datos_extraidos
 
     # Normalizar si vino en lista o envuelto
     if isinstance(datos_extraidos, list):
@@ -396,4 +455,77 @@ async def extraer_datos_con_gemini(
                 "confianza": confianza,
             })
 
-    return propuestas
+    # 5. Extracción específica para contestación: hechos numerados
+    hechos_numerados: list[dict[str, Any]] = []
+    fuente_hechos = None
+    if isinstance(raw_extraidos, dict) and "hechos_numerados" in raw_extraidos:
+        fuente_hechos = raw_extraidos["hechos_numerados"]
+    elif isinstance(datos_extraidos, dict) and "hechos_numerados" in datos_extraidos:
+        fuente_hechos = datos_extraidos["hechos_numerados"]
+
+    if isinstance(fuente_hechos, list):
+        for idx, h_item in enumerate(fuente_hechos, 1):
+            if isinstance(h_item, dict):
+                num = h_item.get("numero", idx)
+                txt = str(h_item.get("texto", "")).strip()
+                if txt:
+                    hechos_numerados.append({"numero": num, "texto": txt})
+
+    # 6. Extracción específica para providencias (fallo o auto)
+    decision_providencia: Optional[dict[str, Any]] = None
+    fuente_dp = None
+    if isinstance(raw_extraidos, dict) and "decision_providencia" in raw_extraidos:
+        fuente_dp = raw_extraidos["decision_providencia"]
+    elif isinstance(datos_extraidos, dict) and "decision_providencia" in datos_extraidos:
+        fuente_dp = datos_extraidos["decision_providencia"]
+
+    if isinstance(fuente_dp, dict):
+        decision_texto = str(fuente_dp.get("decision", "")).strip()
+        fecha_texto = str(fuente_dp.get("fecha", "")).strip()
+        if decision_texto:
+            decision_providencia = {
+                "decision": decision_texto,
+                "fecha": fecha_texto,
+                "archivo": str(fuente_dp.get("archivo", "")).strip() or archivos[0]["nombre"],
+                "pagina": fuente_dp.get("pagina"),
+                "cita_textual_corta": str(fuente_dp.get("cita_textual_corta", "")).strip(),
+                "confianza": str(fuente_dp.get("confianza", "alta")).lower(),
+            }
+            # Asignar al campo respectivo si no se había propuesto aún
+            campo_prov = (
+                "fallo" if tipo_id == "impugnacion_tutela"
+                else "providencia" if tipo_id == "recurso_judicial"
+                else "sentencia" if tipo_id == "apelacion_sentencia"
+                else None
+            )
+            if campo_prov and not any(p["campo"] == campo_prov for p in propuestas):
+                prefijo = "Auto" if tipo_id == "recurso_judicial" else "Sentencia"
+                valor_formateado = (
+                    f"{prefijo} del {fecha_texto} que resolvió: {decision_texto}"
+                    if fecha_texto else f"{prefijo} que resolvió: {decision_texto}"
+                )
+                etiqueta_prov = campos_dict.get(campo_prov, {}).get("l", campo_prov)
+                propuestas.append({
+                    "campo": campo_prov,
+                    "etiqueta": etiqueta_prov,
+                    "tipo_campo": "area",
+                    "valor": valor_formateado,
+                    "archivo": decision_providencia["archivo"],
+                    "pagina": decision_providencia["pagina"],
+                    "cita_textual_corta": decision_providencia["cita_textual_corta"],
+                    "confianza": decision_providencia["confianza"],
+                })
+
+    # 7. Detección de fecha de notificación si aparece
+    fecha_notificacion_detectada: Optional[str] = None
+    for p in propuestas:
+        if p["campo"] == "notificacion_fecha" and p["valor"]:
+            fecha_notificacion_detectada = p["valor"]
+            break
+
+    return {
+        "propuestas": propuestas,
+        "hechos_numerados": hechos_numerados,
+        "decision_providencia": decision_providencia,
+        "fecha_notificacion_detectada": fecha_notificacion_detectada,
+    }

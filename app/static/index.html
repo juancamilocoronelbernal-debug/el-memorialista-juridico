@@ -368,6 +368,35 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .tabla-propuestas td{padding:10px 10px;border-bottom:1px solid var(--regla);vertical-align:top}
 @keyframes pulsoVerdeCampo{0%{background-color:rgba(34,197,94,.22);border-color:#16a34a;box-shadow:0 0 0 2px rgba(34,197,94,.3)}100%{background-color:transparent;box-shadow:none}}
 .campo-recien-aplicado input,.campo-recien-aplicado textarea{animation:pulsoVerdeCampo 2.5s ease-out}
+
+/* ---------- banner vencimiento superior ---------- */
+.banner-vencimiento-top{border-radius:var(--r);padding:12px 16px;border:1.5px solid transparent;transition:all .2s ease}
+.banner-vencimiento-top.ok{background:#f0fdf4;border-color:#86efac;color:#166534}
+.banner-vencimiento-top.urgente{background:#fffbeb;border-color:#fde68a;color:#92400e}
+.banner-vencimiento-top.vencido{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+.banner-vencimiento-top.info{background:#f8fafc;border-color:#cbd5e1;color:#334155}
+.banner-vencimiento-top.cargando{background:#f8fafc;border-color:#e2e8f0;color:#64748b}
+
+/* ---------- asistente de hechos contestacion art 96 cgp ---------- */
+.asistente-hechos{border:1px solid var(--regla);border-radius:var(--r);background:var(--superficie);overflow:hidden;margin-top:6px}
+.asistente-hechos-cab{padding:10px 14px;background:#f8fafc;border-bottom:1px solid var(--regla);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.asistente-hechos-filas{display:grid;gap:10px;padding:12px}
+.asistente-hecho-card{border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;background:#fff;display:grid;gap:8px;transition:border-color .15s}
+.asistente-hecho-card:hover{border-color:#cbd5e1}
+.asistente-hecho-card.es-cierto{border-left:4px solid #10b981}
+.asistente-hecho-card.no-es-cierto{border-left:4px solid #ef4444}
+.asistente-hecho-card.no-consta{border-left:4px solid #6366f1}
+.asistente-hecho-card.parcial{border-left:4px solid #f59e0b}
+.asistente-hecho-card.requiere-razon .asistente-hecho-razon{border-color:#f59e0b}
+.asistente-hecho-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.asistente-hecho-num{font-weight:750;font-size:12.5px;color:var(--tinta);display:flex;align-items:center;gap:6px}
+.asistente-hecho-texto-demanda{font-size:12px;color:var(--tinta-2);background:rgba(0,0,0,.02);padding:6px 8px;border-radius:4px;border-left:2px solid var(--regla);font-style:italic;line-height:1.35}
+.asistente-hecho-controles{display:grid;grid-template-columns:180px 1fr auto;gap:8px;align-items:start}
+@media (max-width:680px){.asistente-hecho-controles{grid-template-columns:1fr;}}
+.asistente-hecho-select{font-size:12.5px;padding:6px 8px;border:1px solid var(--regla);border-radius:4px;background:#fff;font-weight:600}
+.asistente-hecho-razon{font-size:12px;padding:6px 8px;border:1px solid var(--regla);border-radius:4px;resize:vertical;min-height:36px;font-family:inherit;width:100%;box-sizing:border-box}
+.asistente-hecho-del{border:none;background:none;color:#94a3b8;cursor:pointer;padding:4px 8px;font-size:15px;border-radius:4px;align-self:center}
+.asistente-hecho-del:hover{color:#dc2626;background:rgba(220,38,38,.08)}
 </style>
 
 <header class="barra" id="barra">
@@ -388,6 +417,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
     <div class="col-form">
       <div class="form-in gutter">
         <div id="zonaTipo"></div>
+        <div id="bannerVencimientoTop" class="banner-vencimiento-top" style="margin-bottom: 18px;" hidden></div>
         <form id="formCaso" class="form-caso" novalidate autocomplete="off"></form>
         <div class="acciones-form" id="accionesForm" hidden>
           <button class="btn primario grande" id="btnRedactar" type="button">
@@ -887,6 +917,7 @@ const state = {
   archivosCaso: [],
   propuestasExtraidas: [],
   extrayendoDocs: false,
+  hechosContestacion: [],
 };
 const IMG = { logo: null, firma: null };
 const CAP = { sample: true, db: null, user: null, downloads: true, permissions: null, uid: null, listo: true };
@@ -2592,15 +2623,46 @@ function renderZonaSubidaDocumentos(tipo) {
     id: 'zonaSubidaDocs'
   });
 
+  const tipoId = state.tipo;
+  let titSeccion = '📁 Sube los documentos del caso';
+  let descSeccion = 'Adjunta poderes, cédulas, demandas, contratos, grabaciones de audio o providencias (PDF, imágenes, audio · máx. 20 MB en total). La IA de Gemini 3.8 Flash extraerá los datos y te propondrá cada campo antes de que se escriba en el formulario.';
+  let iconoDrop = '📄 🎙️ 🖼️';
+  let textoDrop = 'Arrastra y suelta tus archivos aquí, o ';
+  let subDrop = 'PDF, PNG, JPG, WEBP, MP3, WAV, M4A, OGG · Máximo 20 MB en total (privacidad: procesados 100% en memoria y descartados)';
+
+  if (tipoId === 'contestacion') {
+    titSeccion = '📁 Sube la demanda judicial (PDF)';
+    descSeccion = 'Adjunta la demanda en PDF. Gemini 3.8 Flash extraerá los hechos numerados (art. 96 CGP) para responderlos uno a uno, pretensiones y fecha de notificación.';
+    iconoDrop = '⚖️ 📄';
+    textoDrop = 'Arrastra y suelta aquí la demanda en PDF (o anexos del caso), o ';
+    subDrop = 'Demanda en PDF, grabaciones o fotos · Máx. 20 MB · Privacidad: procesados 100% en memoria y descartados';
+  } else if (tipoId === 'impugnacion_tutela') {
+    titSeccion = '📁 Sube el fallo de tutela (PDF)';
+    descSeccion = 'Adjunta la sentencia de tutela en PDF. Gemini 3.8 Flash extraerá la decisión de la parte resolutiva, su fecha y la notificación para calcular el término de 3 días.';
+    iconoDrop = '⚖️ 📑';
+    textoDrop = 'Arrastra y suelta aquí el fallo de tutela en PDF, o ';
+    subDrop = 'Fallo de tutela en PDF · Máx. 20 MB · Privacidad: procesados 100% en memoria y descartados';
+  } else if (tipoId === 'recurso_judicial') {
+    titSeccion = '📁 Sube el auto judicial recurrido (PDF)';
+    descSeccion = 'Adjunta el auto interlocutorio en PDF. Gemini 3.8 Flash extraerá la decisión controvertida, su fecha y la notificación para el cómputo de términos (arts. 318 y 322 CGP).';
+    iconoDrop = '⚖️ 📑';
+    textoDrop = 'Arrastra y suelta aquí el auto judicial en PDF, o ';
+    subDrop = 'Auto en PDF · Máx. 20 MB · Privacidad: procesados 100% en memoria y descartados';
+  } else if (tipoId === 'apelacion_sentencia') {
+    titSeccion = '📁 Sube la sentencia judicial apelada (PDF)';
+    descSeccion = 'Adjunta la sentencia en PDF. Gemini 3.8 Flash extraerá la decisión, la fecha del fallo y la fecha de notificación para calcular el término de apelación.';
+    iconoDrop = '⚖️ 📑';
+    textoDrop = 'Arrastra y suelta aquí la sentencia en PDF, o ';
+    subDrop = 'Sentencia en PDF · Máx. 20 MB · Privacidad: procesados 100% en memoria y descartados';
+  }
+
   const cab = h('div', { style: 'display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;' },
     h('div', {},
       h('h3', { style: 'font-size: 15px; font-weight: 750; margin: 0 0 3px; display: flex; align-items: center; gap: 8px;' },
-        h('span', {}, '📁 Sube los documentos del caso'),
+        h('span', {}, titSeccion),
         h('span', { style: 'font-size: 11px; background: rgba(37,99,235,0.08); color: var(--azul, #2563eb); padding: 2px 8px; border-radius: 999px; font-weight: 600;' }, 'Extracción con IA')
       ),
-      h('p', { style: 'font-size: 12.5px; color: var(--tinta-2); margin: 0;' },
-        'Adjunta poderes, cédulas, demandas, contratos, grabaciones de audio o providencias (PDF, imágenes, audio · máx. 20 MB en total). La IA de Gemini 3.8 Flash extraerá los datos y te propondrá cada campo antes de que se escriba en el formulario.'
-      )
+      h('p', { style: 'font-size: 12.5px; color: var(--tinta-2); margin: 0;' }, descSeccion)
     )
   );
 
@@ -2617,14 +2679,12 @@ function renderZonaSubidaDocumentos(tipo) {
     id: 'dropzoneDocs',
     onclick: () => inpArchivos.click()
   },
-    h('div', { style: 'font-size: 26px; margin-bottom: 6px;' }, '📄 🎙️ 🖼️'),
+    h('div', { style: 'font-size: 26px; margin-bottom: 6px;' }, iconoDrop),
     h('div', { style: 'font-size: 13.5px; font-weight: 650; color: var(--tinta);' },
-      'Arrastra y suelta tus archivos aquí, o ',
+      textoDrop,
       h('span', { style: 'color: var(--azul, #2563eb); text-decoration: underline;' }, 'haz clic para seleccionarlos')
     ),
-    h('div', { style: 'font-size: 11.5px; color: var(--tinta-2); margin-top: 4px;' },
-      'PDF, PNG, JPG, WEBP, MP3, WAV, M4A, OGG · Máximo 20 MB en total (privacidad: procesados 100% en memoria y descartados)'
-    )
+    h('div', { style: 'font-size: 11.5px; color: var(--tinta-2); margin-top: 4px;' }, subDrop)
   );
 
   dropzone.addEventListener('dragover', (e) => {
@@ -2803,13 +2863,43 @@ async function ejecutarExtraccionDocumentos(tipo) {
     const data = await res.json();
     state.propuestasExtraidas = data.propuestas || [];
 
-    if (!state.propuestasExtraidas.length) {
+    // 1. Si se detectó fecha de notificación en el documento:
+    if (data.fecha_notificacion_detectada) {
+      state.datos.notificacion_fecha = data.fecha_notificacion_detectada;
+      const inpNotif = $('#f_notificacion_fecha');
+      if (inpNotif) {
+        inpNotif.value = data.fecha_notificacion_detectada;
+        inpNotif.dispatchEvent(new Event('input', { bubbles: true }));
+        inpNotif.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      actualizarBannerVencimientoTop(data.fecha_notificacion_detectada);
+    }
+
+    // 2. Si es contestación y se extrajeron hechos numerados de la demanda:
+    let mensajeHechos = '';
+    if (state.tipo === 'contestacion' && Array.isArray(data.hechos_numerados) && data.hechos_numerados.length > 0) {
+      state.hechosContestacion = data.hechos_numerados.map(h => ({
+        numero: h.numero,
+        texto: h.texto,
+        pronunciamiento: 'Es cierto',
+        razon: ''
+      }));
+      recompilarRespuestaHechos();
+      const wrapHechos = $('#filasHechosContestacion');
+      if (wrapHechos) renderFilasAsistenteHechos(wrapHechos);
+      mensajeHechos = ` y ${data.hechos_numerados.length} hechos de la demanda listos para responder`;
+    }
+
+    const totalDatos = (state.propuestasExtraidas.length) + (data.hechos_numerados ? data.hechos_numerados.length : 0);
+    if (!totalDatos) {
       toast('No se encontraron datos concluyentes en los documentos adjuntos.', 'error', 6000);
       return;
     }
 
-    toast(`¡Se extrajeron ${state.propuestasExtraidas.length} datos del caso!`, 'ok');
-    renderizarTablaPropuestas(state.propuestasExtraidas);
+    toast(`¡Extracción exitosa! ${state.propuestasExtraidas.length} campos propuestos${mensajeHechos}.`, 'ok');
+    if (state.propuestasExtraidas.length > 0) {
+      renderizarTablaPropuestas(state.propuestasExtraidas);
+    }
   } catch (err) {
     console.error('Error en extracción:', err);
     toast(err.message || 'Error al procesar los documentos con IA.', 'error', 7000);
@@ -3001,6 +3091,9 @@ function incorporarPropuestasSeleccionadas(propuestas) {
         setTimeout(() => wrap.classList.remove('campo-recien-aplicado'), 3000);
       }
     }
+    if (p.campo === 'notificacion_fecha' && p.valor) {
+      actualizarBannerVencimientoTop(p.valor);
+    }
   }
 
   guardarBorrador();
@@ -3023,11 +3116,375 @@ function incorporarPropuestasSeleccionadas(propuestas) {
   );
 }
 
+/* =========================================================
+   Asistente de Hechos (Art. 96 CGP) y Cómputo de Vencimiento
+   ========================================================= */
+
+function parsearTextoAHechos(texto) {
+  if (!texto || typeof texto !== 'string') return [];
+  const bloques = texto.split(/(?=\n\s*\d+[\.\)])/g).map(s => s.trim()).filter(Boolean);
+  if (!bloques.length) return [];
+  const hechos = [];
+  for (let i = 0; i < bloques.length; i++) {
+    const b = bloques[i];
+    const mNum = /^\s*(\d+)[\.\)]\s*(?:AL\s+HECHO\s+\w+[\s\:\-\.]*)?(.*)$/is.exec(b);
+    const num = mNum ? parseInt(mNum[1], 10) : (i + 1);
+    const resto = mNum ? mNum[2].trim() : b;
+
+    let pron = 'Es cierto';
+    let razon = '';
+    if (/\bno\s+es\s+cierto\b/i.test(resto)) {
+      pron = 'No es cierto';
+      razon = resto.replace(/^.*?\bno\s+es\s+cierto\b[\:\.\s\-]*/i, '').trim();
+    } else if (/\bno\s+me\s+consta\b/i.test(resto)) {
+      pron = 'No me consta';
+      razon = resto.replace(/^.*?\bno\s+me\s+consta\b[\:\.\s\-]*/i, '').trim();
+    } else if (/\b(?:es\s+)?parcialmente\s+cierto\b/i.test(resto)) {
+      pron = 'Es parcialmente cierto';
+      razon = resto.replace(/^.*?\bparcialmente\s+cierto\b[\:\.\s\-]*/i, '').trim();
+    } else if (/\bes\s+cierto\b/i.test(resto)) {
+      pron = 'Es cierto';
+      razon = resto.replace(/^.*?\bes\s+cierto\b[\:\.\s\-]*/i, '').trim();
+    } else {
+      razon = resto;
+    }
+    hechos.push({ numero: num, texto: '', pronunciamiento: pron, razon });
+  }
+  return hechos;
+}
+
+function recompilarRespuestaHechos() {
+  if (!state.hechosContestacion || !state.hechosContestacion.length) return;
+  const lineas = state.hechosContestacion.map((h, i) => {
+    const num = h.numero || (i + 1);
+    const pron = h.pronunciamiento || 'Es cierto';
+    const razon = (h.razon || '').trim();
+    let l = `${num}. AL HECHO ${num}: ${pron}.`;
+    if (razon) {
+      l += ` ${razon.endsWith('.') ? razon : razon + '.'}`;
+    }
+    return l;
+  });
+
+  const textoCompilado = lineas.join('\n\n');
+  state.datos.respuesta_hechos = textoCompilado;
+  const area = $('#f_respuesta_hechos');
+  if (area && area.value !== textoCompilado) {
+    area.value = textoCompilado;
+  }
+  guardarBorrador();
+}
+
+function claseSegunPronunciamiento(pron) {
+  if (pron === 'No es cierto') return 'no-es-cierto requiere-razon';
+  if (pron === 'No me consta') return 'no-consta requiere-razon';
+  if (pron === 'Es parcialmente cierto') return 'parcial requiere-razon';
+  return 'es-cierto';
+}
+
+function renderFilasAsistenteHechos(filasWrap) {
+  if (!filasWrap) return;
+  filasWrap.replaceChildren();
+
+  if (!state.hechosContestacion || !state.hechosContestacion.length) {
+    state.hechosContestacion = [{ numero: 1, texto: '', pronunciamiento: 'Es cierto', razon: '' }];
+  }
+
+  state.hechosContestacion.forEach((hItem, idx) => {
+    hItem.numero = idx + 1;
+    const card = h('div', {
+      class: 'asistente-hecho-card ' + claseSegunPronunciamiento(hItem.pronunciamiento)
+    });
+
+    const topBar = h('div', { class: 'asistente-hecho-top' },
+      h('span', { class: 'asistente-hecho-num' },
+        h('span', { style: 'color: var(--azul, #2563eb);' }, `#${hItem.numero}`),
+        `Hecho ${hItem.numero}`
+      ),
+      h('button', {
+        type: 'button',
+        class: 'asistente-hecho-del',
+        title: `Eliminar hecho ${hItem.numero}`,
+        onclick: () => {
+          state.hechosContestacion.splice(idx, 1);
+          if (!state.hechosContestacion.length) {
+            state.hechosContestacion.push({ numero: 1, texto: '', pronunciamiento: 'Es cierto', razon: '' });
+          }
+          renderFilasAsistenteHechos(filasWrap);
+          recompilarRespuestaHechos();
+        }
+      }, '✕')
+    );
+
+    const txtDemanda = hItem.texto
+      ? h('div', { class: 'asistente-hecho-texto-demanda' },
+          h('strong', { style: 'color: var(--tinta);' }, 'Afirmación de la demanda: '),
+          `“${hItem.texto}”`
+        )
+      : null;
+
+    const controles = h('div', { class: 'asistente-hecho-controles' });
+
+    const sel = h('select', { class: 'asistente-hecho-select' },
+      h('option', { value: 'Es cierto' }, '✓ Es cierto'),
+      h('option', { value: 'No es cierto' }, '✗ No es cierto'),
+      h('option', { value: 'No me consta' }, '❓ No me consta'),
+      h('option', { value: 'Es parcialmente cierto' }, '⚡ Es parcialmente cierto')
+    );
+    sel.value = hItem.pronunciamiento || 'Es cierto';
+
+    const inpRazon = h('textarea', {
+      class: 'asistente-hecho-razon',
+      rows: 2,
+      placeholder: (sel.value === 'Es cierto')
+        ? 'Razón o precisión opcional...'
+        : '⚠️ Razón precisa y unívoca obligatoria (art. 96 CGP)...'
+    });
+    inpRazon.value = hItem.razon || '';
+
+    sel.addEventListener('change', () => {
+      hItem.pronunciamiento = sel.value;
+      card.className = 'asistente-hecho-card ' + claseSegunPronunciamiento(sel.value);
+      inpRazon.placeholder = (sel.value === 'Es cierto')
+        ? 'Razón o precisión opcional...'
+        : '⚠️ Razón precisa y unívoca obligatoria (art. 96 CGP)...';
+      recompilarRespuestaHechos();
+    });
+
+    inpRazon.addEventListener('input', () => {
+      hItem.razon = inpRazon.value;
+      recompilarRespuestaHechos();
+    });
+
+    controles.append(sel, inpRazon);
+
+    card.append(topBar);
+    if (txtDemanda) card.append(txtDemanda);
+    card.append(controles);
+
+    filasWrap.append(card);
+  });
+}
+
+function renderAsistenteHechosContestacion(c, cambiar, wrap) {
+  wrap.replaceChildren();
+
+  // Inicializar state.hechosContestacion si está vacío
+  if (!state.hechosContestacion || !state.hechosContestacion.length) {
+    const parsed = parsearTextoAHechos(state.datos.respuesta_hechos);
+    if (parsed.length) {
+      state.hechosContestacion = parsed;
+    } else {
+      state.hechosContestacion = [{ numero: 1, texto: '', pronunciamiento: 'Es cierto', razon: '' }];
+    }
+  }
+
+  const asis = h('div', { class: 'asistente-hechos', id: 'wrapAsistenteHechos' });
+  const filasWrap = h('div', { class: 'asistente-hechos-filas', id: 'filasHechosContestacion' });
+
+  const cab = h('div', { class: 'asistente-hechos-cab' },
+    h('div', {},
+      h('div', { style: 'font-weight: 750; font-size: 13.5px; color: var(--tinta); display: flex; align-items: center; gap: 8px;' },
+        h('span', {}, '📋 Pronunciamiento sobre los hechos de la demanda'),
+        h('span', { style: 'font-size: 11px; background: rgba(37,99,235,0.08); color: var(--azul, #2563eb); padding: 2px 7px; border-radius: 999px; font-weight: 600;' }, 'Art. 96 CGP')
+      ),
+      h('div', { style: 'font-size: 11.5px; color: var(--tinta-2); margin-top: 2px;' },
+        'Pronúnciate hecho por hecho. Si niegas o no te consta, debes expresar las razones precisas y unívocas para evitar que se presuma cierto (confesión ficta).'
+      )
+    ),
+    h('button', {
+      type: 'button',
+      class: 'btn chico primario',
+      id: 'btnAgregarHecho',
+      style: 'font-size: 12px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 4px;',
+      onclick: () => {
+        const nuevoNum = (state.hechosContestacion.length || 0) + 1;
+        state.hechosContestacion.push({ numero: nuevoNum, texto: '', pronunciamiento: 'Es cierto', razon: '' });
+        renderFilasAsistenteHechos(filasWrap);
+        recompilarRespuestaHechos();
+      }
+    }, '+ Agregar hecho')
+  );
+
+  renderFilasAsistenteHechos(filasWrap);
+
+  const inpAreaConsolidada = h('textarea', {
+    id: 'f_respuesta_hechos',
+    rows: 6,
+    style: 'width: 100%; box-sizing: border-box; font-family: inherit; font-size: 12.5px; border: 1px solid var(--regla); border-radius: 4px; padding: 8px; margin-top: 6px;'
+  });
+  inpAreaConsolidada.value = state.datos.respuesta_hechos || '';
+  inpAreaConsolidada.addEventListener('input', () => {
+    state.datos.respuesta_hechos = inpAreaConsolidada.value;
+    guardarBorrador();
+  });
+
+  const det = h('details', { style: 'border-top: 1px solid var(--regla); padding: 10px 14px; font-size: 12px;' },
+    h('summary', { style: 'cursor: pointer; font-weight: 600; color: var(--azul, #2563eb);' }, '📝 Ver / editar texto consolidado de respuesta a hechos'),
+    h('p', { style: 'margin: 6px 0; color: var(--tinta-2); font-size: 11.5px;' },
+      'Texto consolidado conforme al art. 96 CGP que se enviará al redactor de IA:'
+    ),
+    inpAreaConsolidada
+  );
+
+  asis.append(cab, filasWrap, det);
+  wrap.append(asis);
+
+  recompilarRespuestaHechos();
+  return wrap;
+}
+
+async function actualizarBannerVencimientoTop(fechaIso) {
+  const banner = $('#bannerVencimientoTop');
+  if (!banner) return;
+  const tipoId = state.tipo;
+  if (!tipoId || !TIPOS[tipoId]) {
+    banner.hidden = true;
+    banner.replaceChildren();
+    return;
+  }
+
+  const tiposConTermino = ['contestacion', 'impugnacion_tutela', 'recurso_judicial', 'apelacion_sentencia'];
+  const esTipoConTermino = tiposConTermino.includes(tipoId);
+  const fecha = (fechaIso != null ? String(fechaIso) : String(state.datos.notificacion_fecha || '')).trim();
+
+  // Si no hay fecha aún
+  if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    if (esTipoConTermino) {
+      const infoTerminos = {
+        contestacion: { dias: '20 días hábiles (ordinario) / 10 días (verbal sumario)', norma: 'Arts. 369 y 391 CGP' },
+        impugnacion_tutela: { dias: '3 días hábiles', norma: 'Art. 31 Decreto 2591 de 1991' },
+        recurso_judicial: { dias: '3 días hábiles', norma: 'Arts. 318 y 322 CGP' },
+        apelacion_sentencia: { dias: '3 días hábiles', norma: 'Art. 322 CGP' }
+      };
+      const info = infoTerminos[tipoId] || { dias: 'Término legal procesal', norma: 'CGP / CPACA' };
+      banner.hidden = false;
+      banner.className = 'banner-vencimiento-top info';
+      banner.replaceChildren(
+        h('div', { style: 'display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;' },
+          h('div', { style: 'display: flex; align-items: center; gap: 10px;' },
+            h('span', { style: 'font-size: 20px;' }, '⏱️'),
+            h('div', {},
+              h('div', { style: 'font-weight: 750; font-size: 13.5px; color: var(--tinta);' },
+                `Término legal: ${info.dias} · ${info.norma}`
+              ),
+              h('div', { style: 'font-size: 12px; color: var(--tinta-2); margin-top: 2px;' },
+                'Sube la providencia o demanda en PDF (o ingresa la fecha de notificación) para calcular el vencimiento en días hábiles.'
+              )
+            )
+          ),
+          h('button', {
+            type: 'button',
+            class: 'btn chico',
+            style: 'font-size: 12px;',
+            onclick: () => {
+              const inp = $('#f_notificacion_fecha');
+              if (inp) { inp.focus(); inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            }
+          }, '📅 Ingresar fecha')
+        )
+      );
+      return;
+    }
+    banner.hidden = true;
+    banner.replaceChildren();
+    return;
+  }
+
+  // Si hay fecha válida, llamamos a /api/plazos
+  const presetId = inferirPresetTermino(tipoId);
+  banner.hidden = false;
+  banner.className = 'banner-vencimiento-top cargando';
+  banner.dataset.lastPlazoFecha = fecha;
+  banner.replaceChildren(
+    h('div', { style: 'display: flex; align-items: center; gap: 8px; color: var(--tinta-2); font-size: 13px;' },
+      h('span', { class: 'girando' }, '⏳'),
+      h('span', {}, 'Calculando vencimiento legal del término procesal...')
+    )
+  );
+
+  try {
+    const res = await apiFetch('/api/plazos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipo_termino: presetId,
+        fecha_inicio: fecha,
+        titulo_evento: `Vencimiento: ${TIPOS[tipoId]?.nombre || 'Término procesal'}`
+      })
+    });
+    if (!res.ok) throw new Error('Error al calcular plazos en el servidor');
+    const data = await res.json();
+    if (banner.dataset.lastPlazoFecha !== fecha) return;
+
+    const esVencido = data.ha_vencido;
+    const esHoy = data.estado_vencimiento === 'vence_hoy';
+    banner.className = 'banner-vencimiento-top ' + (esVencido ? 'vencido' : esHoy ? 'urgente' : 'ok');
+
+    let textoVence = '';
+    if (esVencido) {
+      textoVence = `Vence el ${data.dia_semana_vencimiento.toLowerCase()}, ${data.fecha_vencimiento} (quedan 0 días hábiles · ¡VENCIDO!)`;
+    } else {
+      textoVence = `Vence el ${data.dia_semana_vencimiento.toLowerCase()}, ${data.fecha_vencimiento} (quedan ${data.dias_habiles_restantes} días hábiles)`;
+    }
+
+    const icono = esVencido ? '⚠️' : esHoy ? '⏰' : '⏱️';
+
+    banner.replaceChildren(
+      h('div', { style: 'display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;' },
+        h('div', { style: 'display: flex; align-items: flex-start; gap: 10px;' },
+          h('span', { style: 'font-size: 22px; line-height: 1.1;' }, icono),
+          h('div', {},
+            h('div', { style: 'font-size: 14px; font-weight: 800; letter-spacing: -0.2px;' },
+              (esVencido ? '¡PLAZO VENCIDO! ' : '') + textoVence
+            ),
+            h('div', { style: 'font-size: 12px; margin-top: 3px; opacity: 0.95;' },
+              `${data.nombre_termino} (${data.cantidad} ${data.unidad === 'dias_habiles' ? 'días hábiles' : data.unidad}) · ${data.norma} · Notificado el ${fecha}`
+            ),
+            h('div', { style: 'font-size: 11.5px; margin-top: 2px; opacity: 0.85;' },
+              data.texto_resumen
+            )
+          )
+        ),
+        h('div', { style: 'display: flex; gap: 8px; align-items: center;' },
+          h('button', {
+            type: 'button',
+            class: 'btn chico ' + (esVencido ? 'fantasma' : 'primario'),
+            style: 'display: inline-flex; align-items: center; gap: 5px; font-weight: 600;',
+            onclick: () => descargarIcs(data.evento_ics, `vencimiento_${data.fecha_vencimiento}.ics`)
+          }, '📅 Descargar evento (.ics)'),
+          h('button', {
+            type: 'button',
+            class: 'btn chico fantasma',
+            title: 'Ir al campo de fecha de notificación',
+            onclick: () => {
+              const inp = $('#f_notificacion_fecha');
+              if (inp) { inp.focus(); inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            }
+          }, 'Cambiar fecha')
+        )
+      )
+    );
+  } catch (err) {
+    if (banner.dataset.lastPlazoFecha !== fecha) return;
+    console.error('Error calculando vencimiento superior:', err);
+    banner.className = 'banner-vencimiento-top info';
+    banner.replaceChildren(
+      h('div', { style: 'font-size: 12px; color: #dc2626;' },
+        'No fue posible calcular el vencimiento legal: ' + err.message
+      )
+    );
+  }
+}
+
 function renderFormulario() {
   const form = $('#formCaso');
   form.replaceChildren();
   const tipo = TIPOS[state.tipo];
   if (!tipo) { form.hidden = true; return; }
+
+  // Banner superior de vencimiento con /api/plazos
+  actualizarBannerVencimientoTop(state.datos.notificacion_fecha);
 
   // 1. Área: Sube los documentos del caso (PDF, imágenes, audio)
   form.append(renderZonaSubidaDocumentos(tipo));
@@ -3044,6 +3501,11 @@ function renderCampo(c) {
   const wrap = h('div', { class: 'campo', 'data-campo': c.k });
   const etiqueta = (t) => h('label', { for: id }, t, c.req ? h('span', { class: 'req', 'aria-hidden': 'true' }, '*') : null);
   const cambiar = val => { state.datos[c.k] = val; wrap.classList.remove('err'); const me = wrap.querySelector('.msg-err'); if (me) me.remove(); guardarBorrador(); if (c.k === '_membrete' && !state.ejemplo) renderMembreteHoja(); };
+
+  // Asistente estructurado para hechos de contestación de demanda (Art. 96 CGP)
+  if (c.k === 'respuesta_hechos' && state.tipo === 'contestacion') {
+    return renderAsistenteHechosContestacion(c, cambiar, wrap);
+  }
   if (c.t === 'check') {
     const inp = h('input', { type: 'checkbox', id });
     inp.checked = !!v;
@@ -3188,6 +3650,9 @@ function actualizarAyudasCampo(c, inp, contenedor) {
   const esFechaNotif = c.t === 'date' || c.t === 'fecha' || (c.k && (c.k.includes('notificacion') || c.k.includes('fecha')));
   if (esFechaNotif && val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
     renderizarAyudaVencimientoCampo(c, inp, contenedor, val);
+    actualizarBannerVencimientoTop(val);
+  } else if (esFechaNotif && !val) {
+    actualizarBannerVencimientoTop('');
   }
 
   // 5. Ayuda general del catálogo

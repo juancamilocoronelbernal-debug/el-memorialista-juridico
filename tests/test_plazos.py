@@ -384,6 +384,21 @@ def test_endpoint_post_plazos():
     assert "BEGIN:VCALENDAR" in data["evento_ics"]
 
 
+def test_endpoint_post_plazos_con_preset_sin_cantidad():
+    """Verifica que POST /api/plazos funcione enviando solo tipo_termino y fecha_inicio."""
+    payload = {
+        "tipo_termino": "contestacion_verbal",
+        "fecha_inicio": "2026-10-21",
+    }
+    resp = client.post("/api/plazos", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ok"] is True
+    assert data["cantidad"] == 20
+    assert data["unidad"] == "dias_habiles"
+    assert "Art. 369" in data["norma"]
+
+
 def test_endpoint_post_plazos_ics_download():
     """Verifica que POST /api/plazos/ics retorne el archivo .ics con cabeceras de descarga."""
     payload = {

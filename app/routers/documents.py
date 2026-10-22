@@ -29,6 +29,7 @@ from app.services.plazos import (
     calcular_plazo,
     cargar_calendario_judicial_config,
     obtener_precargas_terminos,
+    buscar_precarga,
 )
 from app.services.extractor_documentos import (
     validar_archivos_extraccion,
@@ -112,9 +113,9 @@ class RevisarRequest(BaseModel):
 class PlazosRequest(BaseModel):
     tipo_termino: Optional[str] = None
     fecha_inicio: str = Field(..., description="Fecha de inicio o notificación en formato ISO (YYYY-MM-DD)")
-    unidad: Literal["dias_habiles", "meses", "anios"] = "dias_habiles"
-    cantidad: int = Field(..., gt=0, description="Cantidad de días hábiles, meses o años")
-    vacancia_colectiva: bool = Field(True, description="Si aplica la vacancia judicial colectiva (20 dic - 10 ene)")
+    unidad: Optional[Literal["dias_habiles", "meses", "anios"]] = None
+    cantidad: Optional[int] = Field(None, gt=0, description="Cantidad de días hábiles, meses o años")
+    vacancia_colectiva: Optional[bool] = None
     notificacion_mensaje_datos: bool = Field(False, description="Aplica regla de mensaje de datos art. 8 Ley 2213/2022")
     fecha_acuse_recibo: Optional[str] = None
     hora_limite: str = "17:00"
@@ -173,12 +174,33 @@ async def endpoint_numero_a_letras(valor: str):
 async def endpoint_calcular_plazos(req: PlazosRequest):
     """Calcula el vencimiento de términos procesales en Colombia (CGP, CPACA, D. 2591/91, Ley 2213/22, Ley 51/83)."""
     try:
+        unidad = req.unidad
+        cantidad = req.cantidad
+        vacancia = req.vacancia_colectiva
+
+        if req.tipo_termino:
+            precarga = buscar_precarga(req.tipo_termino)
+            if precarga:
+                if unidad is None:
+                    unidad = precarga.get("unidad", "dias_habiles")
+                if cantidad is None:
+                    cantidad = precarga.get("cantidad", 3)
+                if vacancia is None:
+                    vacancia = precarga.get("vacancia_colectiva", True)
+
+        if unidad is None:
+            unidad = "dias_habiles"
+        if cantidad is None:
+            cantidad = 3
+        if vacancia is None:
+            vacancia = True
+
         resultado = calcular_plazo(
             fecha_inicio=req.fecha_inicio,
-            unidad=req.unidad,
-            cantidad=req.cantidad,
+            unidad=unidad,
+            cantidad=cantidad,
             tipo_termino=req.tipo_termino,
-            vacancia_colectiva=req.vacancia_colectiva,
+            vacancia_colectiva=vacancia,
             notificacion_mensaje_datos=req.notificacion_mensaje_datos,
             fecha_acuse_recibo=req.fecha_acuse_recibo,
             hora_limite=req.hora_limite,
@@ -248,7 +270,7 @@ async def endpoint_extraer_documentos(
     archivos_procesados, total_bytes = await validar_archivos_extraccion(archivos)
 
     try:
-        propuestas = await extraer_datos_con_gemini(
+        resultado_extraccion = await extraer_datos_con_gemini(
             tipo_id=tipo,
             tipo_info=tipo_info,
             archivos=archivos_procesados,
@@ -260,12 +282,26 @@ async def endpoint_extraer_documentos(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error durante la extracción de datos: {e}")
 
+    if isinstance(resultado_extraccion, dict):
+        propuestas = resultado_extraccion.get("propuestas", [])
+        hechos_num = resultado_extraccion.get("hechos_numerados", [])
+        decision_prov = resultado_extraccion.get("decision_providencia")
+        fecha_notif = resultado_extraccion.get("fecha_notificacion_detectada")
+    else:
+        propuestas = resultado_extraccion
+        hechos_num = []
+        decision_prov = None
+        fecha_notif = None
+
     return {
         "ok": True,
         "tipo": tipo,
         "total_archivos": len(archivos_procesados),
         "total_bytes": total_bytes,
         "propuestas": propuestas,
+        "hechos_numerados": hechos_num,
+        "decision_providencia": decision_prov,
+        "fecha_notificacion_detectada": fecha_notif,
     }
 
 
