@@ -603,6 +603,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 </main>
 <div id="toasts" aria-live="polite"></div>
 
+<script src="auditor.js"></script>
 <script>
 'use strict';
 /* =========================================================
@@ -1338,6 +1339,7 @@ function actualizarVerificacion() {
   const nc = items.filter(i => i.tipo === 'c').length, nv = items.filter(i => i.tipo === 'v').length;
   verif.replaceChildren();
 
+  // 1. Citas verificadas oficialmente
   if (state.verificandoCitas) {
     verif.append(h('span', { class: 'vchip amarillo' }, '⏳ Verificando citas en fuentes oficiales…'));
   } else if (state.citasVerificadas && state.citasVerificadas.length) {
@@ -1350,8 +1352,21 @@ function actualizarVerificacion() {
     if (nVerdes) verif.append(h('button', { class: 'vchip verde', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `✓ ${nVerdes} ${nVerdes === 1 ? 'cita verificada' : 'citas verificadas'}`));
   }
 
+  // 2. Datos por completar
   if (nc) verif.append(h('button', { class: 'vchip c', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `${nc} ${nc === 1 ? 'dato' : 'datos'} por completar`));
   if (nv && (!state.citasVerificadas || !state.citasVerificadas.length)) verif.append(h('button', { class: 'vchip v', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `${nv} ${nv === 1 ? 'cita' : 'citas'} por verificar`));
+
+  // 3. Auditoría de datos (formulario vs. escrito generado)
+  let nAudit = 0;
+  if (typeof auditarDatosYEscrito === 'function') {
+    state.auditoria = auditarDatosYEscrito(state.datos, state.texto, state.perfil);
+    nAudit = state.auditoria ? state.auditoria.total : 0;
+  }
+  if (nAudit > 0) {
+    verif.append(h('button', { class: 'vchip amarillo', type: 'button', 'aria-expanded': String(panelAbierto), onclick: alternarPanel }, `⚠ ${nAudit} ${nAudit === 1 ? 'dato para revisar' : 'datos para revisar'}`));
+  } else if (!nc && (!state.citasVerificadas || !state.citasVerificadas.some(c => c.color === 'rojo' || c.color === 'amarillo'))) {
+    verif.append(h('span', { class: 'vchip ok' }, '✓ Datos consistentes'));
+  }
 
   if (!verif.children.length) verif.append(h('span', { class: 'vchip ok' }, '✓ Sin datos pendientes'));
   verif.hidden = false;
@@ -1393,7 +1408,52 @@ function pintarPanel(items) {
     panel.append(ol);
   }
 
-  // 2. Datos por completar
+  // 2. Auditoría de datos del formulario vs. escrito
+  const audit = state.auditoria || (typeof auditarDatosYEscrito === 'function' ? auditarDatosYEscrito(state.datos, state.texto, state.perfil) : null);
+  if (audit && audit.total > 0) {
+    panel.append(h('h3', {}, 'Auditoría de consistencia de datos'));
+
+    // a) Posibles invenciones (en el escrito pero no en tus datos)
+    if (audit.invenciones && audit.invenciones.length) {
+      panel.append(h('div', { style: 'font-weight: 600; font-size: 13px; color: var(--amarillo-osc, #b45309); margin: 6px 0 4px 0;' },
+        `⚠️ Posibles invenciones (${audit.invenciones.length}): en el escrito pero no en tus datos`
+      ));
+      const olInv = h('ol', { style: 'padding-left: 20px; margin-bottom: 12px;' });
+      audit.invenciones.forEach(inv => {
+        const li = h('li', { style: 'margin-bottom: 6px; line-height: 1.4;' });
+        li.append(
+          h('strong', {}, `${inv.tipo}: `),
+          h('span', {}, inv.valor || inv.textoOriginal),
+          h('span', { class: 'acc', style: 'margin-left: 8px;' },
+            h('button', { class: 'enlace', type: 'button', onclick: () => irATexto(inv.textoOriginal || inv.valor) }, 'Ver en el texto')
+          )
+        );
+        li.append(h('div', { class: 'ctx', style: 'font-size: 12px; color: #666;' }, 'Dato generado en el escrito que no fue suministrado en el formulario.'));
+        olInv.append(li);
+      });
+      panel.append(olInv);
+    }
+
+    // b) Posibles omisiones (en tus datos pero no en el escrito)
+    if (audit.omisiones && audit.omisiones.length) {
+      panel.append(h('div', { style: 'font-weight: 600; font-size: 13px; color: var(--rojo, #b91c1c); margin: 6px 0 4px 0;' },
+        `ℹ️ Posibles omisiones (${audit.omisiones.length}): en tus datos pero no en el escrito`
+      ));
+      const olOm = h('ol', { style: 'padding-left: 20px; margin-bottom: 12px;' });
+      audit.omisiones.forEach(om => {
+        const li = h('li', { style: 'margin-bottom: 6px;' });
+        li.append(
+          h('strong', {}, `${om.tipo}: `),
+          h('span', {}, om.valor || om.textoOriginal)
+        );
+        li.append(h('div', { class: 'ctx', style: 'font-size: 12px; color: #666;' }, 'Ingresado en el formulario pero ausente en el escrito generado.'));
+        olOm.append(li);
+      });
+      panel.append(olOm);
+    }
+  }
+
+  // 3. Datos por completar
   const datosComp = items.filter(i => i.tipo === 'c');
   if (datosComp.length) {
     panel.append(h('h3', {}, 'Datos por completar'));
@@ -1420,6 +1480,46 @@ function irAMarca(it) {
     const r = document.createRange(); r.setStart(it.nodo, it.off); r.setEnd(it.nodo, Math.min(it.nodo.length, it.off + 11));
     const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
   } catch { /* nodo cambió */ }
+}
+
+function irATexto(cadena) {
+  if (!cadena) return;
+  const cuerpo = $('#cuerpo');
+  if (!cuerpo) return;
+
+  const target = String(cadena).trim().toLowerCase();
+  if (!target) return;
+
+  // 1. Buscar en nodos de texto dentro de cuerpo
+  const walker = document.createTreeWalker(cuerpo, NodeFilter.SHOW_TEXT, null, false);
+  let nodo;
+  while ((nodo = walker.nextNode())) {
+    const val = (nodo.nodeValue || '').toLowerCase();
+    const idx = val.indexOf(target);
+    if (idx !== -1) {
+      const el = nodo.parentElement || cuerpo;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.remove('destello'); void el.offsetWidth; el.classList.add('destello');
+      try {
+        const r = document.createRange();
+        r.setStart(nodo, idx);
+        r.setEnd(nodo, Math.min(nodo.length, idx + target.length));
+        const sel = getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+      } catch { }
+      return;
+    }
+  }
+
+  // 2. Fallback: buscar en elementos hijos de cuerpo si abarca varias etiquetas
+  for (const el of cuerpo.children) {
+    if ((el.textContent || '').toLowerCase().includes(target)) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.remove('destello'); void el.offsetWidth; el.classList.add('destello');
+      return;
+    }
+  }
 }
 
 /* =========================================================

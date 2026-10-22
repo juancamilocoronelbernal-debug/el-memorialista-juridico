@@ -129,6 +129,14 @@ async def root_index():
     return {"app": "El Memorialista API", "status": "online"}
 
 
+@app.get("/auditor.js", include_in_schema=False)
+async def auditor_js():
+    js_file = STATIC_DIR / "auditor.js"
+    if js_file.exists():
+        return FileResponse(js_file, media_type="application/javascript", headers={"Cache-Control": "no-cache"})
+    raise HTTPException(status_code=404, detail="File not found")
+
+
 if __name__ == "__main__":
     import uvicorn
 

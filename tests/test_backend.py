@@ -294,3 +294,11 @@ def test_health_no_expone_la_clave(preparar):
     assert r.status_code == 200
     assert r.json()["gemini_configured"] is True
     assert "clave-de-prueba" not in r.text
+
+
+def test_endpoint_auditor_js():
+    with TestClient(app) as c:
+        r = c.get("/auditor.js")
+    assert r.status_code == 200
+    assert "application/javascript" in r.headers["content-type"]
+    assert "auditarDatosYEscrito" in r.text
