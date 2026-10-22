@@ -424,6 +424,13 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .diff-del{background:#fee2e2;color:#b91c1c;text-decoration:line-through;padding:1px 3px;border-radius:2px;font-weight:500}
 .diff-parrafo{margin:0 0 12px;line-height:1.7}
 .diff-parrafo.diff-vacio{min-height:12px}
+
+/* ---------- botón de dictado por voz (Web Speech API) ---------- */
+.btn-microfono{display:inline-flex;align-items:center;gap:5px;background:#f1f5f9;border:1px solid var(--regla);border-radius:4px;padding:3px 8px;font-size:11.5px;font-weight:600;color:var(--tinta-2);cursor:pointer;transition:all .2s ease;user-select:none}
+.btn-microfono:hover{background:#e2e8f0;color:var(--tinta);border-color:#cbd5e1}
+.btn-microfono.grabando{background:#fee2e2;border-color:#fca5a5;color:#b91c1c;animation:pulsoGrabando 1.5s infinite}
+.btn-microfono[hidden]{display:none !important}
+@keyframes pulsoGrabando{0%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}70%{box-shadow:0 0 0 6px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
 </style>
 
 <header class="barra" id="barra">
@@ -4103,6 +4110,14 @@ function renderFilasAsistenteHechos(filasWrap) {
     });
     inpRazon.value = hItem.razon || '';
 
+    const btnMicRazon = crearBotonMicrofono('razon_' + hItem.numero, (b) => {
+      iniciarDictado(inpRazon, b, (nuevaRazon) => {
+        hItem.razon = nuevaRazon;
+        recompilarRespuestaHechos();
+      });
+    });
+    btnMicRazon.title = `Dictar razón del hecho ${hItem.numero} (es-CO)`;
+
     sel.addEventListener('change', () => {
       hItem.pronunciamiento = sel.value;
       card.className = 'asistente-hecho-card ' + claseSegunPronunciamiento(sel.value);
@@ -4117,7 +4132,7 @@ function renderFilasAsistenteHechos(filasWrap) {
       recompilarRespuestaHechos();
     });
 
-    controles.append(sel, inpRazon);
+    controles.append(sel, inpRazon, btnMicRazon);
 
     card.append(topBar);
     if (txtDemanda) card.append(txtDemanda);
@@ -4180,11 +4195,23 @@ function renderAsistenteHechosContestacion(c, cambiar, wrap) {
     guardarBorrador();
   });
 
-  const det = h('details', { style: 'border-top: 1px solid var(--regla); padding: 10px 14px; font-size: 12px;' },
-    h('summary', { style: 'cursor: pointer; font-weight: 600; color: var(--azul, #2563eb);' }, '📝 Ver / editar texto consolidado de respuesta a hechos'),
-    h('p', { style: 'margin: 6px 0; color: var(--tinta-2); font-size: 11.5px;' },
+  const btnMicConsolidado = crearBotonMicrofono('respuesta_hechos', (b) => {
+    iniciarDictado(inpAreaConsolidada, b, (val) => {
+      state.datos.respuesta_hechos = val;
+      guardarBorrador();
+    });
+  });
+
+  const cabDetalle = h('div', { style: 'display: flex; justify-content: space-between; align-items: center; margin: 6px 0; gap: 8px;' },
+    h('p', { style: 'margin: 0; color: var(--tinta-2); font-size: 11.5px;' },
       'Texto consolidado conforme al art. 96 CGP que se enviará al redactor de IA:'
     ),
+    btnMicConsolidado
+  );
+
+  const det = h('details', { style: 'border-top: 1px solid var(--regla); padding: 10px 14px; font-size: 12px;' },
+    h('summary', { style: 'cursor: pointer; font-weight: 600; color: var(--azul, #2563eb);' }, '📝 Ver / editar texto consolidado de respuesta a hechos'),
+    cabDetalle,
     inpAreaConsolidada
   );
 
@@ -4338,6 +4365,179 @@ async function actualizarBannerVencimientoTop(fechaIso) {
   }
 }
 
+/* =========================================================
+   Reconocimiento y Dictado por Voz (Web Speech API es-CO)
+   ========================================================= */
+const soportaVoz = () => typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+function esCampoHechosOPretensiones(c) {
+  if (!c || !c.k) return false;
+  if (c.t === 'check' || c.t === 'chips' || c.t === 'select' || c.t === 'date' || c.t === 'fecha') return false;
+  const k = String(c.k).toLowerCase();
+  const l = String(c.l || '').toLowerCase();
+  return k.includes('hecho') || k.includes('pretensi') || l.includes('hecho') || l.includes('pretensi');
+}
+
+function crearBotonMicrofono(idCampo, alClic) {
+  const tieneSoporte = soportaVoz();
+  const iconoMic = `<svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M8 11a3 3 0 0 0 3-3V4a3 3 0 0 0-6 0v4a3 3 0 0 0 3 3z"/><path d="M12.5 8a.5.5 0 0 0-1 0 3.5 3.5 0 0 1-7 0 .5.5 0 0 0-1 0 4.5 4.5 0 0 0 4 4.45V14H6.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H8.5v-1.55A4.5 4.5 0 0 0 12.5 8z"/></svg>`;
+  const btn = h('button', {
+    type: 'button',
+    class: 'btn-microfono',
+    id: 'btnMic_' + idCampo,
+    title: tieneSoporte ? 'Dictar por voz (es-CO)' : 'Dictado por voz no soportado en este navegador',
+    'aria-label': 'Dictar por voz (es-CO)'
+  });
+  btn.innerHTML = `${iconoMic} <span>Dictar</span>`;
+  if (!tieneSoporte) {
+    btn.hidden = true;
+    btn.style.display = 'none';
+    btn.setAttribute('aria-hidden', 'true');
+  } else {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof alClic === 'function') alClic(btn);
+    });
+  }
+  return btn;
+}
+
+let reconocimientoActivo = null;
+
+function iniciarDictado(inp, btnMicrofono, alCambiar) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    if (btnMicrofono) {
+      btnMicrofono.hidden = true;
+      btnMicrofono.style.display = 'none';
+      btnMicrofono.setAttribute('aria-hidden', 'true');
+    }
+    toast('Tu navegador no soporta la Web Speech API para dictado por voz.', 'info');
+    return;
+  }
+
+  const iconoMic = `<svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M8 11a3 3 0 0 0 3-3V4a3 3 0 0 0-6 0v4a3 3 0 0 0 3 3z"/><path d="M12.5 8a.5.5 0 0 0-1 0 3.5 3.5 0 0 1-7 0 .5.5 0 0 0-1 0 4.5 4.5 0 0 0 4 4.45V14H6.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H8.5v-1.55A4.5 4.5 0 0 0 12.5 8z"/></svg>`;
+
+  const ponerEstadoNormal = () => {
+    btnMicrofono.classList.remove('grabando');
+    btnMicrofono.innerHTML = `${iconoMic} <span>Dictar</span>`;
+    btnMicrofono.title = 'Dictar por voz (es-CO)';
+    if (reconocimientoActivo === recognition) reconocimientoActivo = null;
+  };
+
+  const ponerEstadoGrabando = () => {
+    btnMicrofono.classList.add('grabando');
+    btnMicrofono.innerHTML = `<span class="punto-grabando" style="width:7px;height:7px;background:#dc2626;border-radius:50%;display:inline-block;"></span> <span>Escuchando…</span>`;
+    btnMicrofono.title = 'Escuchando en es-CO. Haz clic para detener.';
+  };
+
+  // Si ya estaba grabando este mismo botón, detenerlo
+  if (reconocimientoActivo && reconocimientoActivo._btn === btnMicrofono) {
+    try {
+      reconocimientoActivo.stop();
+    } catch {}
+    ponerEstadoNormal();
+    return;
+  }
+
+  // Si había otro botón grabando, detenerlo primero
+  if (reconocimientoActivo) {
+    try {
+      if (typeof reconocimientoActivo._ponerNormal === 'function') {
+        reconocimientoActivo._ponerNormal();
+      }
+      reconocimientoActivo.stop();
+    } catch {}
+    reconocimientoActivo = null;
+  }
+
+  let recognition;
+  try {
+    recognition = new SpeechRecognition();
+  } catch (e) {
+    console.error('Error al instanciar SpeechRecognition:', e);
+    if (btnMicrofono) {
+      btnMicrofono.hidden = true;
+      btnMicrofono.style.display = 'none';
+      btnMicrofono.setAttribute('aria-hidden', 'true');
+    }
+    return;
+  }
+
+  recognition.lang = 'es-CO';
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition._btn = btnMicrofono;
+  recognition._ponerNormal = ponerEstadoNormal;
+
+  recognition.onstart = () => {
+    reconocimientoActivo = recognition;
+    ponerEstadoGrabando();
+    toast('🎙️ Micrófono activo (es-CO). Dicta y el texto se agregará al final.', 'info', 2500);
+  };
+
+  recognition.onresult = (event) => {
+    const trozos = [];
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        const tr = (event.results[i][0].transcript || '').trim();
+        if (tr) trozos.push(tr);
+      }
+    }
+    const tLimpia = trozos.join(' ');
+    if (tLimpia) {
+      agregarTextoDictado(inp, tLimpia, alCambiar);
+    }
+  };
+
+  recognition.onerror = (event) => {
+    console.warn('SpeechRecognition error:', event.error);
+    ponerEstadoNormal();
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      toast('Permiso de micrófono denegado en el navegador.', 'error', 4500);
+    } else if (event.error === 'no-speech') {
+      toast('No se detectó voz al dictar. Intenta de nuevo.', 'info', 2500);
+    } else if (event.error !== 'aborted') {
+      toast('Reconocimiento de voz: ' + event.error, 'error', 3500);
+    }
+  };
+
+  recognition.onend = () => {
+    ponerEstadoNormal();
+  };
+
+  try {
+    recognition.start();
+  } catch (err) {
+    console.error('No se pudo iniciar el dictado:', err);
+    ponerEstadoNormal();
+  }
+}
+
+function agregarTextoDictado(inp, transcripcion, alCambiar) {
+  const trans = (transcripcion || '').trim();
+  if (!trans) return;
+
+  const actual = inp.value || '';
+  let res = '';
+  if (!actual.trim()) {
+    res = trans.charAt(0).toUpperCase() + trans.slice(1);
+  } else {
+    const trimActual = actual.trimEnd();
+    const separador = /[\.\n]\s*$/.test(trimActual) ? '\n' : ' ';
+    const textoAñadir = (separador === '\n')
+      ? (trans.charAt(0).toUpperCase() + trans.slice(1))
+      : trans;
+    res = trimActual + separador + textoAñadir;
+  }
+
+  inp.value = res;
+  inp.scrollTop = inp.scrollHeight;
+  inp.dispatchEvent(new Event('input', { bubbles: true }));
+  inp.dispatchEvent(new Event('change', { bubbles: true }));
+  if (typeof alCambiar === 'function') alCambiar(res);
+}
+
 function renderFormulario() {
   const form = $('#formCaso');
   form.replaceChildren();
@@ -4392,7 +4592,21 @@ function renderCampo(c) {
     if (c.ayuda) wrap.append(h('p', { class: 'ayuda' }, c.ayuda));
     return wrap;
   }
-  wrap.append(etiqueta(c.l));
+  const esVoz = esCampoHechosOPretensiones(c);
+  let btnMic = null;
+  if (esVoz) {
+    btnMic = crearBotonMicrofono(c.k, (b) => {
+      iniciarDictado(inp, b, cambiar);
+    });
+    btnMic.title = `Dictar por voz en ${c.l || c.k} (es-CO)`;
+    const cabFila = h('div', { class: 'campo-cab', style: 'display: flex; justify-content: space-between; align-items: center; gap: 8px;' },
+      etiqueta(c.l),
+      btnMic
+    );
+    wrap.append(cabFila);
+  } else {
+    wrap.append(etiqueta(c.l));
+  }
   const contenedorAyudas = h('div', { class: 'contenedor-ayudas' });
   let inp;
   if (c.t === 'select') {
