@@ -35,6 +35,11 @@ from app.services.extractor_documentos import (
     validar_archivos_extraccion,
     extraer_datos_con_gemini,
 )
+from app.services.radicacion import (
+    preparar_radicacion,
+    PrepararRadicacionRequest,
+    PrepararRadicacionResponse,
+)
 
 router = APIRouter(prefix="/api", tags=["Documentos"])
 
@@ -245,6 +250,21 @@ async def endpoint_descargar_ics(req: PlazosRequest):
             "Cache-Control": "no-cache",
         },
     )
+
+
+@router.post("/radicacion/preparar", response_model=PrepararRadicacionResponse)
+async def endpoint_preparar_radicacion(req: PrepararRadicacionRequest, request: Request):
+    """
+    Prepara el paquete de radicación judicial:
+    - Nombres normalizados de archivos y paquete ZIP.
+    - Genera el Poder Especial Judicial según art. 74 CGP y Ley 2213/2022 si el tipo lo amerita.
+    - Extrae el capítulo de pruebas y formula el índice numerado según el protocolo del CSJ.
+    - Analiza art. 6 Ley 2213/2022 (traslado simultáneo) y exención por medidas cautelares previas.
+    - Construye los borradores y enlaces mailto: para radicación al despacho y traslado a la contraparte.
+    """
+    await verificar_acceso(request)
+    limitador.verificar(request, "radicacion")
+    return preparar_radicacion(req)
 
 
 @router.post("/extraer")

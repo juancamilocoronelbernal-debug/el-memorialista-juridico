@@ -463,6 +463,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
           <button class="btn chico fantasma" id="btnCopiar" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="1.2"/><path d="M10.5 5V3.2c0-.7-.5-1.2-1.2-1.2H3.2C2.5 2 2 2.5 2 3.2v6.1c0 .7.5 1.2 1.2 1.2H5"/></svg>Copiar</button>
           <button class="btn chico" id="btnWord" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg>Word</button>
           <button class="btn chico" id="btnPdf" type="button" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg>PDF</button>
+          <button class="btn chico primario" id="btnRadicacion" type="button" disabled title="Prepara el paquete de radicación judicial en .ZIP con PDF, poder judicial, índice y correos para despacho y traslado simultáneo (Ley 2213/2022)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4.5l5.5-2.5 5.5 2.5-5.5 2.5-5.5-2.5z"/><path d="M2.5 8l5.5 2.5 5.5-2.5"/><path d="M2.5 11.5l5.5 2.5 5.5-2.5"/></svg>Preparar radicación</button>
         </div>
         <div class="verif" id="verif" hidden></div>
         <div class="panel-verif" id="panelVerif" hidden></div>
@@ -980,6 +981,75 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
   <div class="modal-pie" style="justify-content: space-between;">
     <button type="button" class="btn fantasma" id="btnCerrarSesionCuenta">🚪 Cerrar sesión</button>
     <button type="button" class="btn" id="btnCerrarCuentaDialog">Cerrar</button>
+  </div>
+</dialog>
+
+<!-- Modal de Preparar Radicación Judicial -->
+<dialog id="modalRadicacion" class="modal-dialog" style="max-width: 640px;">
+  <div class="modal-cab">
+    <h3><span>📦</span> Paquete de Radicación Judicial</h3>
+    <button type="button" class="btn-cerrar-modal" id="btnCerrarModalRadicacion" title="Cerrar">✕</button>
+  </div>
+  <div class="modal-cuerpo" style="max-height: 80vh; overflow-y: auto; display: grid; gap: 14px;">
+    <!-- Estado de descarga del ZIP -->
+    <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 6px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+      <div>
+        <div style="font-weight: 750; font-size: 13.5px; color: #166534; display: flex; align-items: center; gap: 6px;">
+          <span>✅</span> Paquete .ZIP generado y descargado
+        </div>
+        <div id="radNombrePaquete" style="font-size: 12px; color: #15803d; font-family: monospace; word-break: break-all; margin-top: 2px;">—</div>
+      </div>
+      <button type="button" class="btn chico" id="btnDescargarZipDeNuevo" title="Descargar nuevamente el archivo .zip">
+        📥 Descargar .ZIP
+      </button>
+    </div>
+
+    <!-- Contenido del paquete -->
+    <div style="background: #f8fafc; border: 1px solid var(--regla); border-radius: 6px; padding: 12px 14px;">
+      <strong style="font-size: 12.5px; color: var(--tinta); display: block; margin-bottom: 6px;">Archivos incluidos en el paquete:</strong>
+      <ul id="radListaArchivos" style="margin: 0; padding-left: 20px; font-size: 12px; color: var(--tinta-2); line-height: 1.6;">
+        <!-- Se llena dinámicamente -->
+      </ul>
+    </div>
+
+    <!-- Traslado simultáneo a contraparte (Art. 6 Ley 2213 de 2022) -->
+    <div id="radSeccionContraparte" style="border-radius: 6px; padding: 12px 14px; border: 1px solid var(--regla); display: grid; gap: 8px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <strong style="font-size: 13px; color: var(--tinta); display: flex; align-items: center; gap: 6px;">
+          <span>⚖️</span> Traslado Simultáneo a Contraparte (Art. 6 Ley 2213 de 2022)
+        </strong>
+        <span id="radBadgeContraparte" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px;">—</span>
+      </div>
+      <p id="radMotivoContraparte" style="margin: 0; font-size: 12px; line-height: 1.45; color: var(--tinta-2);"></p>
+      <div id="radAccionContraparte" style="display: none; margin-top: 4px;">
+        <a id="btnMailtoContraparte" class="btn chico primario" href="#" target="_blank" rel="noopener" style="width: 100%; justify-content: center; gap: 8px; text-decoration: none; box-sizing: border-box;">
+          ✉️ Abrir borrador de correo para Contraparte (mailto:)
+        </a>
+      </div>
+    </div>
+
+    <!-- Radicación al Despacho Judicial -->
+    <div style="border-radius: 6px; padding: 12px 14px; border: 1px solid var(--regla); background: #faf5ff; border-color: #e9d5ff; display: grid; gap: 8px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <strong style="font-size: 13px; color: #581c87; display: flex; align-items: center; gap: 6px;">
+          <span>🏛️</span> Radicación al Despacho Judicial
+        </strong>
+        <span style="font-size: 11px; font-weight: 700; background: #f3e8ff; color: #6b21a8; padding: 2px 8px; border-radius: 12px;">Oficial</span>
+      </div>
+      <div style="font-size: 12px; color: #6b21a8; line-height: 1.4;">
+        Destinatario: <strong id="radCorreoDespachoTexto">—</strong>
+      </div>
+      <a id="btnMailtoDespacho" class="btn chico primario" href="#" target="_blank" rel="noopener" style="width: 100%; justify-content: center; gap: 8px; background: #7e22ce; border-color: #6b21a8; text-decoration: none; box-sizing: border-box;">
+        ✉️ Abrir borrador de correo para Despacho Judicial (mailto:)
+      </a>
+    </div>
+
+    <p style="margin: 0; font-size: 11px; color: var(--tinta-2); line-height: 1.4; text-align: center;">
+      🔒 <strong>Garantía de control:</strong> Los borradores se abren en tu aplicación de correo predeterminada (Outlook, Apple Mail, Thunderbird, Gmail) mediante enlaces <code>mailto:</code>. <strong>Nunca se envían automáticamente</strong> sin tu revisión previa y anexión final.
+    </p>
+  </div>
+  <div class="modal-pie">
+    <button type="button" class="btn chico fantasma" id="btnCerrarModalRadicacionPie">Cerrar</button>
   </div>
 </dialog>
 
@@ -4517,6 +4587,8 @@ function ponerControles() {
   $('#btnCopiar').disabled = !hay || g;
   $('#btnWord').disabled = !hay || g;
   $('#btnPdf').disabled = !hay || g;
+  const btnRad = $('#btnRadicacion');
+  if (btnRad) btnRad.disabled = !hay || g;
   $('#btnRedactar').disabled = g;
   $('#edicion').hidden = !hay || g;
   if (!hay || g) { $('#ajuste').hidden = true; }
@@ -4803,6 +4875,186 @@ async function exportar(tipo, sinVerificar) {
   } finally {
     btn.lastChild.textContent = etiqueta; btn.disabled = false; ponerControles();
   }
+}
+let currentRadicacionBlob = null;
+let currentRadicacionData = null;
+
+async function prepararRadicacion() {
+  sincronizarTexto();
+  const hay = !!state.texto && !state.ejemplo;
+  if (!hay) {
+    toast('Debes redactar o tener un escrito antes de preparar la radicación.', 'info');
+    return;
+  }
+
+  const btn = $('#btnRadicacion');
+  const etiquetaOriginal = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="width:14px;height:14px;animation:spin 1s linear infinite" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="10"/></svg> Preparando…`;
+
+  try {
+    toast('Preparando paquete de radicación, poder judicial e índice CSJ…', 'info', 4000);
+
+    const payload = {
+      tipo: state.tipo || 'otro',
+      datos: state.datos || {},
+      texto: textoExport(true) || state.texto,
+      perfil: state.perfil || {}
+    };
+
+    const res = await apiFetch('/api/radicacion/preparar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error al procesar el paquete de radicación.');
+    }
+
+    const data = await res.json();
+    currentRadicacionData = data;
+
+    // Cargar librerías necesarias
+    await cargarJSZip();
+    await cargarPdfMake();
+
+    const zip = new window.JSZip();
+
+    // 1. PDF del escrito judicial principal
+    const textoDoc = textoExport(true);
+    const blobPrincipal = await construirPdf(textoDoc);
+    zip.file(data.nombre_archivo_principal, blobPrincipal);
+
+    // 2. Si requiere poder judicial, generar PDF del poder especial
+    if (data.requiere_poder && data.texto_poder) {
+      const blobPoder = await construirPdf(data.texto_poder);
+      zip.file(data.nombre_archivo_poder, blobPoder);
+    }
+
+    // 3. Índice de anexos y expediente electrónico (CSJ)
+    zip.file("00_Indice_de_Anexos.txt", data.texto_indice);
+
+    // 4. Borrador del correo de radicación para el Despacho Judicial
+    const borradorDespacho = [
+      `ASUNTO: ${data.asunto_despacho}`,
+      `PARA: ${data.correo_despacho}`,
+      ``,
+      data.cuerpo_despacho
+    ].join('\n');
+    zip.file("Borrador_Correo_Radicacion_Despacho.txt", borradorDespacho);
+
+    // 5. Borrador de traslado simultáneo a contraparte (Art. 6 Ley 2213 de 2022)
+    if (data.aplica_traslado_contraparte && data.correo_contraparte) {
+      const borradorContraparte = [
+        `ASUNTO: ${data.asunto_contraparte}`,
+        `PARA: ${data.correo_contraparte}`,
+        ``,
+        data.cuerpo_contraparte
+      ].join('\n');
+      zip.file("Borrador_Correo_Traslado_Contraparte.txt", borradorContraparte);
+    }
+
+    // Generar archivo ZIP y descargar
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    currentRadicacionBlob = zipBlob;
+
+    await guardarArchivo(data.nombre_paquete, zipBlob);
+    toast('Paquete de radicación .ZIP descargado exitosamente.', 'ok', 5000);
+
+    mostrarModalRadicacion(data);
+
+  } catch (err) {
+    console.error('Error preparando radicación:', err);
+    toast(err.message || 'Error al generar el paquete de radicación.', 'error', 7000);
+  } finally {
+    btn.innerHTML = etiquetaOriginal;
+    btn.disabled = false;
+    ponerControles();
+  }
+}
+
+function mostrarModalRadicacion(data) {
+  const modal = $('#modalRadicacion');
+  if (!modal) return;
+
+  $('#radNombrePaquete').textContent = data.nombre_paquete;
+
+  // Lista de archivos incluidos en el paquete
+  const lista = $('#radListaArchivos');
+  lista.replaceChildren();
+
+  const archivos = [
+    { nombre: data.nombre_archivo_principal, desc: 'Escrito judicial principal en PDF' }
+  ];
+  if (data.requiere_poder && data.nombre_archivo_poder) {
+    archivos.push({ nombre: data.nombre_archivo_poder, desc: 'Poder especial judicial en PDF (Art. 74 CGP / Ley 2213)' });
+  }
+  archivos.push({ nombre: '00_Indice_de_Anexos.txt', desc: 'Índice de expediente y relación de anexos (CSJ)' });
+  archivos.push({ nombre: 'Borrador_Correo_Radicacion_Despacho.txt', desc: 'Borrador del correo para el Despacho Judicial' });
+  if (data.aplica_traslado_contraparte) {
+    archivos.push({ nombre: 'Borrador_Correo_Traslado_Contraparte.txt', desc: 'Borrador de traslado simultáneo a contraparte' });
+  }
+
+  archivos.forEach(a => {
+    const li = document.createElement('li');
+    li.innerHTML = `<strong>${esc(a.nombre)}</strong> <span style="color:var(--tinta-2)">— ${esc(a.desc)}</span>`;
+    lista.appendChild(li);
+  });
+
+  // Sección Traslado a Contraparte (Art. 6 Ley 2213)
+  const secContra = $('#radSeccionContraparte');
+  const badgeContra = $('#radBadgeContraparte');
+  const motivoContra = $('#radMotivoContraparte');
+  const accContra = $('#radAccionContraparte');
+  const btnMailContra = $('#btnMailtoContraparte');
+
+  if (data.aplica_traslado_contraparte) {
+    secContra.style.background = '#f0fdf4';
+    secContra.style.borderColor = '#bbf7d0';
+    badgeContra.style.background = '#dcfce7';
+    badgeContra.style.color = '#15803d';
+    badgeContra.textContent = 'Aplica Traslado';
+    motivoContra.textContent = data.motivo_traslado_contraparte + (data.correo_contraparte ? ` (Destinatario: ${data.correo_contraparte})` : '');
+    accContra.style.display = 'block';
+    btnMailContra.href = data.mailto_contraparte || '#';
+    btnMailContra.onclick = (e) => {
+      if (data.mailto_contraparte) {
+        window.location.href = data.mailto_contraparte;
+        e.preventDefault();
+      }
+    };
+  } else {
+    secContra.style.background = '#fffbeb';
+    secContra.style.borderColor = '#fef08a';
+    badgeContra.style.background = '#fef3c7';
+    badgeContra.style.color = '#b45309';
+    badgeContra.textContent = 'Exonerado / No aplica';
+    motivoContra.textContent = data.motivo_traslado_contraparte;
+    accContra.style.display = 'none';
+  }
+
+  // Sección Despacho Judicial
+  $('#radCorreoDespachoTexto').textContent = data.correo_despacho;
+  const btnMailDespacho = $('#btnMailtoDespacho');
+  btnMailDespacho.href = data.mailto_despacho || '#';
+  btnMailDespacho.onclick = (e) => {
+    if (data.mailto_despacho) {
+      window.location.href = data.mailto_despacho;
+      e.preventDefault();
+    }
+  };
+
+  // Botón re-descargar ZIP
+  const btnReZip = $('#btnDescargarZipDeNuevo');
+  btnReZip.onclick = async () => {
+    if (currentRadicacionBlob && currentRadicacionData) {
+      await guardarArchivo(currentRadicacionData.nombre_paquete, currentRadicacionBlob);
+    }
+  };
+
+  modal.showModal();
 }
 function copiarTexto() {
   sincronizarTexto();
@@ -6130,6 +6382,12 @@ function iniciar() {
   $('#btnCopiar').addEventListener('click', copiarTexto);
   $('#btnWord').addEventListener('click', () => pedirExportacion('docx'));
   $('#btnPdf').addEventListener('click', () => pedirExportacion('pdf'));
+  const btnRad = $('#btnRadicacion'); if (btnRad) btnRad.addEventListener('click', prepararRadicacion);
+  const mRad = $('#modalRadicacion');
+  if (mRad) {
+    $('#btnCerrarModalRadicacion')?.addEventListener('click', () => mRad.close());
+    $('#btnCerrarModalRadicacionPie')?.addEventListener('click', () => mRad.close());
+  }
   $('#btnDeshacerAjuste').addEventListener('click', deshacerAjuste);
   $('#histBuscar').addEventListener('input', pintarHistorial);
   const btnDesc = $('#btnDescargarCopia'); if (btnDesc) btnDesc.addEventListener('click', descargarCopiaSeguridad);
