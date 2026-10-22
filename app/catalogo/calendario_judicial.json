@@ -1,0 +1,118 @@
+{
+  "version": "2.2.1",
+  "fecha_revision": "2026-10-21",
+  "revisado_por": "Comité Jurídico El Memorialista",
+  "fuentes": [
+    "Ley 51 de 1983 (Días festivos de descanso remunerado en Colombia)",
+    "Ley 270 de 1996 Estatutaria de la Administración de Justicia (art. 146, vacancia judicial)",
+    "Código General del Proceso - Ley 1564 de 2012 (arts. 118, 318, 322, 369, 391)",
+    "Código de Procedimiento Administrativo y de lo Contencioso Administrativo - Ley 1437 de 2011 (arts. 76, 164, 172)",
+    "Ley 2213 de 2022 (art. 8, notificación personal por medios electrónicos)",
+    "Acuerdos de la Sala Administrativa del Consejo Superior de la Judicatura"
+  ],
+  "vacancia_judicial_colectiva": {
+    "descripcion": "Vacancia judicial colectiva de fin de año (art. 146 Ley 270 de 1996). Aplica a la jurisdicción ordinaria civil, laboral, de familia y contencioso administrativa.",
+    "inicio_mes_dia": "12-20",
+    "fin_mes_dia": "01-10",
+    "aplica_por_defecto": true,
+    "excepciones": "No aplica para acciones constitucionales (tutela, hábeas corpus) ni en juzgados de control de garantías penal o ejecución de penas."
+  },
+  "semana_santa_judicial": {
+    "descripcion": "Días de Semana Santa sin despacho judicial (lunes, martes y miércoles santos no laborables por Acuerdo de la Sala Administrativa del Consejo Superior de la Judicatura).",
+    "dias_relativos_pascua": [-6, -5, -4],
+    "aplica_por_defecto": true
+  },
+  "suspensiones_adicionales_csj": [
+    {
+      "id": "susp_ejemplo_contingencia",
+      "acuerdo": "Acuerdo CSJ",
+      "descripcion": "Suspensión de términos judiciales por contingencia o fuerza mayor decretada por el Consejo Superior de la Judicatura",
+      "desde": "2026-10-01",
+      "hasta": "2026-10-01",
+      "activo": false
+    }
+  ],
+  "precargas_terminos": [
+    {
+      "id": "impugnacion_tutela",
+      "nombre": "Impugnación de acción de tutela",
+      "unidad": "dias_habiles",
+      "cantidad": 3,
+      "norma": "Art. 31 Decreto 2591 de 1991",
+      "vacancia_colectiva": false,
+      "descripcion": "3 días hábiles siguientes a la notificación del fallo de tutela de primera instancia. No se suspende por vacancia colectiva."
+    },
+    {
+      "id": "recursos_autos",
+      "nombre": "Recursos contra autos (reposición y apelación)",
+      "unidad": "dias_habiles",
+      "cantidad": 3,
+      "norma": "Arts. 318 y 322 Código General del Proceso (CGP)",
+      "vacancia_colectiva": true,
+      "descripcion": "3 días hábiles siguientes a la notificación del auto por estado o al día de la audiencia si fue en estrados."
+    },
+    {
+      "id": "recursos_admin",
+      "nombre": "Recursos administrativos (reposición y apelación)",
+      "unidad": "dias_habiles",
+      "cantidad": 10,
+      "norma": "Art. 76 Ley 1437 de 2011 (CPACA)",
+      "vacancia_colectiva": false,
+      "descripcion": "10 días hábiles siguientes a la notificación del acto administrativo. Días hábiles de la entidad pública."
+    },
+    {
+      "id": "contestacion_verbal",
+      "nombre": "Contestación de demanda verbal ordinaria",
+      "unidad": "dias_habiles",
+      "cantidad": 20,
+      "norma": "Art. 369 Código General del Proceso (CGP)",
+      "vacancia_colectiva": true,
+      "descripcion": "20 días hábiles siguientes al traslado de la demanda verbal ordinaria."
+    },
+    {
+      "id": "contestacion_verbal_sumario",
+      "nombre": "Contestación de demanda verbal sumaria",
+      "unidad": "dias_habiles",
+      "cantidad": 10,
+      "norma": "Art. 391 Código General del Proceso (CGP)",
+      "vacancia_colectiva": true,
+      "descripcion": "10 días hábiles de traslado de la demanda en procesos verbales sumarios."
+    },
+    {
+      "id": "contestacion_cpaca",
+      "nombre": "Contestación de demanda contencioso administrativa",
+      "unidad": "dias_habiles",
+      "cantidad": 30,
+      "norma": "Art. 172 Ley 1437 de 2011 (CPACA)",
+      "vacancia_colectiva": true,
+      "descripcion": "30 días hábiles de traslado de la demanda ante juzgados y tribunales administrativos."
+    },
+    {
+      "id": "caducidad_nulidad_restablecimiento",
+      "nombre": "Caducidad de nulidad y restablecimiento del derecho",
+      "unidad": "meses",
+      "cantidad": 4,
+      "norma": "Art. 164 numeral 2 literal d Ley 1437 de 2011 (CPACA)",
+      "vacancia_colectiva": false,
+      "descripcion": "4 meses calendario contados a partir del día siguiente a la notificación, publicación o ejecución del acto."
+    },
+    {
+      "id": "caducidad_reparacion_directa",
+      "nombre": "Caducidad de reparación directa",
+      "unidad": "anios",
+      "cantidad": 2,
+      "norma": "Art. 164 numeral 2 literal i Ley 1437 de 2011 (CPACA)",
+      "vacancia_colectiva": false,
+      "descripcion": "2 años calendario contados a partir del día siguiente al acaecimiento del hecho, omisión u operación administrativa."
+    },
+    {
+      "id": "caducidad_querella",
+      "nombre": "Caducidad de querella policiva o penal",
+      "unidad": "meses",
+      "cantidad": 6,
+      "norma": "Art. 73 Ley 906 de 2004 / Código Nacional de Policía (Ley 1801 de 2016)",
+      "vacancia_colectiva": false,
+      "descripcion": "6 meses calendario desde la ocurrencia de los hechos o desde que el legitimado tuvo conocimiento."
+    }
+  ]
+}

@@ -367,6 +367,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
       <button role="tab" id="tab-redactar" data-vista="redactar" aria-selected="true" aria-controls="vista-redactar">Redactar</button>
       <button role="tab" id="tab-membrete" data-vista="membrete" aria-selected="false" aria-controls="vista-membrete">Membrete y estilo</button>
       <button role="tab" id="tab-historial" data-vista="historial" aria-selected="false" aria-controls="vista-historial">Historial</button>
+      <button role="tab" id="tab-plazos" data-vista="plazos" aria-selected="false" aria-controls="vista-plazos">⏱️ Términos y plazos</button>
     </nav>
     <button class="perfil-chip pendiente" id="perfilChip" type="button"><span class="ini" aria-hidden="true">?</span><span class="txt">Configura tu membrete</span></button>
   </div>
@@ -600,6 +601,61 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
       </header>
       <ol class="hist-lista" id="histLista"></ol>
       <div class="vacio" id="histVacio" hidden><strong>Todavía no hay escritos</strong>Elige un tipo de documento en Redactar, llena los datos del caso y pulsa “Redactar escrito”. Cada versión se guarda aquí.</div>
+    </div>
+  </section>
+
+  <section id="vista-plazos" class="vista plazos" role="tabpanel" aria-labelledby="tab-plazos" hidden>
+    <div class="plazos-in gutter" style="max-width: 980px; margin: 0 auto; padding-block: 24px 80px; display: grid; gap: 20px;">
+      <header class="plazos-cab" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h1 style="font-size: 24px; font-weight: 750; margin: 0 0 4px;">⏱️ Calculadora de Términos Judiciales y Vencimientos</h1>
+          <p style="margin: 0; color: var(--tinta-2); font-size: 14px;">Cómputo en días hábiles, meses y años (CGP, CPACA, D. 2591/91, Ley 2213/2022 y Ley 51/1983).</p>
+        </div>
+      </header>
+
+      <div class="plazos-form-card" style="background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 22px; display: grid; gap: 18px;">
+        <div class="rejilla">
+          <div class="campo ancho">
+            <label for="plazo_preset">Término procesal o tipo de escrito</label>
+            <select id="plazo_preset"></select>
+          </div>
+          <div class="campo">
+            <label for="plazo_fecha_inicio">Fecha de providencia o notificación</label>
+            <input type="date" id="plazo_fecha_inicio">
+          </div>
+          <div class="campo">
+            <label for="plazo_cantidad">Duración del término</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="number" id="plazo_cantidad" min="1" max="1000" value="3" style="width: 100px;">
+              <select id="plazo_unidad" style="flex: 1;">
+                <option value="dias_habiles">Días hábiles judiciales</option>
+                <option value="meses">Meses calendario (art. 118 CGP)</option>
+                <option value="anios">Años calendario (art. 118 CGP)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--regla);">
+          <label class="check">
+            <input type="checkbox" id="plazo_mensaje_datos">
+            <span><strong>Notificación por mensaje de datos</strong> (art. 8 Ley 2213/2022: 2 días hábiles de gracia tras envío)</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="plazo_vacancia_colectiva" checked>
+            <span><strong>Vacancia judicial colectiva</strong> (20 dic a 10 ene, art. 146 Ley 270/1996)</span>
+          </label>
+        </div>
+
+        <div id="plazo_bloque_acuse" class="campo" style="max-width: 360px;" hidden>
+          <label for="plazo_fecha_acuse">Fecha de acuse de recibo voluntario</label>
+          <input type="date" id="plazo_fecha_acuse">
+          <p class="ayuda">Si el destinatario acusó recibo expresamente antes de cumplirse los 2 días de gracia.</p>
+        </div>
+      </div>
+
+      <!-- PANEL DE RESULTADOS DE LA CALCULADORA -->
+      <div id="plazos_resultado_panel" style="display: grid; gap: 16px;"></div>
     </div>
   </section>
 </main>
@@ -2561,7 +2617,9 @@ function renderCampo(c) {
   } else if (c.t === 'date' || c.t === 'fecha' || (c.k && c.k.includes('notificacion_fecha'))) {
     inp = h('input', { type: 'date', id, class: 'campo-fecha' });
     inp.value = v || '';
-    inp.addEventListener('input', () => { cambiar(inp.value); actualizarAyudasCampo(c, inp, contenedorAyudas); });
+    const fnAlCambiarFecha = () => { cambiar(inp.value); actualizarAyudasCampo(c, inp, contenedorAyudas); };
+    inp.addEventListener('input', fnAlCambiarFecha);
+    inp.addEventListener('change', fnAlCambiarFecha);
   } else {
     inp = h('input', { type: 'text', id, placeholder: c.ph || '', class: c.t === 'radicado' ? 'maq' : null, inputmode: c.t === 'radicado' ? 'numeric' : null });
     inp.value = v || '';
@@ -2660,7 +2718,13 @@ function actualizarAyudasCampo(c, inp, contenedor) {
     }
   }
 
-  // 4. Ayuda general del catálogo
+  // 4. Si es fecha de notificación o campo de fecha: mostrar cálculo de vencimiento y botón .ics
+  const esFechaNotif = c.t === 'date' || c.t === 'fecha' || (c.k && (c.k.includes('notificacion') || c.k.includes('fecha')));
+  if (esFechaNotif && val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    renderizarAyudaVencimientoCampo(c, inp, contenedor, val);
+  }
+
+  // 5. Ayuda general del catálogo
   if (c.ayuda) {
     contenedor.append(h('p', { class: 'ayuda' }, c.ayuda));
   }
@@ -3188,13 +3252,17 @@ function iniciarEdicion() {
    Navegación
    ========================================================= */
 function irVista(v) {
-  if (!['redactar', 'membrete', 'historial'].includes(v)) v = 'redactar';
+  if (!['redactar', 'membrete', 'historial', 'plazos'].includes(v)) v = 'redactar';
   state.vista = v;
   for (const b of $$('.pestanas button')) b.setAttribute('aria-selected', String(b.dataset.vista === v));
-  for (const s of ['redactar', 'membrete', 'historial']) $('#vista-' + s).hidden = s !== v;
+  for (const s of ['redactar', 'membrete', 'historial', 'plazos']) {
+    const el = $('#vista-' + s);
+    if (el) el.hidden = s !== v;
+  }
   if (location.hash.slice(1) !== v) { try { history.replaceState(null, '', '#' + v); } catch { /* sin historial */ } }
   if (v === 'historial') renderHistorial();
   if (v === 'membrete') renderPrevia();
+  if (v === 'plazos') renderVistaPlazos();
   if (v === 'redactar') { sincronizarTexto(); renderHoja(); }
   window.scrollTo(0, 0);
 }
@@ -3526,6 +3594,348 @@ async function restaurarCopiaSeguridad(file) {
   }
 }
 
+/* =========================================================
+   Cómputo de Términos Judiciales y Plazos Procesales
+   ========================================================= */
+function descargarIcs(icsText, nombreArchivo) {
+  if (!icsText) return;
+  const blob = new Blob([icsText], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nombreArchivo || 'vencimiento.ics';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 200);
+}
+
+function inferirPresetTermino(tipoId) {
+  const t = String(tipoId || '').toLowerCase();
+  if (t.includes('tutela')) return 'impugnacion_tutela';
+  if (t.includes('verbal_sumario')) return 'contestacion_verbal_sumario';
+  if (t.includes('verbal') || t.includes('contestacion') || t.includes('demanda')) return 'contestacion_verbal';
+  if (t.includes('nulidad')) return 'caducidad_nulidad_restablecimiento';
+  if (t.includes('reparacion')) return 'caducidad_reparacion_directa';
+  if (t.includes('querella') || t.includes('denuncia')) return 'caducidad_querella';
+  if (t.includes('admin') || t.includes('revocatoria')) return 'recursos_admin';
+  return 'recursos_autos';
+}
+
+function renderizarAyudaVencimientoCampo(c, inp, contenedor, fechaIso) {
+  const box = h('div', {
+    class: 'ayuda-vencimiento-box',
+    style: 'margin-top: 6px; padding: 8px 10px; border-radius: 6px; font-size: 12.5px; border: 1px solid var(--regla); background: var(--superficie); transition: all 0.2s;'
+  },
+    h('div', { style: 'color: var(--tinta-2); display: flex; align-items: center; gap: 6px;' },
+      h('span', { class: 'girando', style: 'display: inline-block;' }, '⏳'),
+      'Calculando vencimiento legal...'
+    )
+  );
+  contenedor.append(box);
+
+  const presetId = inferirPresetTermino(state.tipo);
+  inp.dataset.lastPlazoFecha = fechaIso;
+
+  apiFetch('/api/plazos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tipo_termino: presetId,
+      fecha_inicio: fechaIso,
+      titulo_evento: `Vencimiento: ${TIPOS[state.tipo]?.nombre || 'Término procesal'}`
+    })
+  }).then(async r => {
+    if (!r.ok) throw new Error('Error al calcular plazos');
+    return r.json();
+  }).then(data => {
+    if (inp.value.trim() !== fechaIso || inp.dataset.lastPlazoFecha !== fechaIso) return;
+    box.replaceChildren();
+
+    const esVencido = data.ha_vencido;
+    const esHoy = data.estado_vencimiento === 'vence_hoy';
+
+    if (esVencido) {
+      box.style.background = '#fef2f2';
+      box.style.borderColor = '#fca5a5';
+      box.style.color = '#dc2626';
+    } else if (esHoy) {
+      box.style.background = '#fffbeb';
+      box.style.borderColor = '#fde68a';
+      box.style.color = '#b45309';
+    } else {
+      box.style.background = '#f0fdf4';
+      box.style.borderColor = '#bbf7d0';
+      box.style.color = '#15803d';
+    }
+
+    // Texto exacto solicitado: "Vence el … (quedan N días hábiles)", en rojo si ya venció
+    let textoVence = '';
+    if (esVencido) {
+      textoVence = `Vence el ${data.dia_semana_vencimiento.toLowerCase()}, ${data.fecha_vencimiento} (quedan 0 días hábiles · ¡VENCIDO!)`;
+    } else {
+      textoVence = `Vence el ${data.dia_semana_vencimiento.toLowerCase()}, ${data.fecha_vencimiento} (quedan ${data.dias_habiles_restantes} días hábiles)`;
+    }
+
+    const cab = h('div', { style: 'font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 8px;' },
+      h('span', {}, (esVencido ? '⚠️ ' : esHoy ? '⏰ ' : '⏱️ ') + textoVence),
+      h('span', { style: 'font-size: 11px; opacity: 0.85; font-weight: 600;' }, data.nombre_termino)
+    );
+
+    const sub = h('div', { style: 'font-size: 11.5px; margin-top: 3px; opacity: 0.9;' },
+      data.texto_resumen + ` · ${data.norma}`
+    );
+
+    const btnIcs = h('button', {
+      type: 'button',
+      class: 'btn enlace',
+      style: 'margin-top: 6px; font-size: 12px; font-weight: 600; text-decoration: underline; cursor: pointer; color: inherit; display: inline-flex; align-items: center; gap: 4px; padding: 0; background: none; border: none;',
+      onclick: () => descargarIcs(data.evento_ics, `vencimiento_${data.fecha_vencimiento}.ics`)
+    }, '📅 Descargar vencimiento (.ics)');
+
+    box.append(cab, sub, btnIcs);
+  }).catch(err => {
+    if (inp.value.trim() !== fechaIso) return;
+    box.replaceChildren(h('div', { style: 'color: #dc2626; font-size: 11.5px;' }, 'Error al verificar plazo: ' + err.message));
+  });
+}
+
+let vistaPlazosInicializada = false;
+let calculoPlazosTimer = null;
+
+async function renderVistaPlazos() {
+  const selPreset = $('#plazo_preset');
+  if (!selPreset) return;
+
+  if (!state.catalogo?.plazos) {
+    try {
+      const res = await apiFetch('/api/plazos/catalogo');
+      if (res.ok) {
+        if (!state.catalogo) state.catalogo = {};
+        state.catalogo.plazos = await res.json();
+      }
+    } catch (e) {
+      console.warn('Error al cargar catálogo de plazos:', e);
+    }
+  }
+
+  const presets = state.catalogo?.plazos?.precargas_terminos || [];
+
+  if (selPreset.options.length === 0) {
+    selPreset.append(h('option', { value: '' }, '— Selecciona un término procesal —'));
+    for (const p of presets) {
+      selPreset.append(h('option', { value: p.id }, `${p.nombre} (${p.cantidad} ${p.unidad === 'dias_habiles' ? 'días hábiles' : p.unidad}) · ${p.norma}`));
+    }
+    selPreset.append(h('option', { value: 'personalizado' }, 'Personalizado (duración y unidad manual)'));
+    selPreset.value = 'impugnacion_tutela';
+  }
+
+  const inpFecha = $('#plazo_fecha_inicio');
+  if (inpFecha && !inpFecha.value) {
+    inpFecha.value = new Date().toISOString().slice(0, 10);
+  }
+
+  if (!vistaPlazosInicializada) {
+    vistaPlazosInicializada = true;
+
+    selPreset.addEventListener('change', () => {
+      const val = selPreset.value;
+      const p = presets.find(item => item.id === val);
+      if (p) {
+        $('#plazo_cantidad').value = p.cantidad;
+        $('#plazo_unidad').value = p.unidad;
+        $('#plazo_vacancia_colectiva').checked = p.vacancia_colectiva !== false;
+      }
+      ejecutarCalculoPlazosVista();
+    });
+
+    $('#plazo_mensaje_datos').addEventListener('change', e => {
+      $('#plazo_bloque_acuse').hidden = !e.target.checked;
+      ejecutarCalculoPlazosVista();
+    });
+
+    for (const id of ['plazo_fecha_inicio', 'plazo_cantidad', 'plazo_unidad', 'plazo_vacancia_colectiva', 'plazo_fecha_acuse']) {
+      const el = $('#' + id);
+      if (el) {
+        el.addEventListener('change', ejecutarCalculoPlazosVista);
+        el.addEventListener('input', ejecutarCalculoPlazosVista);
+      }
+    }
+  }
+
+  ejecutarCalculoPlazosVista();
+}
+
+function ejecutarCalculoPlazosVista() {
+  clearTimeout(calculoPlazosTimer);
+  calculoPlazosTimer = setTimeout(async () => {
+    const fechaInicio = $('#plazo_fecha_inicio')?.value;
+    const panel = $('#plazos_resultado_panel');
+    if (!panel) return;
+    if (!fechaInicio) {
+      panel.replaceChildren(h('div', { class: 'vacio' }, 'Selecciona o escribe una fecha de notificación o providencia para calcular los términos.'));
+      return;
+    }
+
+    const presetVal = $('#plazo_preset')?.value;
+    const cantidad = parseInt($('#plazo_cantidad')?.value, 10) || 1;
+    const unidad = $('#plazo_unidad')?.value || 'dias_habiles';
+    const vacancia = Boolean($('#plazo_vacancia_colectiva')?.checked);
+    const mensajeDatos = Boolean($('#plazo_mensaje_datos')?.checked);
+    const fechaAcuse = mensajeDatos && $('#plazo_fecha_acuse')?.value ? $('#plazo_fecha_acuse').value : null;
+
+    panel.replaceChildren(
+      h('div', { style: 'padding: 24px; text-align: center; color: var(--tinta-2);' },
+        h('span', { class: 'girando', style: 'display: inline-block; margin-right: 8px;' }, '⏳'),
+        'Calculando términos procesales con calendario judicial...'
+      )
+    );
+
+    try {
+      const res = await apiFetch('/api/plazos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo_termino: presetVal && presetVal !== 'personalizado' ? presetVal : null,
+          fecha_inicio: fechaInicio,
+          unidad: unidad,
+          cantidad: cantidad,
+          vacancia_colectiva: vacancia,
+          notificacion_mensaje_datos: mensajeDatos,
+          fecha_acuse_recibo: fechaAcuse
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || 'Error al calcular los plazos');
+      }
+
+      const data = await res.json();
+      pintarResultadoPlazosCompleto(data, panel);
+    } catch (err) {
+      panel.replaceChildren(
+        h('div', { style: 'padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--r); color: #dc2626;' },
+          h('strong', {}, 'Error de cómputo: '),
+          err.message
+        )
+      );
+    }
+  }, 100);
+}
+
+function pintarResultadoPlazosCompleto(data, panel) {
+  panel.replaceChildren();
+
+  const esVencido = data.ha_vencido;
+  const esHoy = data.estado_vencimiento === 'vence_hoy';
+
+  const colorTema = esVencido
+    ? { bg: '#fef2f2', borde: '#ef4444', texto: '#991b1b', badgeBg: '#dc2626', badgeTxt: '#fff', label: 'TÉRMINO VENCIDO' }
+    : esHoy
+    ? { bg: '#fffbeb', borde: '#f59e0b', texto: '#92400e', badgeBg: '#d97706', badgeTxt: '#fff', label: '¡VENCE HOY!' }
+    : { bg: '#f0fdf4', borde: '#22c55e', texto: '#166534', badgeBg: '#16a34a', badgeTxt: '#fff', label: 'EN TÉRMINO' };
+
+  // 1. Tarjeta Resumen Principal
+  const tarjetaPrincipal = h('div', {
+    style: `background: ${colorTema.bg}; border: 2px solid ${colorTema.borde}; border-radius: var(--r); padding: 22px; display: grid; gap: 12px;`
+  },
+    h('div', { style: 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;' },
+      h('span', { style: `background: ${colorTema.badgeBg}; color: ${colorTema.badgeTxt}; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em; text-transform: uppercase;` }, colorTema.label),
+      h('span', { style: 'font-size: 13px; font-weight: 600; color: ' + colorTema.texto }, `${data.nombre_termino} · ${data.norma}`)
+    ),
+    h('div', {},
+      h('h2', { style: `font-size: 22px; font-weight: 800; margin: 0 0 6px; color: ${colorTema.texto};` },
+        esVencido
+          ? `Vence el ${data.dia_semana_vencimiento.toLowerCase()}, ${data.fecha_vencimiento} (quedan 0 días hábiles)`
+          : `Vence el ${data.dia_semana_vencimiento.toLowerCase()}, ${data.fecha_vencimiento} (quedan ${data.dias_habiles_restantes} días hábiles)`
+      ),
+      h('p', { style: `margin: 0; font-size: 14.5px; color: ${colorTema.texto}; opacity: 0.95; font-weight: 500;` },
+        `${data.texto_resumen} · Hora límite de radicación: ${data.hora_limite}`
+      )
+    ),
+    h('div', { style: 'display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 6px;' },
+      h('button', {
+        type: 'button',
+        class: 'btn primario',
+        style: 'background: #0f172a; color: #fff; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 13.5px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;',
+        onclick: () => descargarIcs(data.evento_ics, `vencimiento_${data.fecha_vencimiento}.ics`)
+      },
+        '📅 Descargar evento de calendario (.ics)'
+      ),
+      h('span', { style: 'font-size: 12px; color: var(--tinta-2);' }, 'Compatible con Google Calendar, Outlook y Apple Calendar')
+    )
+  );
+
+  // 2. Fundamento Legal y Reglas Aplicadas
+  const tarjetaReglas = h('div', {
+    style: 'background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 18px; display: grid; gap: 10px;'
+  },
+    h('h3', { style: 'font-size: 14px; font-weight: 700; margin: 0; color: var(--tinta); display: flex; align-items: center; gap: 6px;' },
+      '⚖️ Fundamento legal y reglas de cómputo aplicadas'
+    ),
+    h('ul', { style: 'margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; color: var(--tinta-2);' },
+      ...(data.reglas_aplicadas || []).map(r => h('li', {}, r))
+    )
+  );
+
+  // 3. Desglose Día por Día
+  const tarjetaDesglose = h('div', {
+    style: 'background: var(--superficie); border: 1px solid var(--regla); border-radius: var(--r); padding: 18px; display: grid; gap: 12px;'
+  },
+    h('div', { style: 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;' },
+      h('h3', { style: 'font-size: 14px; font-weight: 700; margin: 0; color: var(--tinta);' },
+        `🗓️ Desglose del cómputo procesal (${(data.desglose_dias || []).length} días analizados)`
+      ),
+      h('span', { style: 'font-size: 12px; color: var(--tinta-2);' },
+        `Notificación: ${data.fecha_notificacion} · Inicio cómputo: ${data.fecha_inicio_computo}`
+      )
+    ),
+    h('div', { style: 'overflow-x: auto;' },
+      h('table', { style: 'width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;' },
+        h('thead', {},
+          h('tr', { style: 'border-bottom: 2px solid var(--regla); color: var(--tinta-2);' },
+            h('th', { style: 'padding: 8px 10px;' }, 'Fecha'),
+            h('th', { style: 'padding: 8px 10px;' }, 'Día'),
+            h('th', { style: 'padding: 8px 10px;' }, 'Estado procesal'),
+            h('th', { style: 'padding: 8px 10px;' }, 'Detalle / Festivo / Norma')
+          )
+        ),
+        h('tbody', {},
+          ...(data.desglose_dias || []).map(d => {
+            const esHabil = d.es_habil;
+            const esUltimo = d.fecha === data.fecha_vencimiento;
+            const bgFila = esUltimo
+              ? (esVencido ? '#fef2f2' : '#f0fdf4')
+              : esHabil
+              ? 'rgba(34, 197, 94, 0.04)'
+              : 'rgba(0, 0, 0, 0.02)';
+
+            return h('tr', { style: `border-bottom: 1px solid var(--regla); background: ${bgFila};` },
+              h('td', { style: `padding: 8px 10px; font-family: var(--mono); font-weight: ${esUltimo ? '700' : 'normal'};` }, d.fecha),
+              h('td', { style: 'padding: 8px 10px;' }, d.dia_semana),
+              h('td', { style: 'padding: 8px 10px;' },
+                esUltimo
+                  ? h('span', { style: `display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 11px; background: ${esVencido ? '#dc2626' : '#16a34a'}; color: #fff;` }, `🎯 VENCE (Día #${d.dia_computo || data.cantidad})`)
+                  : esHabil
+                  ? h('span', { style: 'display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px; background: #dcfce7; color: #166534;' }, `✓ Día hábil #${d.dia_computo}`)
+                  : h('span', { style: 'display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; background: #f3f4f6; color: #6b7280;' }, '— Inhábil')
+              ),
+              h('td', { style: `padding: 8px 10px; color: ${esUltimo ? colorTema.texto : 'inherit'}; font-weight: ${esUltimo ? '600' : 'normal'};` },
+                d.motivo + (esUltimo ? ` (Fecha límite a las ${data.hora_limite})` : '')
+              )
+            );
+          })
+        )
+      )
+    )
+  );
+
+  panel.append(tarjetaPrincipal, tarjetaReglas, tarjetaDesglose);
+}
+
 async function cargarDesdeAlmacen() {
   await migrarLocalStorageAIndexedDB();
   try {
@@ -3602,7 +4012,7 @@ function iniciar() {
   renderFormulario();
   if (state.tipo) $('#accionesForm').hidden = false;
   const inicial = location.hash.slice(1);
-  irVista(['membrete', 'historial'].includes(inicial) ? inicial : 'redactar');
+  irVista(['membrete', 'historial', 'plazos'].includes(inicial) ? inicial : 'redactar');
   ponerControles();
   if (!state.ejemplo) estadoHoja('listo', 'Borrador recuperado');
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { ajustarZoom(); if (state.vista === 'redactar') renderMembreteHoja(); });

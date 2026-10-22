@@ -25,6 +25,11 @@ from app.services.revisor_requisitos import revisar_requisitos
 from app.services.nit import calcular_dv_nit, validar_nit, formatear_nit
 from app.services.radicado import obtener_catalogo_radicado, decodificar_radicado, validar_radicado, formatear_radicado
 from app.services.numeros_letras import numero_a_letras
+from app.services.plazos import (
+    calcular_plazo,
+    cargar_calendario_judicial_config,
+    obtener_precargas_terminos,
+)
 
 router = APIRouter(prefix="/api", tags=["Documentos"])
 
@@ -100,6 +105,18 @@ class RevisarRequest(BaseModel):
     tipo: str = Field(..., min_length=1, max_length=100)
 
 
+class PlazosRequest(BaseModel):
+    tipo_termino: Optional[str] = None
+    fecha_inicio: str = Field(..., description="Fecha de inicio o notificación en formato ISO (YYYY-MM-DD)")
+    unidad: Literal["dias_habiles", "meses", "anios"] = "dias_habiles"
+    cantidad: int = Field(..., gt=0, description="Cantidad de días hábiles, meses o años")
+    vacancia_colectiva: bool = Field(True, description="Si aplica la vacancia judicial colectiva (20 dic - 10 ene)")
+    notificacion_mensaje_datos: bool = Field(False, description="Aplica regla de mensaje de datos art. 8 Ley 2213/2022")
+    fecha_acuse_recibo: Optional[str] = None
+    hora_limite: str = "17:00"
+    titulo_evento: Optional[str] = None
+
+
 @router.get("/health")
 async def health_check():
     return {"status": "online", "app": "El Memorialista", "version": get_settings().VERSION, **gemini_service.estado()}
@@ -111,6 +128,7 @@ async def obtener_catalogo():
     areas = cargar_areas()
     grupo_red = cargar_grupo_redaccion()
     radicado_info = obtener_catalogo_radicado()
+    plazos_info = cargar_calendario_judicial_config()
     return {
         "version": "2.2.1",
         "fecha_revision": "21 de octubre de 2026",
@@ -119,6 +137,7 @@ async def obtener_catalogo():
         "tipos": tipos,
         "grupo_redaccion": grupo_red,
         "radicado": radicado_info,
+        "plazos": plazos_info,
     }
 
 
@@ -144,6 +163,62 @@ async def endpoint_validar_nit(nit: str):
 async def endpoint_numero_a_letras(valor: str):
     """Convierte deterministamente un valor numérico a letras en pesos colombianos ("M/CTE")."""
     return {"valor": valor, "letras": numero_a_letras(valor)}
+
+
+@router.post("/plazos")
+async def endpoint_calcular_plazos(req: PlazosRequest):
+    """Calcula el vencimiento de términos procesales en Colombia (CGP, CPACA, D. 2591/91, Ley 2213/22, Ley 51/83)."""
+    try:
+        resultado = calcular_plazo(
+            fecha_inicio=req.fecha_inicio,
+            unidad=req.unidad,
+            cantidad=req.cantidad,
+            tipo_termino=req.tipo_termino,
+            vacancia_colectiva=req.vacancia_colectiva,
+            notificacion_mensaje_datos=req.notificacion_mensaje_datos,
+            fecha_acuse_recibo=req.fecha_acuse_recibo,
+            hora_limite=req.hora_limite,
+            titulo_evento=req.titulo_evento,
+        )
+        return resultado
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en cómputo de plazos: {e}")
+
+
+@router.get("/plazos/catalogo")
+async def endpoint_catalogo_plazos():
+    """Retorna las precargas de términos procesales y la configuración del calendario judicial."""
+    return cargar_calendario_judicial_config()
+
+
+@router.post("/plazos/ics")
+async def endpoint_descargar_ics(req: PlazosRequest):
+    """Descarga el evento de vencimiento procesal como archivo .ics (iCalendar RFC 5545)."""
+    from fastapi.responses import Response
+
+    resultado = calcular_plazo(
+        fecha_inicio=req.fecha_inicio,
+        unidad=req.unidad,
+        cantidad=req.cantidad,
+        tipo_termino=req.tipo_termino,
+        vacancia_colectiva=req.vacancia_colectiva,
+        notificacion_mensaje_datos=req.notificacion_mensaje_datos,
+        fecha_acuse_recibo=req.fecha_acuse_recibo,
+        hora_limite=req.hora_limite,
+        titulo_evento=req.titulo_evento,
+    )
+    ics_text = resultado["evento_ics"]
+    filename = f"vencimiento_{resultado['fecha_vencimiento']}.ics"
+    return Response(
+        content=ics_text,
+        media_type="text/calendar",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
 
 
 @router.post("/redactar")
