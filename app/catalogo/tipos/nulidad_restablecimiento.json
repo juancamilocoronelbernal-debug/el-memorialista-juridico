@@ -66,9 +66,9 @@
         {
           "k": "notificacion_fecha",
           "l": "Fecha de notificación del último acto",
-          "t": "texto",
+          "t": "date",
           "req": true,
-          "ph": "Ej.: 5 de agosto de 2026",
+          "ph": "AAAA-MM-DD",
           "ayuda": "Para la caducidad de 4 meses. Las prestaciones periódicas pueden demandarse en cualquier tiempo."
         },
         {

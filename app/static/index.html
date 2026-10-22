@@ -1469,6 +1469,43 @@ function pintarPanel(items) {
   if (audit && audit.total > 0) {
     panel.append(h('h3', {}, 'Auditoría de consistencia de datos'));
 
+    // 0. Discrepancias entre cifras numéricas y expresiones en letras
+    if (audit.discrepanciasCifrasLetras && audit.discrepanciasCifrasLetras.length) {
+      panel.append(h('div', { style: 'font-weight: 700; font-size: 13px; color: #dc2626; margin: 6px 0 4px 0;' },
+        `❌ Discrepancia entre cifra y letras (${audit.discrepanciasCifrasLetras.length}):`
+      ));
+      const olDisc = h('ol', { style: 'padding-left: 20px; margin-bottom: 12px;' });
+      audit.discrepanciasCifrasLetras.forEach(disc => {
+        const li = h('li', { style: 'margin-bottom: 6px; line-height: 1.4; color: #991b1b;' },
+          h('strong', {}, disc.detalle || `${disc.cifraTexto} vs. ${disc.letrasTexto}`),
+          h('span', { class: 'acc', style: 'margin-left: 8px;' },
+            h('button', { class: 'enlace', type: 'button', onclick: () => irATexto(disc.cifraTexto || disc.letrasTexto) }, 'Ver en el texto')
+          )
+        );
+        olDisc.append(li);
+      });
+      panel.append(olDisc);
+    }
+
+    // 1. Alertas de NIT (Dígito de verificación DIAN)
+    if (audit.alertasNit && audit.alertasNit.length) {
+      panel.append(h('div', { style: 'font-weight: 700; font-size: 13px; color: #dc2626; margin: 6px 0 4px 0;' },
+        `⚠️ Alertas de NIT DIAN (${audit.alertasNit.length}):`
+      ));
+      const olNit = h('ol', { style: 'padding-left: 20px; margin-bottom: 12px;' });
+      audit.alertasNit.forEach(an => {
+        const li = h('li', { style: 'margin-bottom: 6px; line-height: 1.4; color: #991b1b;' },
+          h('strong', {}, `${an.nit}: `),
+          h('span', {}, an.detalle),
+          h('span', { class: 'acc', style: 'margin-left: 8px;' },
+            h('button', { class: 'enlace', type: 'button', onclick: () => irATexto(an.nit) }, 'Ver en el texto')
+          )
+        );
+        olNit.append(li);
+      });
+      panel.append(olNit);
+    }
+
     // a) Posibles invenciones (en el escrito pero no en tus datos)
     if (audit.invenciones && audit.invenciones.length) {
       panel.append(h('div', { style: 'font-weight: 600; font-size: 13px; color: var(--amarillo-osc, #b45309); margin: 6px 0 4px 0;' },
@@ -2511,46 +2548,164 @@ function renderCampo(c) {
     return wrap;
   }
   wrap.append(etiqueta(c.l));
+  const contenedorAyudas = h('div', { class: 'contenedor-ayudas' });
   let inp;
   if (c.t === 'select') {
     inp = h('select', { id });
     for (const [val, txt] of c.opciones) { const o = h('option', { value: val }, txt); if (val === v) o.selected = true; inp.append(o); }
-    inp.addEventListener('change', () => cambiar(inp.value));
+    inp.addEventListener('change', () => { cambiar(inp.value); actualizarAyudasCampo(c, inp, contenedorAyudas); });
   } else if (c.t === 'area') {
     inp = h('textarea', { id, rows: c.rows || 4, placeholder: c.ph || '' });
     inp.value = v || '';
-    inp.addEventListener('input', () => cambiar(inp.value));
+    inp.addEventListener('input', () => { cambiar(inp.value); actualizarAyudasCampo(c, inp, contenedorAyudas); });
+  } else if (c.t === 'date' || c.t === 'fecha' || (c.k && c.k.includes('notificacion_fecha'))) {
+    inp = h('input', { type: 'date', id, class: 'campo-fecha' });
+    inp.value = v || '';
+    inp.addEventListener('input', () => { cambiar(inp.value); actualizarAyudasCampo(c, inp, contenedorAyudas); });
   } else {
     inp = h('input', { type: 'text', id, placeholder: c.ph || '', class: c.t === 'radicado' ? 'maq' : null, inputmode: c.t === 'radicado' ? 'numeric' : null });
     inp.value = v || '';
     if (c.sug && c.sug.length) { const dl = h('datalist', { id: id + '_dl' }, c.sug.map(s => h('option', { value: s }))); inp.setAttribute('list', id + '_dl'); wrap.append(dl); }
-    inp.addEventListener('input', () => { cambiar(inp.value); if (c.t === 'radicado') ayudaRadicado(inp, nota); });
+    inp.addEventListener('input', () => {
+      cambiar(inp.value);
+      actualizarAyudasCampo(c, inp, contenedorAyudas);
+    });
+    if (c.t === 'radicado' || c.k === 'radicado') {
+      inp.addEventListener('blur', () => {
+        const digitos = (inp.value || '').replace(/\D/g, '');
+        if (digitos.length === 23 && typeof formatearRadicado === 'function') {
+          inp.value = formatearRadicado(digitos);
+          cambiar(inp.value);
+          actualizarAyudasCampo(c, inp, contenedorAyudas);
+        }
+      });
+    }
   }
   wrap.append(inp);
-  const nota = h('p', { class: 'ayuda' }, c.ayuda || '');
-  if (c.ayuda || c.t === 'radicado') wrap.append(nota);
-  if (c.t === 'radicado') ayudaRadicado(inp, nota);
+  wrap.append(contenedorAyudas);
+  actualizarAyudasCampo(c, inp, contenedorAyudas);
   return wrap;
 }
+function actualizarAyudasCampo(c, inp, contenedor) {
+  if (!contenedor) return;
+  const val = String(inp.value || '').trim();
+  contenedor.replaceChildren();
+
+  // 1. Si es radicado (o clave radicado)
+  if (c.t === 'radicado' || c.k === 'radicado') {
+    const digitos = val.replace(/\D/g, '');
+    const n = digitos.length;
+    if (!n) {
+      contenedor.append(h('p', { class: 'ayuda' }, 'Número de 23 dígitos asignado por el despacho (5-2-2-3-4-5-2).'));
+    } else if (n === 23 && typeof decodificarRadicado === 'function') {
+      const dec = decodificarRadicado(digitos);
+      contenedor.append(
+        h('div', { class: 'ayuda-radicado-ok', style: 'background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 6px 8px; margin-top: 4px; font-size: 12.5px;' },
+          h('div', { style: 'color: #166534; font-weight: 600;' }, `✓ Radicado judicial: ${dec.formateado}`),
+          h('div', { style: 'color: #15803d; font-size: 11.5px; margin-top: 2px;' }, `📍 ${dec.resumen}`)
+        )
+      );
+    } else {
+      contenedor.append(
+        h('p', { class: 'msg-err', style: 'color: #dc2626; font-size: 12px; margin-top: 4px; font-weight: 500;' },
+          `Tiene ${n} dígitos; un radicado judicial completo exige exactamente 23 dígitos (5-2-2-3-4-5-2).`
+        )
+      );
+    }
+    return;
+  }
+
+  // 2. Si contiene un NIT: calcular y validar dígito de verificación DIAN
+  const esNit = c.k.includes('nit') || val.toLowerCase().includes('nit') || /\b\d{3}\.\d{3}\.\d{3}-\d\b/.test(val) || /\b\d{8,10}-\d\b/.test(val);
+  if (esNit && typeof validarNit === 'function') {
+    const reNit = /\b(?:NIT|N\.I\.T\.)\s*[:#]?\s*(\d{1,3}(?:\.\d{3}){2,3}(?:-\d)?|\d{8,10}(?:-\d)?)\b|\b(\d{3}\.\d{3}\.\d{3}-\d|\d{8,10}-\d)\b/gi;
+    let m = reNit.exec(val);
+    const textoNit = m ? (m[1] || m[2]) : (val.includes('-') ? val : '');
+    if (textoNit) {
+      const vNit = validarNit(textoNit);
+      if (vNit.dvIngresado !== null) {
+        if (vNit.valido) {
+          contenedor.append(
+            h('p', { class: 'ayuda', style: 'color: #166534; font-size: 12px; margin-top: 3px;' },
+              `✓ Dígito de verificación DIAN correcto: ${vNit.nitFormateado}`
+            )
+          );
+        } else {
+          contenedor.append(
+            h('p', { class: 'msg-err', style: 'color: #dc2626; font-size: 12px; font-weight: 600; margin-top: 3px;' },
+              `⚠️ ${vNit.mensaje}`
+            )
+          );
+        }
+      } else if (vNit.dvCalculado !== null) {
+        contenedor.append(
+          h('p', { class: 'ayuda', style: 'font-size: 12px; color: var(--tinta-2); margin-top: 3px;' },
+            `Dígito de verificación DIAN: ${vNit.dvCalculado} (${vNit.nitFormateado})`
+          )
+        );
+      }
+    }
+  }
+
+  // 3. Si es un valor económico: mostrar versión en letras determinista
+  const esValor = c.t === 'valor' || c.k.includes('cuantia') || c.k.includes('valor') || c.k.includes('canon') || c.k.includes('salario') || c.k.includes('perjuicios') || c.k.includes('capital') || c.k.includes('monto') || /^\$?\s*\d/.test(val);
+  if (esValor && typeof numeroALetras === 'function') {
+    const letras = numeroALetras(val);
+    if (letras) {
+      contenedor.append(
+        h('div', { class: 'valor-en-letras', style: 'font-size: 12px; color: var(--azul, #2563eb); font-weight: 600; margin-top: 4px; background: rgba(37,99,235,0.06); padding: 4px 8px; border-radius: 4px;' },
+          `↳ ${letras}`
+        )
+      );
+    }
+  }
+
+  // 4. Ayuda general del catálogo
+  if (c.ayuda) {
+    contenedor.append(h('p', { class: 'ayuda' }, c.ayuda));
+  }
+}
 function ayudaRadicado(inp, nota) {
-  const n = (inp.value.match(/\d/g) || []).length;
-  if (!n) { nota.textContent = 'Número de 23 dígitos que asigna el despacho.'; return; }
-  nota.textContent = n === 23 ? 'Radicado completo: 23 dígitos.' : `Tiene ${n} dígitos; un radicado completo tiene 23.`;
+  actualizarAyudasCampo({ t: 'radicado', k: 'radicado' }, inp, nota);
 }
 function validarFormulario() {
   const tipo = TIPOS[state.tipo];
   let primero = null;
   for (const c of camposTipo(tipo)) {
-    if (!c.req) continue;
     const v = state.datos[c.k];
     const vacio = v == null || (typeof v === 'string' && !v.trim()) || (Array.isArray(v) && !v.length);
     const wrap = $(`[data-campo="${c.k}"]`);
     if (!wrap) continue;
-    wrap.classList.toggle('err', vacio);
-    const prev = wrap.querySelector('.msg-err'); if (prev) prev.remove();
-    if (vacio) { wrap.append(h('p', { class: 'msg-err' }, 'Este dato es necesario para redactar.')); if (!primero) primero = wrap; }
+
+    wrap.querySelectorAll('.msg-err-valid').forEach(el => el.remove());
+
+    if (c.req && vacio) {
+      wrap.classList.add('err');
+      wrap.append(h('p', { class: 'msg-err msg-err-valid' }, 'Este dato es necesario para redactar.'));
+      if (!primero) primero = wrap;
+      continue;
+    }
+
+    // Exigencia de exactamente 23 dígitos en radicado
+    if ((c.t === 'radicado' || c.k === 'radicado') && !vacio) {
+      const digitos = String(v).replace(/\D/g, '');
+      if (digitos.length !== 23) {
+        wrap.classList.add('err');
+        wrap.append(h('p', { class: 'msg-err msg-err-valid', style: 'color: #dc2626; font-weight: 600;' },
+          `El radicado judicial debe tener exactamente 23 dígitos (actualmente tiene ${digitos.length}). Formato: 5-2-2-3-4-5-2.`
+        ));
+        if (!primero) primero = wrap;
+        continue;
+      }
+    }
+
+    wrap.classList.remove('err');
   }
-  if (primero) { primero.scrollIntoView({ behavior: 'smooth', block: 'center' }); const f = primero.querySelector('input,textarea,button'); if (f) f.focus({ preventScroll: true }); }
+  if (primero) {
+    primero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const f = primero.querySelector('input,textarea,button');
+    if (f) f.focus({ preventScroll: true });
+  }
   return !primero;
 }
 const guardarBorrador = debounce(() => {
@@ -2849,6 +3004,34 @@ function renderizarPreExportacion(tipo) {
     ));
   }
 
+  // Discrepancias entre cifras numéricas y expresiones en letras
+  const auditPre = state.auditoria || (typeof auditarDatosYEscrito === 'function' ? auditarDatosYEscrito(state.datos, state.texto, state.perfil) : null);
+  const discCifras = (auditPre && auditPre.discrepanciasCifrasLetras) || [];
+  if (discCifras.length > 0) {
+    contenido.push(h('div', { style: 'background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;' },
+      h('p', { style: 'color: #991b1b; font-weight: 700; margin: 0 0 4px 0;' },
+        `❌ Atención: Hay ${discCifras.length} discrepancia(s) entre cifras y letras en el escrito:`
+      ),
+      h('ul', { style: 'margin: 0; padding-left: 18px; color: #b91c1c; font-size: 12.5px;' },
+        discCifras.map(d => h('li', {}, d.detalle))
+      ),
+      h('p', { style: 'margin: 4px 0 0 0; color: #7f1d1d; font-size: 12px;' }, 'Verifica que el valor en números coincida con su expresión en palabras antes de radicar.')
+    ));
+  }
+
+  // Alertas de NIT con DV inválido
+  const alertasNitPre = (auditPre && auditPre.alertasNit) || [];
+  if (alertasNitPre.length > 0) {
+    contenido.push(h('div', { style: 'background: #fffbeb; border: 1px solid #f59e0b; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;' },
+      h('p', { style: 'color: #92400e; font-weight: 700; margin: 0 0 4px 0;' },
+        `⚠️ Alerta de NIT DIAN (${alertasNitPre.length}):`
+      ),
+      h('ul', { style: 'margin: 0; padding-left: 18px; color: #78350f; font-size: 12.5px;' },
+        alertasNitPre.map(a => h('li', {}, a.detalle))
+      )
+    ));
+  }
+
   // Marcas [COMPLETAR]
   if (nc) {
     contenido.push(h('p', { class: 'nota', style: 'margin-bottom: 6px;' }, `Quedan ${nc} ${nc === 1 ? 'dato' : 'datos'} por completar; saldrán resaltados en amarillo en el archivo.`));
@@ -2863,7 +3046,7 @@ function renderizarPreExportacion(tipo) {
   ));
 
   // Botones de acción
-  const textoBotonExport = (criticosFaltantes.length || citasRojas.length)
+  const textoBotonExport = (criticosFaltantes.length || citasRojas.length || discCifras.length)
     ? `Confirmar y exportar de todos modos (${tipo === 'docx' ? 'Word' : 'PDF'})`
     : `Confirmar y exportar (${tipo === 'docx' ? 'Word' : 'PDF'})`;
 

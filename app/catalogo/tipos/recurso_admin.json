@@ -55,9 +55,9 @@
         {
           "k": "notificacion_fecha",
           "l": "Fecha de notificación",
-          "t": "texto",
+          "t": "date",
           "req": true,
-          "ph": "Ej.: 6 de octubre de 2026"
+          "ph": "AAAA-MM-DD"
         },
         {
           "k": "recurso",

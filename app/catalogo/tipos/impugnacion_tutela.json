@@ -70,7 +70,15 @@
           "t": "area",
           "rows": 3,
           "req": true,
-          "ph": "Ej.: Sentencia del 10/10/2026 que negó la tutela por improcedente; notificada el 14/10/2026."
+          "ph": "Ej.: Sentencia del 10/10/2026 que negó la tutela por improcedente."
+        },
+        {
+          "k": "notificacion_fecha",
+          "l": "Fecha de notificación del fallo",
+          "t": "date",
+          "req": false,
+          "ph": "AAAA-MM-DD",
+          "ayuda": "Término legal: 3 días hábiles contados a partir de la notificación (art. 31 Decreto 2591 de 1991)."
         },
         {
           "k": "razones",

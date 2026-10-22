@@ -22,6 +22,9 @@ from app.services.prompt import (
 )
 from app.services.verificador_citas import verificar_citas
 from app.services.revisor_requisitos import revisar_requisitos
+from app.services.nit import calcular_dv_nit, validar_nit, formatear_nit
+from app.services.radicado import obtener_catalogo_radicado, decodificar_radicado, validar_radicado, formatear_radicado
+from app.services.numeros_letras import numero_a_letras
 
 router = APIRouter(prefix="/api", tags=["Documentos"])
 
@@ -107,6 +110,7 @@ async def obtener_catalogo():
     tipos = listar_tipos(incluir_guia=False)
     areas = cargar_areas()
     grupo_red = cargar_grupo_redaccion()
+    radicado_info = obtener_catalogo_radicado()
     return {
         "version": "2.2.1",
         "fecha_revision": "21 de octubre de 2026",
@@ -114,7 +118,32 @@ async def obtener_catalogo():
         "areas": areas,
         "tipos": tipos,
         "grupo_redaccion": grupo_red,
+        "radicado": radicado_info,
     }
+
+
+@router.get("/radicado")
+async def obtener_radicado_info():
+    """Retorna la tabla y estructura oficial del radicado judicial de 23 dígitos."""
+    return obtener_catalogo_radicado()
+
+
+@router.get("/radicado/decodificar")
+async def endpoint_decodificar_radicado(radicado: str):
+    """Decodifica un radicado judicial de 23 dígitos."""
+    return decodificar_radicado(radicado)
+
+
+@router.get("/nit/validar")
+async def endpoint_validar_nit(nit: str):
+    """Calcula y valida el dígito de verificación DIAN de un NIT."""
+    return validar_nit(nit)
+
+
+@router.get("/numero-a-letras")
+async def endpoint_numero_a_letras(valor: str):
+    """Convierte deterministamente un valor numérico a letras en pesos colombianos ("M/CTE")."""
+    return {"valor": valor, "letras": numero_a_letras(valor)}
 
 
 @router.post("/redactar")

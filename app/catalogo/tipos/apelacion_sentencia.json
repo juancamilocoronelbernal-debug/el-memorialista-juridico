@@ -114,7 +114,15 @@
           "t": "area",
           "rows": 3,
           "req": true,
-          "ph": "Ej.: Sentencia del 2/10/2026 que negó las pretensiones; notificada por estado el 3/10/2026."
+          "ph": "Ej.: Sentencia del 2/10/2026 que negó las pretensiones."
+        },
+        {
+          "k": "notificacion_fecha",
+          "l": "Fecha de notificación de la sentencia",
+          "t": "date",
+          "req": false,
+          "ph": "AAAA-MM-DD",
+          "ayuda": "Término procesal contado desde la notificación por estado o en audiencia."
         },
         {
           "k": "reparos",

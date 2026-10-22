@@ -2,6 +2,7 @@
 import datetime
 import json
 import os
+import re
 from typing import Any, Optional
 
 CATALOGO_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "catalogo")
@@ -166,16 +167,35 @@ def validar_datos_tipo(tipo: dict[str, Any], datos: dict[str, Any]) -> list[str]
     errores = []
     for g in tipo.get("grupos", []):
         for c in g.get("campos", []):
-            if c.get("req"):
-                k = c.get("k")
-                v = datos.get(k)
-                if v is None or (isinstance(v, str) and not v.strip()) or (isinstance(v, list) and len(v) == 0):
-                    errores.append(f"El campo '{c.get('l', k)}' ({k}) es obligatorio.")
+            k = c.get("k")
+            v = datos.get(k)
+            v_vacio = v is None or (isinstance(v, str) and not v.strip()) or (isinstance(v, list) and len(v) == 0)
+            if c.get("req") and v_vacio:
+                errores.append(f"El campo '{c.get('l', k)}' ({k}) es obligatorio.")
+            elif not v_vacio and (c.get("t") == "radicado" or k == "radicado"):
+                solo_dig = re.sub(r"\D", "", str(v))
+                if len(solo_dig) != 23:
+                    errores.append(
+                        f"El radicado judicial debe tener exactamente 23 dígitos (actualmente tiene {len(solo_dig)})."
+                    )
     return errores
+
+
+def _formatear_fecha_iso_legible(iso_str: str) -> str:
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", str(iso_str or "").strip())
+    if not m:
+        return str(iso_str or "").strip()
+    ano, mes, dia = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    meses = ("enero", "febrero", "marzo", "abril", "mayo", "junio",
+             "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
+    if 1 <= mes <= 12:
+        return f"{dia} de {meses[mes - 1]} de {ano}"
+    return str(iso_str)
 
 
 def valor_legible(c: dict[str, Any], v: Any) -> str:
     t = c.get("t")
+    k = c.get("k", "")
     if t == "check":
         return "Sí" if v else "No"
     if t == "select":
@@ -187,6 +207,12 @@ def valor_legible(c: dict[str, Any], v: Any) -> str:
         if isinstance(v, list):
             return ", ".join(str(x) for x in v)
         return str(v or "").strip()
+    if t == "date" or t == "fecha" or k.endswith("_fecha"):
+        return _formatear_fecha_iso_legible(v)
+    if t == "radicado" or k == "radicado":
+        digitos = re.sub(r"\D", "", str(v or ""))
+        if len(digitos) == 23:
+            return f"{digitos[0:5]}-{digitos[5:7]}-{digitos[7:9]}-{digitos[9:12]}-{digitos[12:16]}-{digitos[16:21]}-{digitos[21:23]}"
     return str(v or "").strip()
 
 

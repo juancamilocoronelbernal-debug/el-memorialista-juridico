@@ -60,9 +60,9 @@
         {
           "k": "notificacion_fecha",
           "l": "Fecha de notificación del auto admisorio",
-          "t": "texto",
+          "t": "date",
           "req": false,
-          "ph": "Ej.: 1 de octubre de 2026"
+          "ph": "AAAA-MM-DD"
         },
         {
           "k": "ciudad",
