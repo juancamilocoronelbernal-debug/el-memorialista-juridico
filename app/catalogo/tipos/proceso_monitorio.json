@@ -2,7 +2,7 @@
   "id": "proceso_monitorio",
   "nombre": "Demanda de proceso monitorio",
   "area": "Civil y comercial",
-  "norma": "Arts. 419 a 421 del Código General del Proceso (CGP)",
+  "norma": "Arts. 419 a 421 CGP",
   "rolFirma": "demandante",
   "rolCliente": "demandante",
   "desc": "Cobro rápido de obligaciones dinerarias de mínima cuantía de origen contractual, sin título ejecutivo.",

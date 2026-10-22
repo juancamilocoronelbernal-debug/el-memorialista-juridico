@@ -163,7 +163,7 @@ input.maq{font-family:var(--f-maq);font-size:15px;letter-spacing:.02em}
 .cat-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:9px 10px;border-radius:var(--r);cursor:pointer;border:0;background:transparent;color:var(--tinta);text-align:left;width:100%}
 .cat-item:hover{background:var(--superficie-2)}
 .cat-item:focus-visible{outline:2px solid var(--sello);outline-offset:-2px}
-.cat-item .n{font-weight:650;font-size:14.5px}
+.cat-item .n{font-weight:650;font-size:14.5px;display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px}
 .cat-item .nm{font-family:var(--f-maq);font-size:11.5px;color:var(--tinta-3);white-space:nowrap;align-self:center}
 .cat-item .d{grid-column:1/-1;color:var(--tinta-2);font-size:13px}
 @media (max-width:480px){.cat-item{grid-template-columns:1fr}.cat-item .nm{white-space:normal}}
@@ -433,7 +433,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 @keyframes pulsoGrabando{0%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}70%{box-shadow:0 0 0 6px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
 
 /* ---------- etiquetas y alertas de revisión jurídica y auditoría IA ---------- */
-.pill-revision{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;margin-left:6px;vertical-align:middle;user-select:none}
+.pill-revision{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;line-height:1;padding:1px 5px;border-radius:999px;font-weight:600;margin-left:6px;vertical-align:middle;user-select:none;white-space:nowrap;flex-shrink:0}
 .pill-revision.pill-pendiente{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
 .pill-revision.pill-ia{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
 .alerta-revision-guia{display:inline-flex;align-items:center;gap:8px;font-size:12px;padding:7px 12px;border-radius:6px;font-weight:600;margin-top:8px;flex-wrap:wrap;line-height:1.4}
@@ -3455,9 +3455,9 @@ function renderZonaTipo() {
         lista.append(h('div', { class: 'cat-grupo' }, h('h3', {}, area), h('div', { class: 'cat-items' }, items.map(t => {
           let pillRev = null;
           if (t.revisado_por === 'pendiente') {
-            pillRev = h('span', { class: 'pill-revision pill-pendiente' }, '⚠️ Pendiente de revisión jurídica');
+            pillRev = h('span', { class: 'pill-revision pill-pendiente', title: 'Guía pendiente de revisión jurídica' }, '⚠️ Pendiente');
           } else if ((t.revisado_por && t.revisado_por.toLowerCase().includes('auditado con ia')) || t.auditoria_ia) {
-            pillRev = h('span', { class: 'pill-revision pill-ia' }, '🤖 Auditado con IA Jurídica');
+            pillRev = h('span', { class: 'pill-revision pill-ia', title: 'Auditado con IA Jurídica' }, '🤖 Auditado');
           }
           return h('button', { class: 'cat-item', type: 'button', onclick: () => elegirTipo(t.id) },
             h('span', { class: 'n' }, t.nombre, pillRev),
