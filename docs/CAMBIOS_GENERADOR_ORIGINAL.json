@@ -1,0 +1,1719 @@
+{
+  "comparacion": "generador original vs entrega previa; excluye integracion nueva",
+  "fecha_revision": "2026-10-22",
+  "metodo": "Comparacion byte a byte de entradas de los ZIP y SHA-256; las lineas usan difflib.SequenceMatcher con autojunk=False. No ejecuta servicios ni modifica fuentes.",
+  "zip_original": {
+    "archivo": "upload/el-memorialista-codigo-completo.zip",
+    "sha256": "7bf898cd3c8d482061cd833e23cbdd4e914f54ec240c79efd38062f50528006e"
+  },
+  "zip_entrega_previa": {
+    "archivo": "deliverables/el-memorialista-codigo-completo.zip",
+    "sha256": "42615ae10b2533755b6100b4b302006d9bdad3f881edf47fb0cb9419f161fee3"
+  },
+  "resumen": {
+    "archivos_zip_original": 117,
+    "archivos_zip_entrega_previa": 183,
+    "rutas_comunes_identicas": 82,
+    "rutas_comunes_con_cambio": 34,
+    "rutas_agregadas": 67,
+    "archivos_originales_contenido_identico_incluyendo_reubicado": 83,
+    "archivos_originales_modificados_incluyendo_reubicado": 34,
+    "originales_sin_correspondencia": 0,
+    "archivos_nuevos_despues_de_mapear_reubicaciones": 66,
+    "rutas_retiradas": [
+      "app/static/auditor.js"
+    ]
+  },
+  "archivos_originales": [
+    {
+      "ruta_original": ".env.example",
+      "ruta_entrega_previa": ".env.example",
+      "clasificacion": "modificado",
+      "sha256_original": "a53fed27e92f4967633c6c25f2e49b86a690f84cb57743a7bc988f5ac0469610",
+      "sha256_entrega_previa": "251271087b73b255ba9d254300cb0b1f148a6eb5c051b7da6ba75e7fbddfaad1",
+      "bytes_original": 1166,
+      "bytes_entrega_previa": 1715,
+      "comparacion_lineas": {
+        "original": 31,
+        "entrega_previa": 47,
+        "identicas": 17,
+        "retiradas_o_reemplazadas": 14,
+        "agregadas_o_reemplazadas": 30
+      }
+    },
+    {
+      "ruta_original": "PROMPT_PARA_CLAUDE.md",
+      "ruta_entrega_previa": "PROMPT_PARA_CLAUDE.md",
+      "clasificacion": "modificado",
+      "sha256_original": "e1c31b5709575ef517db62719cf530b7de022dac18638ee73115bbbe063ad0e6",
+      "sha256_entrega_previa": "19cdfc03274ba802b482f9e6c34550ed5254de08b417e2892ee5bbb1aefb1f77",
+      "bytes_original": 5765,
+      "bytes_entrega_previa": 17202,
+      "comparacion_lineas": {
+        "original": 127,
+        "entrega_previa": 159,
+        "identicas": 17,
+        "retiradas_o_reemplazadas": 110,
+        "agregadas_o_reemplazadas": 142
+      }
+    },
+    {
+      "ruta_original": "README.md",
+      "ruta_entrega_previa": "README.md",
+      "clasificacion": "modificado",
+      "sha256_original": "5e4ab6cb0d0b7c4d4b1b1f525fb8c173cc21b3dc6a73ddbeacc8033ee82a66b5",
+      "sha256_entrega_previa": "9849f303688c75837b6dff2ce925cdac3e35ece2b4df57ae98177e24fe88ecf4",
+      "bytes_original": 9073,
+      "bytes_entrega_previa": 16263,
+      "comparacion_lineas": {
+        "original": 171,
+        "entrega_previa": 210,
+        "identicas": 34,
+        "retiradas_o_reemplazadas": 137,
+        "agregadas_o_reemplazadas": 176
+      }
+    },
+    {
+      "ruta_original": "app/__init__.py",
+      "ruta_entrega_previa": "app/__init__.py",
+      "clasificacion": "identico",
+      "sha256_original": "b4f4e502ed868db7d7cea29ab7fd0087bda3c83a91ddb3312d6693eddb1f77f8",
+      "sha256_entrega_previa": "b4f4e502ed868db7d7cea29ab7fd0087bda3c83a91ddb3312d6693eddb1f77f8",
+      "bytes_original": 14,
+      "bytes_entrega_previa": 14
+    },
+    {
+      "ruta_original": "app/catalogo/areas.json",
+      "ruta_entrega_previa": "app/catalogo/areas.json",
+      "clasificacion": "identico",
+      "sha256_original": "87430f00e8598c5a4d73b61fa2c8b0189c3d964fd1d88317093ae3b33eadb846",
+      "sha256_entrega_previa": "87430f00e8598c5a4d73b61fa2c8b0189c3d964fd1d88317093ae3b33eadb846",
+      "bytes_original": 193,
+      "bytes_entrega_previa": 193
+    },
+    {
+      "ruta_original": "app/catalogo/calendario_judicial.json",
+      "ruta_entrega_previa": "app/catalogo/calendario_judicial.json",
+      "clasificacion": "identico",
+      "sha256_original": "4cf86299cf4678cc169fdf4c899a846e0fec7a7648833eed8e7b17f1438cad5c",
+      "sha256_entrega_previa": "4cf86299cf4678cc169fdf4c899a846e0fec7a7648833eed8e7b17f1438cad5c",
+      "bytes_original": 5318,
+      "bytes_entrega_previa": 5318
+    },
+    {
+      "ruta_original": "app/catalogo/contexto_normativo.json",
+      "ruta_entrega_previa": "app/catalogo/contexto_normativo.json",
+      "clasificacion": "identico",
+      "sha256_original": "3db5ca167a5edce9f7f35c728da39cc259e3d7adf896ccf6d23d9bdb598c77cd",
+      "sha256_entrega_previa": "3db5ca167a5edce9f7f35c728da39cc259e3d7adf896ccf6d23d9bdb598c77cd",
+      "bytes_original": 3241,
+      "bytes_entrega_previa": 3241
+    },
+    {
+      "ruta_original": "app/catalogo/formato_salida.json",
+      "ruta_entrega_previa": "app/catalogo/formato_salida.json",
+      "clasificacion": "identico",
+      "sha256_original": "2112ecc47181c4dc1a976a93d7db6459f8fca8254c9978b2de69cfef61596eca",
+      "sha256_entrega_previa": "2112ecc47181c4dc1a976a93d7db6459f8fca8254c9978b2de69cfef61596eca",
+      "bytes_original": 1224,
+      "bytes_entrega_previa": 1224
+    },
+    {
+      "ruta_original": "app/catalogo/grupo_redaccion.json",
+      "ruta_entrega_previa": "app/catalogo/grupo_redaccion.json",
+      "clasificacion": "identico",
+      "sha256_original": "7ac206aee34b346d98053b87f6a789092782421d4ebc2a8f2063f4f726bf37e8",
+      "sha256_entrega_previa": "7ac206aee34b346d98053b87f6a789092782421d4ebc2a8f2063f4f726bf37e8",
+      "bytes_original": 1814,
+      "bytes_entrega_previa": 1814
+    },
+    {
+      "ruta_original": "app/catalogo/ipc.json",
+      "ruta_entrega_previa": "app/catalogo/ipc.json",
+      "clasificacion": "identico",
+      "sha256_original": "cb40ee31e67277fd655ce266017274f2f300103bf690ca7cf088e186871c4987",
+      "sha256_entrega_previa": "cb40ee31e67277fd655ce266017274f2f300103bf690ca7cf088e186871c4987",
+      "bytes_original": 4259,
+      "bytes_entrega_previa": 4259
+    },
+    {
+      "ruta_original": "app/catalogo/radicado.json",
+      "ruta_entrega_previa": "app/catalogo/radicado.json",
+      "clasificacion": "identico",
+      "sha256_original": "0b43d4505c4777a94ee8efce1b118021f55c325dcb151676951ad20132bb0403",
+      "sha256_entrega_previa": "0b43d4505c4777a94ee8efce1b118021f55c325dcb151676951ad20132bb0403",
+      "bytes_original": 4702,
+      "bytes_entrega_previa": 4702
+    },
+    {
+      "ruta_original": "app/catalogo/reglas_obligatorias.json",
+      "ruta_entrega_previa": "app/catalogo/reglas_obligatorias.json",
+      "clasificacion": "identico",
+      "sha256_original": "d82ee8e08d4e948358dbbcb34d99ac0d56f4119927e6a6e192ba6967620ff2b0",
+      "sha256_entrega_previa": "d82ee8e08d4e948358dbbcb34d99ac0d56f4119927e6a6e192ba6967620ff2b0",
+      "bytes_original": 2560,
+      "bytes_entrega_previa": 2560
+    },
+    {
+      "ruta_original": "app/catalogo/tasas_sfc.json",
+      "ruta_entrega_previa": "app/catalogo/tasas_sfc.json",
+      "clasificacion": "identico",
+      "sha256_original": "ef767caf6bba490d2b890ff68a0eb2ca7e0c3be7563a08b118f2865684b8878c",
+      "sha256_entrega_previa": "ef767caf6bba490d2b890ff68a0eb2ca7e0c3be7563a08b118f2865684b8878c",
+      "bytes_original": 5550,
+      "bytes_entrega_previa": 5550
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/alegatos.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/alegatos.json",
+      "clasificacion": "identico",
+      "sha256_original": "8aef41a1355752c35cb8b23a1e591d80ab8513c46a5c11614de30d0dde49dbfc",
+      "sha256_entrega_previa": "8aef41a1355752c35cb8b23a1e591d80ab8513c46a5c11614de30d0dde49dbfc",
+      "bytes_original": 5748,
+      "bytes_entrega_previa": 5748
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/alimentos.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/alimentos.json",
+      "clasificacion": "identico",
+      "sha256_original": "dec49200c91c49130eaaa86466438c36cd57cb558abd4f00ef85db55835eed37",
+      "sha256_entrega_previa": "dec49200c91c49130eaaa86466438c36cd57cb558abd4f00ef85db55835eed37",
+      "bytes_original": 7596,
+      "bytes_entrega_previa": 7596
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/apelacion_sentencia.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/apelacion_sentencia.json",
+      "clasificacion": "identico",
+      "sha256_original": "a20d1db17eb0db665b02ca80ec5b5a3135710b79b8ecacf1afa4789c760418bb",
+      "sha256_entrega_previa": "a20d1db17eb0db665b02ca80ec5b5a3135710b79b8ecacf1afa4789c760418bb",
+      "bytes_original": 6561,
+      "bytes_entrega_previa": 6561
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/conciliacion.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/conciliacion.json",
+      "clasificacion": "identico",
+      "sha256_original": "5e52e65fee2efcd4438b75b6690aa8380e0c3ca64629d9a4c752fe80ac3fbcb5",
+      "sha256_entrega_previa": "5e52e65fee2efcd4438b75b6690aa8380e0c3ca64629d9a4c752fe80ac3fbcb5",
+      "bytes_original": 6285,
+      "bytes_entrega_previa": 6285
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/contestacion.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/contestacion.json",
+      "clasificacion": "identico",
+      "sha256_original": "21606f4bbd07995ea24ecded6034f22327bdadfdf73de0b976ba06ee03d630f4",
+      "sha256_entrega_previa": "21606f4bbd07995ea24ecded6034f22327bdadfdf73de0b976ba06ee03d630f4",
+      "bytes_original": 7691,
+      "bytes_entrega_previa": 7691
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/cumplimiento.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/cumplimiento.json",
+      "clasificacion": "identico",
+      "sha256_original": "a925cbae9337a0efeb05e116763e92f79934fc753cbd406dde8843f7630f5700",
+      "sha256_entrega_previa": "a925cbae9337a0efeb05e116763e92f79934fc753cbd406dde8843f7630f5700",
+      "bytes_original": 5755,
+      "bytes_entrega_previa": 5755
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/demanda_ejecutiva.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/demanda_ejecutiva.json",
+      "clasificacion": "identico",
+      "sha256_original": "d6956cecbd411356082c48234ba35ca0ef0a04c8da8c25c41ee1f6b36ead1f68",
+      "sha256_entrega_previa": "d6956cecbd411356082c48234ba35ca0ef0a04c8da8c25c41ee1f6b36ead1f68",
+      "bytes_original": 6982,
+      "bytes_entrega_previa": 6982
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/demanda_verbal.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/demanda_verbal.json",
+      "clasificacion": "identico",
+      "sha256_original": "d1888fd5da16144fde0b22198ed251c805fe8e60b2e102409a7379bf23496a9b",
+      "sha256_entrega_previa": "d1888fd5da16144fde0b22198ed251c805fe8e60b2e102409a7379bf23496a9b",
+      "bytes_original": 9644,
+      "bytes_entrega_previa": 9644
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/denuncia.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/denuncia.json",
+      "clasificacion": "identico",
+      "sha256_original": "22cca6a1409f599de8dd4754871df5fa90bbff9b70fcd92217f8635712c75589",
+      "sha256_entrega_previa": "22cca6a1409f599de8dd4754871df5fa90bbff9b70fcd92217f8635712c75589",
+      "bytes_original": 6430,
+      "bytes_entrega_previa": 6430
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/desacato.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/desacato.json",
+      "clasificacion": "identico",
+      "sha256_original": "e60ef4626788f34b565d1203f12a99e6156c87d9ba19193f9b2d83e88f293c06",
+      "sha256_entrega_previa": "e60ef4626788f34b565d1203f12a99e6156c87d9ba19193f9b2d83e88f293c06",
+      "bytes_original": 5124,
+      "bytes_entrega_previa": 5124
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/divorcio.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/divorcio.json",
+      "clasificacion": "identico",
+      "sha256_original": "3f7876c679ec789cddfe3133f5cb8ebfbeca6a7195fddec92045769d8a10492a",
+      "sha256_entrega_previa": "3f7876c679ec789cddfe3133f5cb8ebfbeca6a7195fddec92045769d8a10492a",
+      "bytes_original": 7449,
+      "bytes_entrega_previa": 7449
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/impugnacion_tutela.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/impugnacion_tutela.json",
+      "clasificacion": "identico",
+      "sha256_original": "ec9fe93d37da8915fad0e7ef2484426c9a333e7bdc1702277b3aa7222c1d58b2",
+      "sha256_entrega_previa": "ec9fe93d37da8915fad0e7ef2484426c9a333e7bdc1702277b3aa7222c1d58b2",
+      "bytes_original": 5140,
+      "bytes_entrega_previa": 5140
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/laboral_demanda.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/laboral_demanda.json",
+      "clasificacion": "identico",
+      "sha256_original": "4fc0b5cef4cfded2561f4907e0ef87c1b9b871240e06cca34c8e4877b9d293af",
+      "sha256_entrega_previa": "4fc0b5cef4cfded2561f4907e0ef87c1b9b871240e06cca34c8e4877b9d293af",
+      "bytes_original": 8185,
+      "bytes_entrega_previa": 8185
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/memorial.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/memorial.json",
+      "clasificacion": "identico",
+      "sha256_original": "f4178460c119350fabb444e4cb94c251a0220cbc21ddb024dced4198ef01c004",
+      "sha256_entrega_previa": "f4178460c119350fabb444e4cb94c251a0220cbc21ddb024dced4198ef01c004",
+      "bytes_original": 6133,
+      "bytes_entrega_previa": 6133
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/nulidad_restablecimiento.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/nulidad_restablecimiento.json",
+      "clasificacion": "identico",
+      "sha256_original": "c73d0761cfd34fc2917d784ea6521b0b6787567d8ca506a7da64aa787884b277",
+      "sha256_entrega_previa": "c73d0761cfd34fc2917d784ea6521b0b6787567d8ca506a7da64aa787884b277",
+      "bytes_original": 9124,
+      "bytes_entrega_previa": 9124
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/otro.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/otro.json",
+      "clasificacion": "identico",
+      "sha256_original": "b64670754a8b1d274e5fd9a5c16b5e0c5ca16f5c756f8a9893143b1e710ef6dc",
+      "sha256_entrega_previa": "b64670754a8b1d274e5fd9a5c16b5e0c5ca16f5c756f8a9893143b1e710ef6dc",
+      "bytes_original": 4204,
+      "bytes_entrega_previa": 4204
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/peticion.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/peticion.json",
+      "clasificacion": "identico",
+      "sha256_original": "3567a137f888961fdf283ff2b2647257be849952546b5e366cadac29f686f790",
+      "sha256_entrega_previa": "3567a137f888961fdf283ff2b2647257be849952546b5e366cadac29f686f790",
+      "bytes_original": 6990,
+      "bytes_entrega_previa": 6990
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/poder.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/poder.json",
+      "clasificacion": "identico",
+      "sha256_original": "f8c726ea0b08ed9d19f9ffe4f048c9d89989e6a952239dfe51ba268606ccbe91",
+      "sha256_entrega_previa": "f8c726ea0b08ed9d19f9ffe4f048c9d89989e6a952239dfe51ba268606ccbe91",
+      "bytes_original": 5809,
+      "bytes_entrega_previa": 5809
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/popular.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/popular.json",
+      "clasificacion": "identico",
+      "sha256_original": "0e1905be4cba3f0f602afbcc967390a5a8caf4b20a7fc7282e80d5387a20c36e",
+      "sha256_entrega_previa": "0e1905be4cba3f0f602afbcc967390a5a8caf4b20a7fc7282e80d5387a20c36e",
+      "bytes_original": 6609,
+      "bytes_entrega_previa": 6609
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/proceso_monitorio.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/proceso_monitorio.json",
+      "clasificacion": "identico",
+      "sha256_original": "53675ff7fd5c50faf85f24a8a9856d56ac857c03e3b4ae01417ac6c098cd75a7",
+      "sha256_entrega_previa": "53675ff7fd5c50faf85f24a8a9856d56ac857c03e3b4ae01417ac6c098cd75a7",
+      "bytes_original": 17783,
+      "bytes_entrega_previa": 17783
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/queja_disciplinaria.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/queja_disciplinaria.json",
+      "clasificacion": "identico",
+      "sha256_original": "f9d867c2421e1de75bb3fdddaeca7ce2c80456db9cdc9fb66ce6860d1ef2df7d",
+      "sha256_entrega_previa": "f9d867c2421e1de75bb3fdddaeca7ce2c80456db9cdc9fb66ce6860d1ef2df7d",
+      "bytes_original": 5608,
+      "bytes_entrega_previa": 5608
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/recurso_admin.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/recurso_admin.json",
+      "clasificacion": "identico",
+      "sha256_original": "2ac45d2fcee615c680c5d4f4519f02946ede3b34c5165fa635e1f86ffaced00c",
+      "sha256_entrega_previa": "2ac45d2fcee615c680c5d4f4519f02946ede3b34c5165fa635e1f86ffaced00c",
+      "bytes_original": 5748,
+      "bytes_entrega_previa": 5748
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/recurso_judicial.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/recurso_judicial.json",
+      "clasificacion": "identico",
+      "sha256_original": "3f0330d83fc1152a0b223f7e36084373a629df67a90c709f6996140f52b6f849",
+      "sha256_entrega_previa": "3f0330d83fc1152a0b223f7e36084373a629df67a90c709f6996140f52b6f849",
+      "bytes_original": 6964,
+      "bytes_entrega_previa": 6964
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/reparacion_directa.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/reparacion_directa.json",
+      "clasificacion": "identico",
+      "sha256_original": "07bdc2bb5c45c9747c8f70307966904fee286d123ca5e634f845f57c0140a796",
+      "sha256_entrega_previa": "07bdc2bb5c45c9747c8f70307966904fee286d123ca5e634f845f57c0140a796",
+      "bytes_original": 7814,
+      "bytes_entrega_previa": 7814
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/revocatoria.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/revocatoria.json",
+      "clasificacion": "identico",
+      "sha256_original": "5f0575253d2fed6d6e3a28b705c3bc2607f30715d1558a8a0b97c3824603c2e7",
+      "sha256_entrega_previa": "5f0575253d2fed6d6e3a28b705c3bc2607f30715d1558a8a0b97c3824603c2e7",
+      "bytes_original": 5257,
+      "bytes_entrega_previa": 5257
+    },
+    {
+      "ruta_original": "app/catalogo/tipos/tutela.json",
+      "ruta_entrega_previa": "app/catalogo/tipos/tutela.json",
+      "clasificacion": "identico",
+      "sha256_original": "c60035ad6a6569471db3b6b87183453c113b1fb6d4c563510d2402806602e4bf",
+      "sha256_entrega_previa": "c60035ad6a6569471db3b6b87183453c113b1fb6d4c563510d2402806602e4bf",
+      "bytes_original": 10255,
+      "bytes_entrega_previa": 10255
+    },
+    {
+      "ruta_original": "app/config.py",
+      "ruta_entrega_previa": "app/config.py",
+      "clasificacion": "modificado",
+      "sha256_original": "56ab447d875d9c9fa33611ced12eabe9084953625ee751f652710f3f860cc650",
+      "sha256_entrega_previa": "41b56e8db20f5c2b2bb0ec25522bc592b2a385e58d56067c331fdb8c7e961f74",
+      "bytes_original": 3006,
+      "bytes_entrega_previa": 3386,
+      "comparacion_lineas": {
+        "original": 76,
+        "entrega_previa": 82,
+        "identicas": 73,
+        "retiradas_o_reemplazadas": 3,
+        "agregadas_o_reemplazadas": 9
+      }
+    },
+    {
+      "ruta_original": "app/main.py",
+      "ruta_entrega_previa": "app/main.py",
+      "clasificacion": "modificado",
+      "sha256_original": "f03d33c9306a222b6add639f798c6d216ee15418776e531820305f4437470b21",
+      "sha256_entrega_previa": "ca691c43407de2b0521673dd7dfcc3125e6adddd241f94deecc4e87e5a8f4963",
+      "bytes_original": 5166,
+      "bytes_entrega_previa": 8767,
+      "comparacion_lineas": {
+        "original": 145,
+        "entrega_previa": 213,
+        "identicas": 126,
+        "retiradas_o_reemplazadas": 19,
+        "agregadas_o_reemplazadas": 87
+      }
+    },
+    {
+      "ruta_original": "app/routers/__init__.py",
+      "ruta_entrega_previa": "app/routers/__init__.py",
+      "clasificacion": "identico",
+      "sha256_original": "9e69d80ee4b343a2a90df3a220a1dd981eabcfcc92c926b3cda1048609cb7d33",
+      "sha256_entrega_previa": "9e69d80ee4b343a2a90df3a220a1dd981eabcfcc92c926b3cda1048609cb7d33",
+      "bytes_original": 18,
+      "bytes_entrega_previa": 18
+    },
+    {
+      "ruta_original": "app/routers/auth.py",
+      "ruta_entrega_previa": "app/routers/auth.py",
+      "clasificacion": "modificado",
+      "sha256_original": "1515ff2bf1abb3e2955c157ea807d8d81c34f074ad4e44828684e700d30d2eb5",
+      "sha256_entrega_previa": "5b2f80cca4a060f367882a2174965a73c2363c66972f879d9382963f3f296094",
+      "bytes_original": 4072,
+      "bytes_entrega_previa": 6261,
+      "comparacion_lineas": {
+        "original": 104,
+        "entrega_previa": 152,
+        "identicas": 99,
+        "retiradas_o_reemplazadas": 5,
+        "agregadas_o_reemplazadas": 53
+      }
+    },
+    {
+      "ruta_original": "app/routers/calculos.py",
+      "ruta_entrega_previa": "app/routers/calculos.py",
+      "clasificacion": "identico",
+      "sha256_original": "f6428afd3381bd76ab8ae0c19be617bee20fa0e88cc1eef36f2e57f6db0af2ba",
+      "sha256_entrega_previa": "f6428afd3381bd76ab8ae0c19be617bee20fa0e88cc1eef36f2e57f6db0af2ba",
+      "bytes_original": 841,
+      "bytes_entrega_previa": 841
+    },
+    {
+      "ruta_original": "app/routers/documents.py",
+      "ruta_entrega_previa": "app/routers/documents.py",
+      "clasificacion": "modificado",
+      "sha256_original": "807692545b8d7d9c466a376a1f6650ea5d4c8c6b6b365a6e77a758d6fccc2864",
+      "sha256_entrega_previa": "29aa56dc6dad0ea7040e4cfab31301018ef0e65977516ca5d7f0146aab4c1e01",
+      "bytes_original": 20051,
+      "bytes_entrega_previa": 20512,
+      "comparacion_lineas": {
+        "original": 534,
+        "entrega_previa": 543,
+        "identicas": 532,
+        "retiradas_o_reemplazadas": 2,
+        "agregadas_o_reemplazadas": 11
+      }
+    },
+    {
+      "ruta_original": "app/services/__init__.py",
+      "ruta_entrega_previa": "app/services/__init__.py",
+      "clasificacion": "identico",
+      "sha256_original": "09c1a5a35657fc1644b41df919c35cbfaf4328d66605695c5f0efd6c6967e7a1",
+      "sha256_entrega_previa": "09c1a5a35657fc1644b41df919c35cbfaf4328d66605695c5f0efd6c6967e7a1",
+      "bytes_original": 19,
+      "bytes_entrega_previa": 19
+    },
+    {
+      "ruta_original": "app/services/auditor_catalogo.py",
+      "ruta_entrega_previa": "app/services/auditor_catalogo.py",
+      "clasificacion": "identico",
+      "sha256_original": "fa7fe45f244aa5b0dd035162d3d59b2008f381b42856e824a6be6cd83335ba41",
+      "sha256_entrega_previa": "fa7fe45f244aa5b0dd035162d3d59b2008f381b42856e824a6be6cd83335ba41",
+      "bytes_original": 7659,
+      "bytes_entrega_previa": 7659
+    },
+    {
+      "ruta_original": "app/services/auditor_fidelidad.py",
+      "ruta_entrega_previa": "app/services/auditor_fidelidad.py",
+      "clasificacion": "identico",
+      "sha256_original": "f23d696dfdbfce252bbf2f44ce668eb37c22830700fd9b147c0ae31fe406eba8",
+      "sha256_entrega_previa": "f23d696dfdbfce252bbf2f44ce668eb37c22830700fd9b147c0ae31fe406eba8",
+      "bytes_original": 34046,
+      "bytes_entrega_previa": 34046
+    },
+    {
+      "ruta_original": "app/services/calculos.py",
+      "ruta_entrega_previa": "app/services/calculos.py",
+      "clasificacion": "identico",
+      "sha256_original": "a22fcf899de34c70be30a903c2ef601f9848941fb5ef6d6f5af917e7daddada2",
+      "sha256_entrega_previa": "a22fcf899de34c70be30a903c2ef601f9848941fb5ef6d6f5af917e7daddada2",
+      "bytes_original": 52066,
+      "bytes_entrega_previa": 52066
+    },
+    {
+      "ruta_original": "app/services/comparador_versiones.py",
+      "ruta_entrega_previa": "app/services/comparador_versiones.py",
+      "clasificacion": "identico",
+      "sha256_original": "b0db236468319b90e1c8927dc4323fa6097f40b8071e61a38fa1ed14ede6d89f",
+      "sha256_entrega_previa": "b0db236468319b90e1c8927dc4323fa6097f40b8071e61a38fa1ed14ede6d89f",
+      "bytes_original": 15965,
+      "bytes_entrega_previa": 15965
+    },
+    {
+      "ruta_original": "app/services/extractor_documentos.py",
+      "ruta_entrega_previa": "app/services/extractor_documentos.py",
+      "clasificacion": "identico",
+      "sha256_original": "526b62dd317b5d2b05e174c42869b406d8a65b3acdb9bfb0bc2f6ea23f6be3b6",
+      "sha256_entrega_previa": "526b62dd317b5d2b05e174c42869b406d8a65b3acdb9bfb0bc2f6ea23f6be3b6",
+      "bytes_original": 22679,
+      "bytes_entrega_previa": 22679
+    },
+    {
+      "ruta_original": "app/services/gemini_service.py",
+      "ruta_entrega_previa": "app/services/gemini_service.py",
+      "clasificacion": "modificado",
+      "sha256_original": "bc2069f61a6ae9e3156fd3ac349536215e4bfd2fded7b011a987611f8583410a",
+      "sha256_entrega_previa": "732eca6700bb52382179247f07c7cfb08976fc1be56ebf050c08581c2abc385a",
+      "bytes_original": 39590,
+      "bytes_entrega_previa": 39608,
+      "comparacion_lineas": {
+        "original": 896,
+        "entrega_previa": 897,
+        "identicas": 896,
+        "retiradas_o_reemplazadas": 0,
+        "agregadas_o_reemplazadas": 1
+      }
+    },
+    {
+      "ruta_original": "app/services/limites.py",
+      "ruta_entrega_previa": "app/services/limites.py",
+      "clasificacion": "modificado",
+      "sha256_original": "945d65c893e17dccdac9170465e1513e07d2ec5a3053d2947a6712564d4ab4c1",
+      "sha256_entrega_previa": "19ee602033f82f03a831f30d596f2eac23788574b921259957364c5ba3ed9939",
+      "bytes_original": 5138,
+      "bytes_entrega_previa": 4751,
+      "comparacion_lineas": {
+        "original": 127,
+        "entrega_previa": 118,
+        "identicas": 91,
+        "retiradas_o_reemplazadas": 36,
+        "agregadas_o_reemplazadas": 27
+      }
+    },
+    {
+      "ruta_original": "app/services/nit.py",
+      "ruta_entrega_previa": "app/services/nit.py",
+      "clasificacion": "identico",
+      "sha256_original": "66cdaba9e2e6be664fbd661e65e666179e8c448625fc56fa7906239b2b05a342",
+      "sha256_entrega_previa": "66cdaba9e2e6be664fbd661e65e666179e8c448625fc56fa7906239b2b05a342",
+      "bytes_original": 4370,
+      "bytes_entrega_previa": 4370
+    },
+    {
+      "ruta_original": "app/services/numeros_letras.py",
+      "ruta_entrega_previa": "app/services/numeros_letras.py",
+      "clasificacion": "identico",
+      "sha256_original": "0c57ab8b36205b303d22ec710745bf0248ab580659b2222e15a8c083eb775b7a",
+      "sha256_entrega_previa": "0c57ab8b36205b303d22ec710745bf0248ab580659b2222e15a8c083eb775b7a",
+      "bytes_original": 6711,
+      "bytes_entrega_previa": 6711
+    },
+    {
+      "ruta_original": "app/services/plazos.py",
+      "ruta_entrega_previa": "app/services/plazos.py",
+      "clasificacion": "identico",
+      "sha256_original": "0f43dc75254ce95c11d03cd43907c532503239698903eb408f9abb3bd146dee9",
+      "sha256_entrega_previa": "0f43dc75254ce95c11d03cd43907c532503239698903eb408f9abb3bd146dee9",
+      "bytes_original": 27515,
+      "bytes_entrega_previa": 27515
+    },
+    {
+      "ruta_original": "app/services/prompt.py",
+      "ruta_entrega_previa": "app/services/prompt.py",
+      "clasificacion": "identico",
+      "sha256_original": "762881457c90dd32cafa8b74d3df5bdb2b728b293dbf1c2e2e116f0a6d1413e7",
+      "sha256_entrega_previa": "762881457c90dd32cafa8b74d3df5bdb2b728b293dbf1c2e2e116f0a6d1413e7",
+      "bytes_original": 19952,
+      "bytes_entrega_previa": 19952
+    },
+    {
+      "ruta_original": "app/services/radicacion.py",
+      "ruta_entrega_previa": "app/services/radicacion.py",
+      "clasificacion": "identico",
+      "sha256_original": "0a8ab0921be64519c08a640ed9cc4bee96ecc9f2640f7fcad6175ba27fcb8014",
+      "sha256_entrega_previa": "0a8ab0921be64519c08a640ed9cc4bee96ecc9f2640f7fcad6175ba27fcb8014",
+      "bytes_original": 21988,
+      "bytes_entrega_previa": 21988
+    },
+    {
+      "ruta_original": "app/services/radicado.py",
+      "ruta_entrega_previa": "app/services/radicado.py",
+      "clasificacion": "identico",
+      "sha256_original": "7d2aea0c5e23e7d6bc5efe4005435422c478edae68d24220700ce2ee4c250d2c",
+      "sha256_entrega_previa": "7d2aea0c5e23e7d6bc5efe4005435422c478edae68d24220700ce2ee4c250d2c",
+      "bytes_original": 4223,
+      "bytes_entrega_previa": 4223
+    },
+    {
+      "ruta_original": "app/services/revisor_requisitos.py",
+      "ruta_entrega_previa": "app/services/revisor_requisitos.py",
+      "clasificacion": "identico",
+      "sha256_original": "5048bda24e7e464d9b15cb3e982bcd31d0a96f86e15ca483dc72a1e1c42ad8e7",
+      "sha256_entrega_previa": "5048bda24e7e464d9b15cb3e982bcd31d0a96f86e15ca483dc72a1e1c42ad8e7",
+      "bytes_original": 12521,
+      "bytes_entrega_previa": 12521
+    },
+    {
+      "ruta_original": "app/services/supabase_service.py",
+      "ruta_entrega_previa": "app/services/supabase_service.py",
+      "clasificacion": "modificado",
+      "sha256_original": "b30876ee2f86a6f05184c22b1782199df879c7fdabd40112f75355055ef17f88",
+      "sha256_entrega_previa": "ca64f7021bc56fb2fc21375547daa939deb051d9e010235eb6a0c27a4e2adfc5",
+      "bytes_original": 9348,
+      "bytes_entrega_previa": 14481,
+      "comparacion_lineas": {
+        "original": 248,
+        "entrega_previa": 275,
+        "identicas": 39,
+        "retiradas_o_reemplazadas": 209,
+        "agregadas_o_reemplazadas": 236
+      }
+    },
+    {
+      "ruta_original": "app/services/verificador_citas.py",
+      "ruta_entrega_previa": "app/services/verificador_citas.py",
+      "clasificacion": "identico",
+      "sha256_original": "4ed60377f67f3d531f5e4aed23c9175071398308f8fd74f077d3017c47bf05ea",
+      "sha256_entrega_previa": "4ed60377f67f3d531f5e4aed23c9175071398308f8fd74f077d3017c47bf05ea",
+      "bytes_original": 19424,
+      "bytes_entrega_previa": 19424
+    },
+    {
+      "ruta_original": "app/static/auditor.js",
+      "ruta_entrega_previa": "app/private/auditor.js",
+      "clasificacion": "reubicado_sin_cambio",
+      "sha256_original": "a6eb37c009fd73cc0d58dec1ee9890751410e3e37c45d34fdf50afcf9afc539c",
+      "sha256_entrega_previa": "a6eb37c009fd73cc0d58dec1ee9890751410e3e37c45d34fdf50afcf9afc539c",
+      "bytes_original": 47558,
+      "bytes_entrega_previa": 47558
+    },
+    {
+      "ruta_original": "app/static/index.html",
+      "ruta_entrega_previa": "app/private/generador.html",
+      "clasificacion": "reubicado_y_modificado",
+      "sha256_original": "eb81c30998449ea4dac181e670ba429e7ec20c64ffd23e7d4a3552bd22fff877",
+      "sha256_entrega_previa": "1b8c879f7278ef1b4d2032c7c26bf97567a1508032217320cc776aea4fdf2b5e",
+      "bytes_original": 379694,
+      "bytes_entrega_previa": 383836,
+      "comparacion_lineas": {
+        "original": 7199,
+        "entrega_previa": 7170,
+        "identicas": 6900,
+        "retiradas_o_reemplazadas": 299,
+        "agregadas_o_reemplazadas": 270
+      }
+    },
+    {
+      "ruta_original": "pytest.ini",
+      "ruta_entrega_previa": "pytest.ini",
+      "clasificacion": "identico",
+      "sha256_original": "b160d82f7811555051f8966d8e02750a985227c1d022208c784e606946f2eada",
+      "sha256_entrega_previa": "b160d82f7811555051f8966d8e02750a985227c1d022208c784e606946f2eada",
+      "bytes_original": 42,
+      "bytes_entrega_previa": 42
+    },
+    {
+      "ruta_original": "render.yaml",
+      "ruta_entrega_previa": "render.yaml",
+      "clasificacion": "modificado",
+      "sha256_original": "e68e474e06c9f9a93e8949d7ba00cb61b2f960b47ab9706810f1df14420dc431",
+      "sha256_entrega_previa": "7c604605291ae3e5c1189aa54bf38d747b8f0f98d0befb751223f8452695f812",
+      "bytes_original": 803,
+      "bytes_entrega_previa": 1305,
+      "comparacion_lineas": {
+        "original": 26,
+        "entrega_previa": 42,
+        "identicas": 18,
+        "retiradas_o_reemplazadas": 8,
+        "agregadas_o_reemplazadas": 24
+      }
+    },
+    {
+      "ruta_original": "requirements-dev.txt",
+      "ruta_entrega_previa": "requirements-dev.txt",
+      "clasificacion": "modificado",
+      "sha256_original": "0e7d800c45d87cda68e95d462890ae6a7a006b839af6247af7dc55d25aa725dc",
+      "sha256_entrega_previa": "0dd4c2b87db70e8ef4bece003340e1cc1125c4b5e1c0200aecb755c69da5d5be",
+      "bytes_original": 32,
+      "bytes_entrega_previa": 52,
+      "comparacion_lineas": {
+        "original": 2,
+        "entrega_previa": 3,
+        "identicas": 2,
+        "retiradas_o_reemplazadas": 0,
+        "agregadas_o_reemplazadas": 1
+      }
+    },
+    {
+      "ruta_original": "requirements.txt",
+      "ruta_entrega_previa": "requirements.txt",
+      "clasificacion": "identico",
+      "sha256_original": "acc5228f709a2f32495758137ed9c4535c22c80c0b5bd308acac0643352eab61",
+      "sha256_entrega_previa": "acc5228f709a2f32495758137ed9c4535c22c80c0b5bd308acac0643352eab61",
+      "bytes_original": 159,
+      "bytes_entrega_previa": 159
+    },
+    {
+      "ruta_original": "scripts/build_catalog.py",
+      "ruta_entrega_previa": "scripts/build_catalog.py",
+      "clasificacion": "modificado",
+      "sha256_original": "bfe086ac4854e37c4aab0d56f7fccf096012bf560436be716bbacbd18b099529",
+      "sha256_entrega_previa": "92a918ef56c82172b81de08ae913bfcff27fa6748c73b4e6ccdd4b1553bec0e9",
+      "bytes_original": 15059,
+      "bytes_entrega_previa": 17099,
+      "comparacion_lineas": {
+        "original": 331,
+        "entrega_previa": 363,
+        "identicas": 308,
+        "retiradas_o_reemplazadas": 23,
+        "agregadas_o_reemplazadas": 55
+      }
+    },
+    {
+      "ruta_original": "scripts/build_test_cases.py",
+      "ruta_entrega_previa": "scripts/build_test_cases.py",
+      "clasificacion": "identico",
+      "sha256_original": "58c1863fc32ae0184baf331c247f170df35fabe64b470234e2d3a34c74a51f48",
+      "sha256_entrega_previa": "58c1863fc32ae0184baf331c247f170df35fabe64b470234e2d3a34c74a51f48",
+      "bytes_original": 36056,
+      "bytes_entrega_previa": 36056
+    },
+    {
+      "ruta_original": "scripts/evaluar.py",
+      "ruta_entrega_previa": "scripts/evaluar.py",
+      "clasificacion": "modificado",
+      "sha256_original": "07a3aa7dda352d3bb788461e6168d9eae1362310fd71235b403007371b97e444",
+      "sha256_entrega_previa": "ad186e3044ef876ec083e742e1457e3c63339b77afbedfe3530a6430e1aec1b3",
+      "bytes_original": 58442,
+      "bytes_entrega_previa": 62293,
+      "comparacion_lineas": {
+        "original": 1368,
+        "entrega_previa": 1437,
+        "identicas": 1352,
+        "retiradas_o_reemplazadas": 16,
+        "agregadas_o_reemplazadas": 85
+      }
+    },
+    {
+      "ruta_original": "scripts/update_index_html.py",
+      "ruta_entrega_previa": "scripts/update_index_html.py",
+      "clasificacion": "modificado",
+      "sha256_original": "52ce90e491238a53285700e8d1ff2c3bd12932ab1348a286ff82826054d0e706",
+      "sha256_entrega_previa": "cb44a998ff7d837bf18a8b1299e1847e6a9b41efc71c59b2fe1401e819e3a6c4",
+      "bytes_original": 9431,
+      "bytes_entrega_previa": 10315,
+      "comparacion_lineas": {
+        "original": 205,
+        "entrega_previa": 224,
+        "identicas": 202,
+        "retiradas_o_reemplazadas": 3,
+        "agregadas_o_reemplazadas": 22
+      }
+    },
+    {
+      "ruta_original": "scripts/update_verificador_frontend.py",
+      "ruta_entrega_previa": "scripts/update_verificador_frontend.py",
+      "clasificacion": "modificado",
+      "sha256_original": "ec418131752f362545a7c31b95db29de02a548acddf605d0ae7659676dbed393",
+      "sha256_entrega_previa": "4906b656d040e83276ddd9cf98cb3cd5cf7cd634ac1f41d2d6212fa9a5af1c00",
+      "bytes_original": 15229,
+      "bytes_entrega_previa": 16149,
+      "comparacion_lineas": {
+        "original": 287,
+        "entrega_previa": 306,
+        "identicas": 284,
+        "retiradas_o_reemplazadas": 3,
+        "agregadas_o_reemplazadas": 22
+      }
+    },
+    {
+      "ruta_original": "supabase/migrations/20261022000000_supabase_auth_db_storage.sql",
+      "ruta_entrega_previa": "supabase/migrations/20261022000000_supabase_auth_db_storage.sql",
+      "clasificacion": "modificado",
+      "sha256_original": "ef17084c99a6f76737829d0a199141482f3930e83017d3766b8ab9e6b82c6453",
+      "sha256_entrega_previa": "f87e927afa385bcc614855fde2b7cfce912c419b2b99f07044085dddf743c324",
+      "bytes_original": 196,
+      "bytes_entrega_previa": 26829,
+      "comparacion_lineas": {
+        "original": 4,
+        "entrega_previa": 491,
+        "identicas": 1,
+        "retiradas_o_reemplazadas": 3,
+        "agregadas_o_reemplazadas": 490
+      }
+    },
+    {
+      "ruta_original": "supabase/schema.sql",
+      "ruta_entrega_previa": "supabase/schema.sql",
+      "clasificacion": "modificado",
+      "sha256_original": "8f82b0f515d2bf230483daa3aa2cf3af01f17cdad145d22a702cff3f890e8fda",
+      "sha256_entrega_previa": "2d2d3e35dd26f2ec5c3e4d90eab13b9605464e1c9534a1bb69913a482904174f",
+      "bytes_original": 16780,
+      "bytes_entrega_previa": 26662,
+      "comparacion_lineas": {
+        "original": 371,
+        "entrega_previa": 489,
+        "identicas": 267,
+        "retiradas_o_reemplazadas": 104,
+        "agregadas_o_reemplazadas": 222
+      }
+    },
+    {
+      "ruta_original": "tests/casos/alegatos.json",
+      "ruta_entrega_previa": "tests/casos/alegatos.json",
+      "clasificacion": "identico",
+      "sha256_original": "7b45a51289a7300070c6d17a70380f78fe16f8c54977d3e7cf21ef57226a6363",
+      "sha256_entrega_previa": "7b45a51289a7300070c6d17a70380f78fe16f8c54977d3e7cf21ef57226a6363",
+      "bytes_original": 5676,
+      "bytes_entrega_previa": 5676
+    },
+    {
+      "ruta_original": "tests/casos/alimentos.json",
+      "ruta_entrega_previa": "tests/casos/alimentos.json",
+      "clasificacion": "identico",
+      "sha256_original": "d109e0f83f2033225f174be3ca934a2703597fd2590d31417a6b165ca989d799",
+      "sha256_entrega_previa": "d109e0f83f2033225f174be3ca934a2703597fd2590d31417a6b165ca989d799",
+      "bytes_original": 6900,
+      "bytes_entrega_previa": 6900
+    },
+    {
+      "ruta_original": "tests/casos/apelacion_sentencia.json",
+      "ruta_entrega_previa": "tests/casos/apelacion_sentencia.json",
+      "clasificacion": "identico",
+      "sha256_original": "a4570370388b29547579b1c6eeb0385430291c269af642ac5f56d5cf76d7ab7a",
+      "sha256_entrega_previa": "a4570370388b29547579b1c6eeb0385430291c269af642ac5f56d5cf76d7ab7a",
+      "bytes_original": 4994,
+      "bytes_entrega_previa": 4994
+    },
+    {
+      "ruta_original": "tests/casos/conciliacion.json",
+      "ruta_entrega_previa": "tests/casos/conciliacion.json",
+      "clasificacion": "identico",
+      "sha256_original": "0051c0a8a68fef76ccc2b9e9a9b7d8af884bb33b364a3fddc91c51748cc13f94",
+      "sha256_entrega_previa": "0051c0a8a68fef76ccc2b9e9a9b7d8af884bb33b364a3fddc91c51748cc13f94",
+      "bytes_original": 5682,
+      "bytes_entrega_previa": 5682
+    },
+    {
+      "ruta_original": "tests/casos/contestacion.json",
+      "ruta_entrega_previa": "tests/casos/contestacion.json",
+      "clasificacion": "identico",
+      "sha256_original": "fefc3686071675e6756950d1b7f9fb98cbdf7547f249b221df9461f438d95f60",
+      "sha256_entrega_previa": "fefc3686071675e6756950d1b7f9fb98cbdf7547f249b221df9461f438d95f60",
+      "bytes_original": 6353,
+      "bytes_entrega_previa": 6353
+    },
+    {
+      "ruta_original": "tests/casos/cumplimiento.json",
+      "ruta_entrega_previa": "tests/casos/cumplimiento.json",
+      "clasificacion": "identico",
+      "sha256_original": "add162326a8be64e0ba9832c0a6a00f429d7fcc2b44f2e08507651b9ab6f6461",
+      "sha256_entrega_previa": "add162326a8be64e0ba9832c0a6a00f429d7fcc2b44f2e08507651b9ab6f6461",
+      "bytes_original": 5690,
+      "bytes_entrega_previa": 5690
+    },
+    {
+      "ruta_original": "tests/casos/demanda_ejecutiva.json",
+      "ruta_entrega_previa": "tests/casos/demanda_ejecutiva.json",
+      "clasificacion": "identico",
+      "sha256_original": "b5a0463558e7dbbd058466b654d1a620a6c079301ce24b52b0746876666e4d2c",
+      "sha256_entrega_previa": "b5a0463558e7dbbd058466b654d1a620a6c079301ce24b52b0746876666e4d2c",
+      "bytes_original": 5132,
+      "bytes_entrega_previa": 5132
+    },
+    {
+      "ruta_original": "tests/casos/demanda_verbal.json",
+      "ruta_entrega_previa": "tests/casos/demanda_verbal.json",
+      "clasificacion": "identico",
+      "sha256_original": "9a033ffcc45f8af75ac85e9abf88106249aae50c8dd6d3635d9c978a8fc304c2",
+      "sha256_entrega_previa": "9a033ffcc45f8af75ac85e9abf88106249aae50c8dd6d3635d9c978a8fc304c2",
+      "bytes_original": 7536,
+      "bytes_entrega_previa": 7536
+    },
+    {
+      "ruta_original": "tests/casos/denuncia.json",
+      "ruta_entrega_previa": "tests/casos/denuncia.json",
+      "clasificacion": "identico",
+      "sha256_original": "2ef4dda29e4826fd6ebb38691f2452f3697e399993b46bee0e793509adaed897",
+      "sha256_entrega_previa": "2ef4dda29e4826fd6ebb38691f2452f3697e399993b46bee0e793509adaed897",
+      "bytes_original": 5547,
+      "bytes_entrega_previa": 5547
+    },
+    {
+      "ruta_original": "tests/casos/desacato.json",
+      "ruta_entrega_previa": "tests/casos/desacato.json",
+      "clasificacion": "identico",
+      "sha256_original": "294d6e3e64d96cbc754543fae6bf25e7c161c1ed074d214fb9d8a6c73bdeed02",
+      "sha256_entrega_previa": "294d6e3e64d96cbc754543fae6bf25e7c161c1ed074d214fb9d8a6c73bdeed02",
+      "bytes_original": 5315,
+      "bytes_entrega_previa": 5315
+    },
+    {
+      "ruta_original": "tests/casos/divorcio.json",
+      "ruta_entrega_previa": "tests/casos/divorcio.json",
+      "clasificacion": "identico",
+      "sha256_original": "7fe482fdb33db1cb856032ffcb74a27d3f01920bbabdde7fec990df94368d2e8",
+      "sha256_entrega_previa": "7fe482fdb33db1cb856032ffcb74a27d3f01920bbabdde7fec990df94368d2e8",
+      "bytes_original": 6706,
+      "bytes_entrega_previa": 6706
+    },
+    {
+      "ruta_original": "tests/casos/impugnacion_tutela.json",
+      "ruta_entrega_previa": "tests/casos/impugnacion_tutela.json",
+      "clasificacion": "identico",
+      "sha256_original": "14167fa69ff76faf0bc696ef4b9b64c3c95971d731e05503920c399efd5f6129",
+      "sha256_entrega_previa": "14167fa69ff76faf0bc696ef4b9b64c3c95971d731e05503920c399efd5f6129",
+      "bytes_original": 5185,
+      "bytes_entrega_previa": 5185
+    },
+    {
+      "ruta_original": "tests/casos/laboral_demanda.json",
+      "ruta_entrega_previa": "tests/casos/laboral_demanda.json",
+      "clasificacion": "identico",
+      "sha256_original": "f6fce58532a2a392d596f6def6531f62a1669b2fad2b6ea331c7747ac0903776",
+      "sha256_entrega_previa": "f6fce58532a2a392d596f6def6531f62a1669b2fad2b6ea331c7747ac0903776",
+      "bytes_original": 5858,
+      "bytes_entrega_previa": 5858
+    },
+    {
+      "ruta_original": "tests/casos/memorial.json",
+      "ruta_entrega_previa": "tests/casos/memorial.json",
+      "clasificacion": "identico",
+      "sha256_original": "e06abd4338f45c193856e3aed984d42cac638d93e3087abe84370a4bc6fe2d72",
+      "sha256_entrega_previa": "e06abd4338f45c193856e3aed984d42cac638d93e3087abe84370a4bc6fe2d72",
+      "bytes_original": 4820,
+      "bytes_entrega_previa": 4820
+    },
+    {
+      "ruta_original": "tests/casos/nulidad_restablecimiento.json",
+      "ruta_entrega_previa": "tests/casos/nulidad_restablecimiento.json",
+      "clasificacion": "identico",
+      "sha256_original": "f231c4ab0da0c229a39fab4e7a60159622ad98c50ae64c2bbfe13d2dea1072b9",
+      "sha256_entrega_previa": "f231c4ab0da0c229a39fab4e7a60159622ad98c50ae64c2bbfe13d2dea1072b9",
+      "bytes_original": 6880,
+      "bytes_entrega_previa": 6880
+    },
+    {
+      "ruta_original": "tests/casos/otro.json",
+      "ruta_entrega_previa": "tests/casos/otro.json",
+      "clasificacion": "identico",
+      "sha256_original": "6fe4ac4a9c0b221f3b105705028cb8b6893b82bd9f5a96cc573f2d5fd113d6d0",
+      "sha256_entrega_previa": "6fe4ac4a9c0b221f3b105705028cb8b6893b82bd9f5a96cc573f2d5fd113d6d0",
+      "bytes_original": 4975,
+      "bytes_entrega_previa": 4975
+    },
+    {
+      "ruta_original": "tests/casos/peticion.json",
+      "ruta_entrega_previa": "tests/casos/peticion.json",
+      "clasificacion": "identico",
+      "sha256_original": "3afeb4c1173adb35dbf69ab33179088cf92d865ee7271a878806adb14c50c3ae",
+      "sha256_entrega_previa": "3afeb4c1173adb35dbf69ab33179088cf92d865ee7271a878806adb14c50c3ae",
+      "bytes_original": 4550,
+      "bytes_entrega_previa": 4550
+    },
+    {
+      "ruta_original": "tests/casos/poder.json",
+      "ruta_entrega_previa": "tests/casos/poder.json",
+      "clasificacion": "identico",
+      "sha256_original": "5dcfbd2349619d166862ecc13589ce97cd337a6b9f239f585ef1c7f7b5cbf8a9",
+      "sha256_entrega_previa": "5dcfbd2349619d166862ecc13589ce97cd337a6b9f239f585ef1c7f7b5cbf8a9",
+      "bytes_original": 3505,
+      "bytes_entrega_previa": 3505
+    },
+    {
+      "ruta_original": "tests/casos/popular.json",
+      "ruta_entrega_previa": "tests/casos/popular.json",
+      "clasificacion": "identico",
+      "sha256_original": "c0cac0923502a88ab91972213bdc84a2747c9c4a2d18092fd9b28866eee767d7",
+      "sha256_entrega_previa": "c0cac0923502a88ab91972213bdc84a2747c9c4a2d18092fd9b28866eee767d7",
+      "bytes_original": 5328,
+      "bytes_entrega_previa": 5328
+    },
+    {
+      "ruta_original": "tests/casos/proceso_monitorio.json",
+      "ruta_entrega_previa": "tests/casos/proceso_monitorio.json",
+      "clasificacion": "identico",
+      "sha256_original": "43364c89e5f7bf9fd8a328290f6e4a1c7af22ba61d5b53b8d2d20df817684cb7",
+      "sha256_entrega_previa": "43364c89e5f7bf9fd8a328290f6e4a1c7af22ba61d5b53b8d2d20df817684cb7",
+      "bytes_original": 8185,
+      "bytes_entrega_previa": 8185
+    },
+    {
+      "ruta_original": "tests/casos/queja_disciplinaria.json",
+      "ruta_entrega_previa": "tests/casos/queja_disciplinaria.json",
+      "clasificacion": "identico",
+      "sha256_original": "07b6ffcc1bd5ac383143e05d690846945ca810dcb5b473bcc4850e28a777270b",
+      "sha256_entrega_previa": "07b6ffcc1bd5ac383143e05d690846945ca810dcb5b473bcc4850e28a777270b",
+      "bytes_original": 4840,
+      "bytes_entrega_previa": 4840
+    },
+    {
+      "ruta_original": "tests/casos/recurso_admin.json",
+      "ruta_entrega_previa": "tests/casos/recurso_admin.json",
+      "clasificacion": "identico",
+      "sha256_original": "66d2a54e4613bda725c2fef1ca3c3cc7c23ca3e37770d8ca91337c0bb663e49d",
+      "sha256_entrega_previa": "66d2a54e4613bda725c2fef1ca3c3cc7c23ca3e37770d8ca91337c0bb663e49d",
+      "bytes_original": 5355,
+      "bytes_entrega_previa": 5355
+    },
+    {
+      "ruta_original": "tests/casos/recurso_judicial.json",
+      "ruta_entrega_previa": "tests/casos/recurso_judicial.json",
+      "clasificacion": "identico",
+      "sha256_original": "7ce55190b0eb51da953d9a40ccdb1a96259a7b567f3b924595d7558bf822883d",
+      "sha256_entrega_previa": "7ce55190b0eb51da953d9a40ccdb1a96259a7b567f3b924595d7558bf822883d",
+      "bytes_original": 5261,
+      "bytes_entrega_previa": 5261
+    },
+    {
+      "ruta_original": "tests/casos/reparacion_directa.json",
+      "ruta_entrega_previa": "tests/casos/reparacion_directa.json",
+      "clasificacion": "identico",
+      "sha256_original": "0937be43e2048488d414a46fa454609f837899431e00ea481e13c675ac8823dd",
+      "sha256_entrega_previa": "0937be43e2048488d414a46fa454609f837899431e00ea481e13c675ac8823dd",
+      "bytes_original": 5876,
+      "bytes_entrega_previa": 5876
+    },
+    {
+      "ruta_original": "tests/casos/revocatoria.json",
+      "ruta_entrega_previa": "tests/casos/revocatoria.json",
+      "clasificacion": "identico",
+      "sha256_original": "cc9d33e8357bf12ecc63f1dc08f218a401d699d1abfc1ecc1cf307d670a6a551",
+      "sha256_entrega_previa": "cc9d33e8357bf12ecc63f1dc08f218a401d699d1abfc1ecc1cf307d670a6a551",
+      "bytes_original": 4977,
+      "bytes_entrega_previa": 4977
+    },
+    {
+      "ruta_original": "tests/casos/tutela.json",
+      "ruta_entrega_previa": "tests/casos/tutela.json",
+      "clasificacion": "identico",
+      "sha256_original": "f980d6d2075785e1afb09aa748bab9c70876fcbd433e3d9985ef869516a42161",
+      "sha256_entrega_previa": "f980d6d2075785e1afb09aa748bab9c70876fcbd433e3d9985ef869516a42161",
+      "bytes_original": 6214,
+      "bytes_entrega_previa": 6214
+    },
+    {
+      "ruta_original": "tests/reference_prompt.js",
+      "ruta_entrega_previa": "tests/reference_prompt.js",
+      "clasificacion": "identico",
+      "sha256_original": "98359f3a1098562ff4c1e9631a4d938ad67e2e3135f67b376c84aace73683f1d",
+      "sha256_entrega_previa": "98359f3a1098562ff4c1e9631a4d938ad67e2e3135f67b376c84aace73683f1d",
+      "bytes_original": 95554,
+      "bytes_entrega_previa": 95554
+    },
+    {
+      "ruta_original": "tests/test_auditor.py",
+      "ruta_entrega_previa": "tests/test_auditor.py",
+      "clasificacion": "modificado",
+      "sha256_original": "11fc7e017605b45eb1984a502ab366af1cecfaee480a6506172627655ed832f0",
+      "sha256_entrega_previa": "aa0c643ca37b6ffa21b20b0d9068b837b1101536f169148a4ac449c4d9f1df06",
+      "bytes_original": 9083,
+      "bytes_entrega_previa": 9161,
+      "comparacion_lineas": {
+        "original": 243,
+        "entrega_previa": 242,
+        "identicas": 231,
+        "retiradas_o_reemplazadas": 12,
+        "agregadas_o_reemplazadas": 11
+      }
+    },
+    {
+      "ruta_original": "tests/test_auditor_catalogo.py",
+      "ruta_entrega_previa": "tests/test_auditor_catalogo.py",
+      "clasificacion": "modificado",
+      "sha256_original": "b06006b75161fef75d9fb5ff7ffdedaf0fddbae110a21cd63a25395a2579b602",
+      "sha256_entrega_previa": "68d3f02986404df7e984ff9583f45d33470698eb0fa2e0a661b4388fc54edbc8",
+      "bytes_original": 2316,
+      "bytes_entrega_previa": 2433,
+      "comparacion_lineas": {
+        "original": 57,
+        "entrega_previa": 59,
+        "identicas": 56,
+        "retiradas_o_reemplazadas": 1,
+        "agregadas_o_reemplazadas": 3
+      }
+    },
+    {
+      "ruta_original": "tests/test_auth_supabase.py",
+      "ruta_entrega_previa": "tests/test_auth_supabase.py",
+      "clasificacion": "modificado",
+      "sha256_original": "9ba3ecae43987786961e1df108ed286ff43c12ec7e641b0ee119a032bb290b95",
+      "sha256_entrega_previa": "5d96b657427961a710a0b15e61d0623bce14fee79969d8b422250b3f0d5facbd",
+      "bytes_original": 7205,
+      "bytes_entrega_previa": 7674,
+      "comparacion_lineas": {
+        "original": 193,
+        "entrega_previa": 187,
+        "identicas": 160,
+        "retiradas_o_reemplazadas": 33,
+        "agregadas_o_reemplazadas": 27
+      }
+    },
+    {
+      "ruta_original": "tests/test_backend.py",
+      "ruta_entrega_previa": "tests/test_backend.py",
+      "clasificacion": "modificado",
+      "sha256_original": "830242f9c7c3fb590d1e6920efe953dc3f600a6ca649f2aa8368ae366c2741d3",
+      "sha256_entrega_previa": "c8a460992213deb3756a6898ba0063482f0af0ee2b879c51820f9c02795507ea",
+      "bytes_original": 11362,
+      "bytes_entrega_previa": 12300,
+      "comparacion_lineas": {
+        "original": 304,
+        "entrega_previa": 307,
+        "identicas": 287,
+        "retiradas_o_reemplazadas": 17,
+        "agregadas_o_reemplazadas": 20
+      }
+    },
+    {
+      "ruta_original": "tests/test_browser_dictado.py",
+      "ruta_entrega_previa": "tests/test_browser_dictado.py",
+      "clasificacion": "modificado",
+      "sha256_original": "028fbb10a0da8185d50ffd6c80fb9ef55839dc18e222d6c6c77cc8979d5affa3",
+      "sha256_entrega_previa": "bdd0d38bbfaecf3a1404a0d92eba81a5da85b20ef33c352b1ff51e731bffb72d",
+      "bytes_original": 13978,
+      "bytes_entrega_previa": 14260,
+      "comparacion_lineas": {
+        "original": 310,
+        "entrega_previa": 315,
+        "identicas": 310,
+        "retiradas_o_reemplazadas": 0,
+        "agregadas_o_reemplazadas": 5
+      }
+    },
+    {
+      "ruta_original": "tests/test_calculos.py",
+      "ruta_entrega_previa": "tests/test_calculos.py",
+      "clasificacion": "modificado",
+      "sha256_original": "039c99e7eec99aeb3dd9ff99c1bd50a7b26b090810f23966182f395a007b66ee",
+      "sha256_entrega_previa": "d830abd576677c27b364ac3874e8355486794c06ad58d66a36f1e801604ab863",
+      "bytes_original": 16316,
+      "bytes_entrega_previa": 16433,
+      "comparacion_lineas": {
+        "original": 410,
+        "entrega_previa": 412,
+        "identicas": 409,
+        "retiradas_o_reemplazadas": 1,
+        "agregadas_o_reemplazadas": 3
+      }
+    },
+    {
+      "ruta_original": "tests/test_comparador_versiones.py",
+      "ruta_entrega_previa": "tests/test_comparador_versiones.py",
+      "clasificacion": "modificado",
+      "sha256_original": "3b4ba582800aae778466b932566fe39694d988cfc44789d75141f6f1bfc6c1e8",
+      "sha256_entrega_previa": "84770f1b6bc055bc3db6b9fa700d74af66688ae9892f065e79704bcc6534dbd1",
+      "bytes_original": 5010,
+      "bytes_entrega_previa": 5141,
+      "comparacion_lineas": {
+        "original": 136,
+        "entrega_previa": 139,
+        "identicas": 135,
+        "retiradas_o_reemplazadas": 1,
+        "agregadas_o_reemplazadas": 4
+      }
+    },
+    {
+      "ruta_original": "tests/test_evaluar.py",
+      "ruta_entrega_previa": "tests/test_evaluar.py",
+      "clasificacion": "modificado",
+      "sha256_original": "120c4d34b7e81f01760769a25c6557c94180ad1e92c6d65672a69e4422b5de41",
+      "sha256_entrega_previa": "445a3ba3e2dcf0c19f87c0722f17a3b9aa05694fc18024f7306ca6d8fbb38936",
+      "bytes_original": 8709,
+      "bytes_entrega_previa": 14176,
+      "comparacion_lineas": {
+        "original": 198,
+        "entrega_previa": 308,
+        "identicas": 198,
+        "retiradas_o_reemplazadas": 0,
+        "agregadas_o_reemplazadas": 110
+      }
+    },
+    {
+      "ruta_original": "tests/test_extraer.py",
+      "ruta_entrega_previa": "tests/test_extraer.py",
+      "clasificacion": "modificado",
+      "sha256_original": "41180f235289f7f3f129e4ab55c371ad9439cc9adc3d0da697ba3d9e31221078",
+      "sha256_entrega_previa": "d7b8d6f1d0186da8b6692f7eb236f9b536b322863f9c3de235bfbf2c2e495269",
+      "bytes_original": 15448,
+      "bytes_entrega_previa": 15568,
+      "comparacion_lineas": {
+        "original": 371,
+        "entrega_previa": 373,
+        "identicas": 369,
+        "retiradas_o_reemplazadas": 2,
+        "agregadas_o_reemplazadas": 4
+      }
+    },
+    {
+      "ruta_original": "tests/test_nit_radicado_letras.py",
+      "ruta_entrega_previa": "tests/test_nit_radicado_letras.py",
+      "clasificacion": "modificado",
+      "sha256_original": "59a4547d21800a99fe4e4fd1029f866561d3c50f87b7b1fdc96bf99165b19610",
+      "sha256_entrega_previa": "ff1ff26bfad5e93b3b6e2667766c99c6ec976966e01e34fc813d95d0d9f096aa",
+      "bytes_original": 13421,
+      "bytes_entrega_previa": 13741,
+      "comparacion_lineas": {
+        "original": 332,
+        "entrega_previa": 335,
+        "identicas": 321,
+        "retiradas_o_reemplazadas": 11,
+        "agregadas_o_reemplazadas": 14
+      }
+    },
+    {
+      "ruta_original": "tests/test_plazos.py",
+      "ruta_entrega_previa": "tests/test_plazos.py",
+      "clasificacion": "modificado",
+      "sha256_original": "9ec953d53a2f88e887d4ff6aa0e70a9b186288997d7a594b4697a1a465681309",
+      "sha256_entrega_previa": "c1a66dc32bcdaeb63fce7d54a699aaa15fc683dc215ebfed2dbff1b93fbddc01",
+      "bytes_original": 16852,
+      "bytes_entrega_previa": 16969,
+      "comparacion_lineas": {
+        "original": 415,
+        "entrega_previa": 417,
+        "identicas": 414,
+        "retiradas_o_reemplazadas": 1,
+        "agregadas_o_reemplazadas": 3
+      }
+    },
+    {
+      "ruta_original": "tests/test_prompt.py",
+      "ruta_entrega_previa": "tests/test_prompt.py",
+      "clasificacion": "modificado",
+      "sha256_original": "36e85926ab28a1694996b15f7eb0ca4ed682a1d923cef895a5881a5a125878f8",
+      "sha256_entrega_previa": "bb7081b3232d44ed3b6fc43cc15e73e19e0fd6b304ff2f9d8effc08d4a9a2c51",
+      "bytes_original": 6718,
+      "bytes_entrega_previa": 7220,
+      "comparacion_lineas": {
+        "original": 186,
+        "entrega_previa": 177,
+        "identicas": 150,
+        "retiradas_o_reemplazadas": 36,
+        "agregadas_o_reemplazadas": 27
+      }
+    },
+    {
+      "ruta_original": "tests/test_radicacion.py",
+      "ruta_entrega_previa": "tests/test_radicacion.py",
+      "clasificacion": "modificado",
+      "sha256_original": "f3db8af6c1835562cbd42421ed5aebfdc61ca970721ce345536c75a6a715df03",
+      "sha256_entrega_previa": "32f7490cd7e7f87edb720fc9cfb965d65997820d3d9bab7dc6b4b73ded3167f3",
+      "bytes_original": 8801,
+      "bytes_entrega_previa": 8932,
+      "comparacion_lineas": {
+        "original": 234,
+        "entrega_previa": 237,
+        "identicas": 233,
+        "retiradas_o_reemplazadas": 1,
+        "agregadas_o_reemplazadas": 4
+      }
+    },
+    {
+      "ruta_original": "tests/test_revisar.py",
+      "ruta_entrega_previa": "tests/test_revisar.py",
+      "clasificacion": "modificado",
+      "sha256_original": "8642bdf89b35a9f00a4987b723b4d238a6f31165fd63caa338945752820028dd",
+      "sha256_entrega_previa": "371eb20afd64ccc8a34e532297df5b173b9c25b14f4253140af85459e2ac0bab",
+      "bytes_original": 7055,
+      "bytes_entrega_previa": 7280,
+      "comparacion_lineas": {
+        "original": 163,
+        "entrega_previa": 165,
+        "identicas": 160,
+        "retiradas_o_reemplazadas": 3,
+        "agregadas_o_reemplazadas": 5
+      }
+    },
+    {
+      "ruta_original": "tests/test_verificar_citas.py",
+      "ruta_entrega_previa": "tests/test_verificar_citas.py",
+      "clasificacion": "modificado",
+      "sha256_original": "1df28ed2a1cba97f1f5afc165b1a6c564bd15e9cb475ed93027387d884070567",
+      "sha256_entrega_previa": "fdac3f3eca49ff8461c506019041b222466f5d705b6c448e769028f158aaf29c",
+      "bytes_original": 8745,
+      "bytes_entrega_previa": 8862,
+      "comparacion_lineas": {
+        "original": 203,
+        "entrega_previa": 205,
+        "identicas": 202,
+        "retiradas_o_reemplazadas": 1,
+        "agregadas_o_reemplazadas": 3
+      }
+    }
+  ],
+  "archivos_nuevos": [
+    {
+      "ruta": ".dockerignore",
+      "bytes": 106,
+      "sha256": "173f778d2d2274d48ee2426f3c4aafc86b04358e46d795962fd36c42b9d87367",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": ".gitignore",
+      "bytes": 157,
+      "sha256": "dfc98ea5804f1ff9644531f466a926eafde8752f5adfac235bb04e2e1de1408b",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "Dockerfile",
+      "bytes": 420,
+      "sha256": "464185ee52fc6d21c43f90343d01277225e1e81d728cbb321aead490a7444143",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/data/asesor_paginas.json",
+      "bytes": 363388,
+      "sha256": "b5628e7493f7b263b0dbff31b19415dc3dba7bca2daa1d6da891366a7a47e3ac",
+      "artefacto_generado": true
+    },
+    {
+      "ruta": "app/routers/asesor_paginas.py",
+      "bytes": 2238,
+      "sha256": "568adb001f4ed9cda9bc585c7b5b632b333c76f1bb6c123b255ab433b5cd1bf3",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/routers/asesor_pwa.py",
+      "bytes": 2499,
+      "sha256": "20b7cbb68c01b3dee08f47d043bebd735da6b3e06df9d206c92d3ce08f3517be",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/services/asesor_paginas.py",
+      "bytes": 20935,
+      "sha256": "9b2c8644cb15df965aeec5b6f534c6c5979d7be973a18dcc7004b36b2c4f2a17",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/services/sesiones.py",
+      "bytes": 3196,
+      "sha256": "bb2f1a501ed4ff55c1cc7e1172307ab3475186b0c10dd5dbb7ea80426267c827",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/css/estilos.css",
+      "bytes": 27229,
+      "sha256": "8f648da0fe20e55b44043b66da0768fadea923fb71ec4af000c41ce618e95451",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/css/memorialista.css",
+      "bytes": 25884,
+      "sha256": "399ab29941d339abb9fa2b0db848b16cdeec9f7c40e59255bd42e97a79ee3353",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/css/paginas.css",
+      "bytes": 6442,
+      "sha256": "06addb81eed6d3c3bb6958f62fbd1761c50b81db05a062d9c2cadf44cb1dcd2c",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/descargas/el-memorialista-ciudadano-sin-internet.html",
+      "bytes": 906881,
+      "sha256": "9b0e7134bf10f092a401705aa51c8f41ff5ce9ab73040cece3f555ccac110698",
+      "artefacto_generado": true
+    },
+    {
+      "ruta": "app/static/asesor/favicon.svg",
+      "bytes": 264,
+      "sha256": "419f4d022d5f5187950d9aa22e3d86ae8a231df849f38282ed64150091a8dde8",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/app.js",
+      "bytes": 87421,
+      "sha256": "4bbcdfdda30838011a5a21dc73c498351c1f9dc66fa16e456d10688f352cdbdd",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/comunes.js",
+      "bytes": 33377,
+      "sha256": "5c5cdf7334b0a0fbc6a262c3d2cba12e1f7fd62364fbf895046ab38c53ffb684",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/contratos.js",
+      "bytes": 94778,
+      "sha256": "abb167add25b055f57a366e7bf5d0f9172c332d913fd4e39ab5f1f526239a0a9",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/entidades.js",
+      "bytes": 17179,
+      "sha256": "ba5b833b6c927f232d54f8544f1a606139a2508274f23791e6e8162c330a42ff",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/mujer.js",
+      "bytes": 82973,
+      "sha256": "8861201d38693d1d9e2e7ec5997bedb8a177e97da0e974199d3fd08cb3284bb5",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/normas.js",
+      "bytes": 92737,
+      "sha256": "a12b2ebc80a3e37cbd3efa08df4982c8064a434404ea7f484dddd28235f6d30c",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/otros.js",
+      "bytes": 80747,
+      "sha256": "729f44f74a34551ad4be189ca93b7325723629bd7195134248f651a864ae32df",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/peticiones.js",
+      "bytes": 58647,
+      "sha256": "b51c0f1b3c498e54652e84aa84ffc4a25c2ff1db7a6a3df9fcdf6ad1b2e0eeb0",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/peticiones2.js",
+      "bytes": 57510,
+      "sha256": "a92f0c635704e20968206e671b1e3d09152cde44fda0b54e55912aac8fd5351a",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/peticiones3.js",
+      "bytes": 47999,
+      "sha256": "f88589ea33373aa1b7318e6c84c1a783b85fb94ce7a7e8cd2e51600fefd77bc1",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/sinonimos.js",
+      "bytes": 20348,
+      "sha256": "62613c9252ad98867f59b79f11fbad8e96bbdf86cc92aa12471ff491f1c4c7f0",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/tutelas.js",
+      "bytes": 62356,
+      "sha256": "1e862264fe6c789738277e56e69cfb81bffc73fed4095c9a6b2b7d4b9bfe3a8b",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/datos/tutelas2.js",
+      "bytes": 65005,
+      "sha256": "59019f3e1694f0de28ffb6a19a4735409e13bfdb6ccc8388adaeb5f7755ddd62",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/festivos.js",
+      "bytes": 4510,
+      "sha256": "6cc94e3265e4afdfafd7c310662e3f48e99caaf3af1766881b18ec6bb46b31d8",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/mejoras.js",
+      "bytes": 12922,
+      "sha256": "fbe94a42908a4e966bb3fdf3868edc9c8af373dd296cdb78ad9b9b8b639b126b",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/motor.js",
+      "bytes": 30935,
+      "sha256": "b2e2474a6fd94b74125fd05ec88fc8b2436641a3541dc7e4afdb8e71e0e32d1e",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/js/pwa.js",
+      "bytes": 5413,
+      "sha256": "9dad3bdbde53d707210c8870789d26869d10ebe9a9702bd2c8fa4ad8ab08f4b0",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/pwa/icon-192.png",
+      "bytes": 4811,
+      "sha256": "e1feb5998ecc472bc2663bc06efbc3591b1d3eba682080da3ec04dfa991a6d5b",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/pwa/icon-512.png",
+      "bytes": 11697,
+      "sha256": "1a19e4d6219a1fc5d21539a65416934a07f5f06df7070c2bd4bcba1ba5ed2d84",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/pwa/icon-maskable-512.png",
+      "bytes": 11697,
+      "sha256": "1a19e4d6219a1fc5d21539a65416934a07f5f06df7070c2bd4bcba1ba5ed2d84",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/pwa/manifest.webmanifest",
+      "bytes": 1103,
+      "sha256": "c2cf19d6361f45057988c8d43957f955c2ed7942c94bb6fd596c7b8aa625c78c",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/asesor/pwa/shell.html",
+      "bytes": 6148,
+      "sha256": "9d8fa54bcb53fa1df5e410f153d6e2ab6abc327924a8ed0e2f63559a0ae877f4",
+      "artefacto_generado": true
+    },
+    {
+      "ruta": "app/static/asesor/pwa/sw.js",
+      "bytes": 9472,
+      "sha256": "d6cb5a6d43540222ea40973f9126a7c66704eb6037fc99ad9a56698c6a69c2c9",
+      "artefacto_generado": true
+    },
+    {
+      "ruta": "app/static/auth/login.css",
+      "bytes": 7160,
+      "sha256": "4c01c346d8b4cfb187d80541abe8dc8f6bc53db107275c5188facf129c33c060",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/auth/login.js",
+      "bytes": 7865,
+      "sha256": "1811fd6b5a8f81f349e1384f87cef53b9aeedacbf44d5c713441363d9b620369",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/auth/session.js",
+      "bytes": 3614,
+      "sha256": "1856c606c41625f94149cfb22200cb58b92b0752170dab5ad355dc376eead805",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/index.html",
+      "bytes": 6101,
+      "sha256": "c3da4b992ca06d743273c54ced98d3f1dd1ab6fd67161432255fdec645574ae5",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/login.html",
+      "bytes": 5053,
+      "sha256": "7f50938863f64899e9b9fd9c4b5884648fe21c5d7b93d37dce1e3d5dcfdf7d0b",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/vendor/README.txt",
+      "bytes": 174,
+      "sha256": "f9732b22fbfed3dd1544275bb2fdbe766831c8279eddb306fa81e9c74770bf0f",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/vendor/SUPABASE-LICENSE.txt",
+      "bytes": 1065,
+      "sha256": "334dd6820e2eaeab2064e7c59001b810566728a28a41a7c1dbf69bbee17d0936",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "app/static/vendor/supabase.js",
+      "bytes": 218252,
+      "sha256": "ee3be8de192b97cb1d73d1e95d6b82bb1f6b658c0f97c4ef757fc331996ed3d3",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "citas_cache.sqlite3",
+      "bytes": 12288,
+      "sha256": "afd157b0fe77ae0fad40630a75d810c8a93b5f9bb47bbc98c885b42ba0866a3e",
+      "artefacto_generado": true
+    },
+    {
+      "ruta": "constraints.txt",
+      "bytes": 563,
+      "sha256": "0f479a39f2d0982ac8bf83debb93b680f2d70a57bd28c70de15adc07aa8e9263",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "docs/ASESOR_CIUDADANO.md",
+      "bytes": 15080,
+      "sha256": "a9d942018bfa13ec56a213d5c354e1252db7c098348c3c34516c954d0acfa3de",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "docs/PARIDAD_ASESOR.md",
+      "bytes": 7484,
+      "sha256": "3ebd84cd95976f3b053f468af90a834edd4377d44abe1fa5e488f70da4466554",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "docs/SEGURIDAD_DATOS.md",
+      "bytes": 5058,
+      "sha256": "f1662c58f8b6ba163159f6277ff1b07981537ff217ffe7b5fa4508866ec540d1",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "docs/VERIFICACION.md",
+      "bytes": 9419,
+      "sha256": "acc93d2dda6ad8cae59b0f94e26af1651ed9d56717bfc709088fed18f470ac89",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "scripts/asesor_pwa_worker.js",
+      "bytes": 5850,
+      "sha256": "a5aa9f82539f6179b4932aafbda9344f98c9653fa78d11f7fbdcc6de68b8f13b",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "scripts/build_asesor_offline.py",
+      "bytes": 2416,
+      "sha256": "ac881b033cf9e0b05c105c2a6946a9e14334b025636e25aaad292b76f43fde37",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "scripts/build_asesor_paginas.cjs",
+      "bytes": 7895,
+      "sha256": "4e7d084cff67035ce9948450212ca1abc4f48dd559f2879cfe394c593ca9df23",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "scripts/build_asesor_pwa.py",
+      "bytes": 5160,
+      "sha256": "90c0abb39de16a79e2fdd16c060fd6bbf60fbf444798c23021fb0da30b3688dd",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "supabase/migrations/20261022010000_separacion_publica_privada_rls.sql",
+      "bytes": 18253,
+      "sha256": "e7c20b15cd78a1127f3912936b633826d40115ee93a54d1d480febe17ff21930",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "supabase/tests/aislamiento_cuentas.sql",
+      "bytes": 12762,
+      "sha256": "361674b459087f3454b908e22da09c35c4f45a31567e1a69623845f97d8fc0c2",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/conftest.py",
+      "bytes": 1172,
+      "sha256": "212a1baa147edeb2b1794c50865bc22a240ae92109940a70ba788051c43d9bc9",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/fixtures/asesor_slugs_originales.json",
+      "bytes": 3747,
+      "sha256": "f63c8cb848e268b15f22958ab6b211566c122dc7d62b74f375c2f5fb33f7b931",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/test_asesor_engine.cjs",
+      "bytes": 12998,
+      "sha256": "544148e31cb3f372f1fd6703698976b34078955d867afd11d26fbd0c3be53261",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/test_asesor_paginas.py",
+      "bytes": 11506,
+      "sha256": "af4488dde22ed02137557ec006c4954bad72e7370601267b0f567b234696e5b8",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/test_asesor_pwa.cjs",
+      "bytes": 11113,
+      "sha256": "3d0e974b8fe9dd17d9f5edbc5b9703ede5f15221bb33ddddfe5e8d0cd2740fd1",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/test_asesor_pwa.py",
+      "bytes": 4710,
+      "sha256": "a9044391cee2ba8dd7e94203b524fe55cd5b87167afd67b7091cddff9a94b856",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/test_auth_client.cjs",
+      "bytes": 22076,
+      "sha256": "b1b16894d9c7cfad3782cc44f302f0c6b8b54835c3316469a740eae7165d6bad",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/test_security_boundary.py",
+      "bytes": 9662,
+      "sha256": "0958d8077414b882e399846a1e261a9f9a6b3f015232862eb058113b1d8f3ca6",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/test_security_sql.py",
+      "bytes": 4234,
+      "sha256": "dda0a55e17e5ead5e173e46f51bb0e6bd6a5ae839d57f69d556e658479ba2f84",
+      "artefacto_generado": false
+    },
+    {
+      "ruta": "tests/test_supabase_data_safety.py",
+      "bytes": 3685,
+      "sha256": "b64e2bec97c03f68e0705cb69611b2e15b7591f50361bcd6fa1a4ce051bc14b6",
+      "artefacto_generado": false
+    }
+  ],
+  "nota_cache": "citas_cache.sqlite3 ya forma parte del ZIP previo. Se usa el hash del ZIP, porque la copia extraida puede cambiar al ejecutar pruebas."
+}

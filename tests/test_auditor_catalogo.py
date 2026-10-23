@@ -46,7 +46,7 @@ def test_listar_tipos_incluye_proceso_monitorio():
     assert "guia" not in mon  # incluir_guia=False la debe remover
 
 def test_api_catalogo_entrega_proceso_monitorio():
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as client:
         res = client.get("/api/catalogo")
         assert res.status_code == 200
         data = res.json()
@@ -55,3 +55,5 @@ def test_api_catalogo_entrega_proceso_monitorio():
         assert mon is not None, "proceso_monitorio debe figurar en el endpoint /api/catalogo"
         assert mon["nombre"] == "Demanda de proceso monitorio"
         assert mon["auditoria_ia"]["puntuacion"] >= 90
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

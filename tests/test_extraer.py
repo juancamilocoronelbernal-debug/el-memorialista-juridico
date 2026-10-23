@@ -28,7 +28,7 @@ from app.services.extractor_documentos import (
 )
 from app.services.prompt import obtener_tipo
 
-client = TestClient(app)
+client = TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"})
 
 
 def test_detectar_mime():
@@ -346,7 +346,7 @@ def test_prompt_instrucciones_especiales_providencias_y_contestacion():
 
 def test_frontend_asistente_hechos_y_banner_plazos():
     """Verifica que el HTML del frontend contenga el banner superior de plazos y el asistente de hechos art. 96 CGP."""
-    resp = client.get("/")
+    resp = client.get("/app")
     assert resp.status_code == 200
     html = resp.text
 
@@ -369,3 +369,5 @@ def test_frontend_asistente_hechos_y_banner_plazos():
 
 
 
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

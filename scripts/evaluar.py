@@ -38,8 +38,8 @@ if ROOT_DIR not in sys.path:
 
 from app.services.auditor_fidelidad import auditar_datos_y_escrito, normalizar_texto
 from app.services.prompt import listar_tipos, obtener_tipo, construir_prompt
-from app.services.revisor_requisitos import revisar_requisitos
-from app.services.verificador_citas import verificar_citas
+from app.services.revisor_requisitos import revisar_requisitos, _evaluacion_heuristica
+from app.services.verificador_citas import verificar_citas, extraer_citas
 
 log = logging.getLogger("memorialista.evaluar")
 
@@ -270,12 +270,57 @@ def generar_mock_escrito(caso: dict[str, Any]) -> tuple[str, float, dict[str, in
     return texto_final, tiempo, tokens
 
 
+def cabeceras_evaluacion() -> dict[str, str]:
+    """La evaluación real obedece exactamente la misma autenticación que la web."""
+    token = os.environ.get("MEMORIALISTA_ACCESS_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError(
+            "Falta MEMORIALISTA_ACCESS_TOKEN. Proporciona un access_token vigente de "
+            "Supabase de una cuenta autorizada para ejecutar una evaluación real. "
+            "Usa --mock únicamente para una simulación local sin red ni IA."
+        )
+    if len(token) > 8192 or any(c.isspace() for c in token):
+        raise RuntimeError("MEMORIALISTA_ACCESS_TOKEN debe contener solo el access_token de Supabase, sin el prefijo Bearer ni espacios.")
+    return {"Authorization": "Bearer " + token}
+
+
+def error_http_evaluacion(status: int) -> RuntimeError:
+    """No copiar cuerpos remotos en reportes: pueden contener información sensible."""
+    if status == 401:
+        return RuntimeError("La sesión Supabase no es válida o caducó (HTTP 401). Renueva MEMORIALISTA_ACCESS_TOKEN.")
+    if status == 403:
+        return RuntimeError("La cuenta no tiene permiso para esta evaluación (HTTP 403).")
+    if status == 429:
+        return RuntimeError("La cuenta o el servidor alcanzó su cuota de evaluación (HTTP 429).")
+    return RuntimeError(f"El generador respondió HTTP {status}. Revisa la configuración del servidor.")
+
+
+def _citas_simuladas_sin_red(texto: str) -> dict[str, Any]:
+    citas = [{**cita, "estado": "sin_verificar", "color": "amarillo", "pertinencia": {
+        "respalda": "sin_verificar", "fragmento": "Simulación local: no se consultó la fuente oficial ni un modelo de IA."
+    }} for cita in extraer_citas(texto)]
+    return {"ok": True, "simulacion": True, "total_citas": len(citas),
+            "resumen": {"verde": 0, "amarillo": len(citas), "rojo": 0}, "citas": citas}
+
+
+def _requisitos_simulados_sin_red(texto: str, tipo_id: str) -> list[dict[str, Any]]:
+    tipo = obtener_tipo(tipo_id) or {}
+    resultado = []
+    for req in tipo.get("requisitos", []):
+        estado, evidencia, sugerencia = _evaluacion_heuristica(req, texto.lower())
+        resultado.append({**req, "estado": estado, "evidencia": evidencia,
+                          "sugerencia": sugerencia, "simulacion": True})
+    return resultado
+
+
 async def generar_con_cliente(
     caso: dict[str, Any],
     cliente_http: Optional[Any] = None,
     servidor_url: Optional[str] = None,
 ) -> tuple[str, float, dict[str, int], str]:
-    """Genera el escrito contra el servidor local o la aplicación en memoria."""
+    """Genera mediante una sesión Supabase explícita, local o remotamente."""
+    headers = cabeceras_evaluacion()  # Antes de inicializar cualquier cliente o proveedor.
+    token_secreto = headers["Authorization"][7:]
     tipo = caso.get("tipo", "otro")
     datos = caso.get("datos", {})
 
@@ -319,10 +364,9 @@ async def generar_con_cliente(
         import httpx
         url = f"{servidor_url.rstrip('/')}/api/redactar"
         async with httpx.AsyncClient(timeout=180.0) as client:
-            async with client.stream("POST", url, json=payload) as resp:
+            async with client.stream("POST", url, json=payload, headers=headers) as resp:
                 if resp.status_code != 200:
-                    cuerpo = (await resp.aread()).decode("utf-8", "ignore")
-                    raise RuntimeError(f"Servidor respondió {resp.status_code}: {cuerpo}")
+                    raise error_http_evaluacion(resp.status_code)
                 async for linea in resp.aiter_lines():
                     linea = linea.strip()
                     if not linea:
@@ -336,17 +380,20 @@ async def generar_con_cliente(
                             tokens = ev.get("tokens") or tokens
                             modelo = ev.get("modelo", modelo)
                         elif t == "error":
-                            raise RuntimeError(ev.get("mensaje", "Error en redacción"))
+                            raise RuntimeError(str(ev.get("mensaje", "Error en redacción")).replace(token_secreto, "[REDACTADO]"))
                     except json.JSONDecodeError:
                         continue
     else:
         # En memoria usando TestClient de FastAPI
         from fastapi.testclient import TestClient
         from app.main import app
-        client = TestClient(app)
-        with client.stream("POST", "/api/redactar", json=payload) as resp:
+        from app.services.gemini_service import gemini_service
+        # La revisión del caso anterior puede haber creado un cliente en este
+        # loop. No reutilizarlo en el loop aislado que abrirá TestClient.
+        await gemini_service.cerrar()
+        with TestClient(app) as client, client.stream("POST", "/api/redactar", json=payload, headers=headers) as resp:
             if resp.status_code != 200:
-                raise RuntimeError(f"Error {resp.status_code}: {resp.text}")
+                raise error_http_evaluacion(resp.status_code)
             for linea in resp.iter_lines():
                 linea = (linea.decode("utf-8") if isinstance(linea, bytes) else linea).strip()
                 if not linea:
@@ -360,7 +407,7 @@ async def generar_con_cliente(
                         tokens = ev.get("tokens") or tokens
                         modelo = ev.get("modelo", modelo)
                     elif t == "error":
-                        raise RuntimeError(ev.get("mensaje", "Error en redacción"))
+                        raise RuntimeError(str(ev.get("mensaje", "Error en redacción")).replace(token_secreto, "[REDACTADO]"))
                 except json.JSONDecodeError:
                     continue
 
@@ -526,7 +573,9 @@ async def evaluar_caso(
     mock: bool = False,
     servidor_url: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Ejecuta la evaluación completa de un caso de prueba."""
+    """Ejecuta la evaluación; --mock solo comprueba la canalización local."""
+    if not mock:
+        cabeceras_evaluacion()  # Fallar antes de producir un reporte engañoso sin sesión.
     caso_id = caso.get("id", "caso_sin_id")
     tipo = caso.get("tipo", "otro")
     datos = caso.get("datos", {})
@@ -548,6 +597,9 @@ async def evaluar_caso(
             )
     except Exception as exc:
         error_generacion = str(exc)
+        secreto = os.environ.get("MEMORIALISTA_ACCESS_TOKEN", "").strip()
+        if secreto:
+            error_generacion = error_generacion.replace(secreto, "[REDACTADO]")
         texto = ""
         tiempo = 0.0
 
@@ -561,13 +613,13 @@ async def evaluar_caso(
 
     # 2. Verificador de citas
     if texto:
-        res_citas = await verificar_citas(texto)
+        res_citas = _citas_simuladas_sin_red(texto) if mock else await verificar_citas(texto)
     else:
         res_citas = {"ok": False, "total_citas": 0, "resumen": {"verde": 0, "amarillo": 0, "rojo": 0}, "citas": []}
 
     # 3. Checklist de requisitos normativos
     if texto:
-        raw_requisitos = await revisar_requisitos(texto, tipo)
+        raw_requisitos = _requisitos_simulados_sin_red(texto, tipo) if mock else await revisar_requisitos(texto, tipo)
     else:
         raw_requisitos = []
 
@@ -614,6 +666,7 @@ async def evaluar_caso(
         "modelo": modelo,
         "texto": texto,
         "error_generacion": error_generacion,
+        "simulacion": mock,
         "auditoria": {
             "invenciones": res_auditoria.get("invenciones", []),
             "omisiones": res_auditoria.get("omisiones", []),
@@ -646,6 +699,11 @@ def generar_reporte_html(
     fecha_reporte = metadata.get("fecha", datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     modelo_nombre = metadata.get("modelo", "Gemini 2.5 Pro")
     entorno = metadata.get("entorno", "Local / Evaluación Automatizada")
+    aviso_simulacion = (
+        '<p role="note"><strong>SIMULACIÓN LOCAL:</strong> no consulta modelos de IA ni fuentes oficiales. '
+        'Este reporte comprueba el flujo de pruebas y no autoriza un despliegue.</p>'
+        if metadata.get("simulacion") else ""
+    )
 
     # Serializar resultados para búsqueda y filtrado dinámico en JavaScript
     resultados_json = json.dumps(resultados, ensure_ascii=False).replace("<", "\\u003c")
@@ -922,6 +980,7 @@ def generar_reporte_html(
       <div class="title-group">
         <h1>⚖️ El Memorialista · Reporte de Evaluación de Modelos y Prompts</h1>
         <p>Evaluación automatizada de fidelidad, verificación oficial de citas y checklist legal procesal</p>
+        {aviso_simulacion}
         <div class="meta-pills">
           <span class="meta-pill">📅 Fecha: {fecha_reporte}</span>
           <span class="meta-pill">🤖 Modelo: {modelo_nombre}</span>
@@ -1220,12 +1279,18 @@ async def main_async() -> int:
     parser.add_argument("--tipo", type=str, default=None, help="Evaluar solo un tipo de documento específico (ej: tutela)")
     parser.add_argument("--caso", type=str, default=None, help="Evaluar un único caso por su identificador")
     parser.add_argument("--limite", type=int, default=None, help="Límite máximo de casos a evaluar")
-    parser.add_argument("--mock", action="store_true", help="Usar generaciones simuladas para evaluación rápida sin consumo de cuota")
+    parser.add_argument("--mock", action="store_true", help="Simulación local sin token, red ni consumo de IA; no valida un modelo real")
     parser.add_argument("--salida", type=str, default="reporte_evaluacion.html", help="Ruta del reporte HTML de salida")
     parser.add_argument("--json-salida", type=str, default=None, help="Ruta para exportar los resultados en JSON")
     parser.add_argument("--estricto", action="store_true", help="Retorna código de error 1 si hay cualquier caso amarillo o rojo")
 
     args = parser.parse_args()
+    if not args.mock:
+        try:
+            cabeceras_evaluacion()
+        except RuntimeError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 2
 
     print("=" * 80)
     print("⚖️  EL MEMORIALISTA · MARCO DE EVALUACIÓN Y BENCHMARKING PRE-DESPLIEGUE")
@@ -1319,6 +1384,7 @@ async def main_async() -> int:
         "fecha": datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         "modelo": resultados[0]["modelo"] if resultados else "Gemini",
         "entorno": "Mock (Simulado)" if args.mock else (args.servidor or "Local FastAPI"),
+        "simulacion": args.mock,
     }
 
     # Generar y guardar reporte HTML
@@ -1355,7 +1421,10 @@ async def main_async() -> int:
         print(f"⚠️  MODO ESTRICTO: Hay {total_amarillos} advertencias amarillas.", file=sys.stderr)
         return 1
 
-    print("✅ EVALUACIÓN SUPERADA CON ÉXITO. APTO PARA DESPLIEGUE.")
+    if args.mock:
+        print("✅ SIMULACIÓN LOCAL COMPLETADA. No valida un modelo real ni autoriza un despliegue.")
+    else:
+        print("✅ EVALUACIÓN SUPERADA CON ÉXITO. Revisa la comparación con la línea base antes de desplegar.")
     return 0
 
 

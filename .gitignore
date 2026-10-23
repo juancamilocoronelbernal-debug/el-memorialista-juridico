@@ -10,13 +10,27 @@ __pycache__/
 
 # Variables de entorno secretas
 .env
+.env.*
+!.env.example
 
 # Logs y base de datos
 *.log
+*.sqlite
 *.sqlite3
+*.db
 .DS_Store
+node_modules/
+dist/
+artifacts/
+.openai/
+.pytest_cache/
 
 # Reportes de evaluación generados dinámicamente
 reporte_evaluacion*.html
 reporte_evaluacion*.json
 *.zip
+
+# Entregas e integraciones temporales
+_integracion_recibida/
+_temp_recibido/
+_integracion_temp/

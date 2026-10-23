@@ -2,61 +2,109 @@
 El Memorialista · control de acceso y límites de uso (v2.3)
 Autenticación con Supabase Auth (Bearer tokens y Enlace Mágico) y límites por usuario.
 """
-import hmac
 import time
 from collections import defaultdict, deque
+from functools import lru_cache
+from ipaddress import ip_address, ip_network
 from typing import Any, Optional
 
 from fastapi import HTTPException, Request
 
 from app.config import get_settings
-from app.services.supabase_service import validar_token_supabase
+from app.services import supabase_service
+
+
+def _direccion_ip(value: str):
+    """Solo direcciones numéricas, normalizadas; nunca puertos, listas ni zone IDs."""
+    if not isinstance(value, str) or not value or len(value) > 64 or "%" in value:
+        return None
+    try:
+        direccion = ip_address(value.strip())
+        # La misma IPv4 no debe obtener dos cuotas usando la notación IPv6 mapeada.
+        return getattr(direccion, "ipv4_mapped", None) or direccion
+    except ValueError:
+        return None
+
+
+@lru_cache(maxsize=32)
+def _redes_proxy(configuracion: str) -> tuple:
+    try:
+        redes = tuple(ip_network(value.strip(), strict=False) for value in configuracion.split(",") if value.strip())
+        return redes if all(red.prefixlen > 0 for red in redes) else ()
+    except ValueError:
+        return ()
 
 
 def ip_cliente(request: Request) -> str:
-    reenviada = request.headers.get("x-forwarded-for", "")
-    if reenviada:
-        primera = reenviada.split(",")[0].strip()
-        if primera:
-            return primera[:64]
-    return request.client.host if request.client else "desconocida"
+    """Solo un peer declarado puede aportar la IP del cliente.
+
+    El servidor ASGI también debe tener una configuración segura de proxies: no
+    puede recuperar aquí el peer original si otro middleware ya lo sustituyó.
+    No hay autodetección por proveedor ni confianza implícita en encabezados.
+    """
+    directa = _direccion_ip(request.client.host) if request.client else None
+    resultado_directo = str(directa) if directa else "desconocida"
+    s = get_settings()
+    redes = _redes_proxy(s.PROXY_IPS_CONFIABLES)
+
+    def confiable(ip) -> bool:
+        return ip is not None and any(ip.version == red.version and ip in red for red in redes)
+
+    if not confiable(directa):
+        return resultado_directo
+    cabecera = s.IP_CABECERA_CONFIABLE
+    if cabecera:
+        valores = request.headers.getlist(cabecera)
+        # Las cabeceras dedicadas deben ser reemplazadas por el proxy, no anexadas.
+        ip = _direccion_ip(valores[0]) if len(valores) == 1 else None
+        return str(ip) if ip else resultado_directo
+
+    saltos = s.PROXIES_CONFIABLES
+    if not saltos:
+        return resultado_directo
+    valores = request.headers.getlist("x-forwarded-for")
+    if len(valores) != 1 or len(valores[0]) > 4096:
+        return resultado_directo
+    partes = valores[0].split(",")
+    if len(partes) < saltos or len(partes) > 32:
+        return resultado_directo
+    cadena = [_direccion_ip(parte) for parte in partes]
+    if any(ip is None for ip in cadena):
+        return resultado_directo
+    # Contar desde la derecha descarta los prefijos que puede aportar el cliente.
+    # Cada salto a la derecha del cliente elegido debe ser además un proxy declarado.
+    if any(not confiable(ip) for ip in cadena[len(cadena) - saltos + 1:]):
+        return resultado_directo
+    return str(cadena[-saltos])
 
 
-async def verificar_acceso(request: Request) -> Optional[dict[str, Any]]:
-    """Verifica la sesión activa de Supabase (Bearer token) o código de acceso de respaldo."""
-    settings = get_settings()
+async def verificar_acceso(request: Request) -> dict[str, Any]:
+    """Toda API profesional exige un JWT real; una cookie sola no la autoriza."""
+    if getattr(request.state, "usuario_verificado_bearer", False):
+        return request.state.usuario
     auth_header = request.headers.get("authorization", "").strip()
-    token = ""
-    if auth_header.lower().startswith("bearer "):
-        token = auth_header[7:].strip()
-
-    # Si se envía un token Bearer o si Supabase está activo
-    if token or settings.SUPABASE_URL:
-        if not token:
-            raise HTTPException(
-                status_code=401,
-                detail="Se requiere iniciar sesión con tu enlace mágico para acceder a El Memorialista.",
-            )
-        usuario = await validar_token_supabase(token)
-        if not usuario:
-            raise HTTPException(
-                status_code=401,
-                detail="Tu sesión de Supabase ha expirado o no es válida. Inicia sesión nuevamente.",
-            )
-        request.state.usuario = usuario
-        request.state.user_id = usuario.get("id") or usuario.get("sub")
-        return usuario
-
-    # Respaldo de código de acceso legado si no hay Supabase configurado
-    codigo = settings.APP_ACCESS_CODE.strip()
-    if codigo:
-        enviado = request.headers.get("x-codigo-acceso", "").strip()
-        if not enviado or not hmac.compare_digest(enviado.encode("utf-8"), codigo.encode("utf-8")):
-            raise HTTPException(
-                status_code=401,
-                detail="Esta versión de El Memorialista requiere autenticación válida.",
-            )
-    return None
+    esquema, _, token = auth_header.partition(" ")
+    token = token.strip() if esquema.lower() == "bearer" else ""
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Inicia sesión para acceder al espacio profesional.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    try:
+        usuario = await supabase_service.validar_token_supabase(token)
+    except supabase_service.ErrorSupabase as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from None
+    if not usuario:
+        raise HTTPException(
+            status_code=401,
+            detail="Tu sesión ha expirado o no es válida. Inicia sesión nuevamente.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    request.state.usuario = usuario
+    request.state.user_id = usuario["id"]
+    request.state.usuario_verificado_bearer = True
+    return usuario
 
 
 class Limitador:

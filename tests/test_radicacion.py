@@ -1,3 +1,4 @@
+import pytest
 """
 Pruebas unitarias para el módulo de preparación de radicación judicial
 y aplicación del artículo 6 de la Ley 2213 de 2022 (El Memorialista).
@@ -16,7 +17,7 @@ from app.services.radicacion import (
     PrepararRadicacionRequest,
 )
 
-client = TestClient(app)
+client = TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"})
 
 
 def test_demanda_verbal_traslado_simultaneo():
@@ -232,3 +233,5 @@ REF: Proceso Verbal - Rad. 76001310301520240012300
     assert data["mailto_contraparte"].startswith("mailto:gerencia@ferreteriabeta.com")
     assert "mailto:radicacion@ramajudicial.gov.co" in data["mailto_despacho"]
     assert len(data["indice_anexos"]) >= 3
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

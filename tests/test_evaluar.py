@@ -196,3 +196,113 @@ async def test_evaluar_caso_mock_tutela():
     assert res["citas"]["resumen"]["rojo"] == 0
     assert len(res["auditoria"]["discrepancias"]) == 0
     assert len(res["expectativas"]["entidades_prohibidas_detectadas"]) == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("servidor", [None, "https://memorialista.example.test"])
+async def test_generacion_real_exige_token_antes_de_crear_cliente(monkeypatch, servidor):
+    from scripts import evaluar
+    import httpx
+    import fastapi.testclient
+    monkeypatch.delenv("MEMORIALISTA_ACCESS_TOKEN", raising=False)
+    def prohibido(*args, **kwargs):
+        pytest.fail("No se debe iniciar un cliente sin un token explícito.")
+    monkeypatch.setattr(httpx, "AsyncClient", prohibido)
+    monkeypatch.setattr(fastapi.testclient, "TestClient", prohibido)
+    with pytest.raises(RuntimeError, match="Falta MEMORIALISTA_ACCESS_TOKEN"):
+        await evaluar.generar_con_cliente({"tipo": "peticion", "datos": {}}, servidor_url=servidor)
+
+
+@pytest.mark.asyncio
+async def test_cli_real_falla_antes_de_cargar_casos_si_falta_token(monkeypatch, capsys, tmp_path):
+    from scripts import evaluar
+    monkeypatch.delenv("MEMORIALISTA_ACCESS_TOKEN", raising=False)
+    salida = tmp_path / "no-debe-existir.html"
+    monkeypatch.setattr("sys.argv", ["evaluar.py", "--limite", "1", "--salida", str(salida)])
+    def prohibido(**kwargs):
+        pytest.fail("El CLI debe fallar antes de cargar y procesar los casos.")
+    monkeypatch.setattr(evaluar, "cargar_casos", prohibido)
+    assert await evaluar.main_async() == 2
+    assert "MEMORIALISTA_ACCESS_TOKEN" in capsys.readouterr().err
+    assert not salida.exists()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("servidor", [None, "https://memorialista.example.test"])
+async def test_generacion_envia_bearer_en_cliente_local_y_remoto(monkeypatch, capsys, servidor):
+    """Se sustituye solo el transporte del script; no el validador de producción."""
+    from scripts import evaluar
+    import fastapi.testclient
+    import httpx
+    import json
+    token = "access-token-exclusivo-de-esta-prueba"
+    monkeypatch.setenv("MEMORIALISTA_ACCESS_TOKEN", token)
+    llamadas = []
+    eventos = [json.dumps({"t": "delta", "d": "Documento simulado por el transporte de prueba."}),
+               json.dumps({"t": "fin", "modelo": "provider-test", "tokens": {"entrada": 2, "salida": 3, "total": 5}})]
+    class Respuesta:
+        status_code = 200
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): return False
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        async def aiter_lines(self):
+            for line in eventos: yield line
+        def iter_lines(self): return iter(eventos)
+    class Cliente:
+        def __init__(self, *args, **kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): return False
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        def stream(self, metodo, url, **kwargs):
+            llamadas.append((metodo, url, kwargs))
+            return Respuesta()
+    monkeypatch.setattr(httpx, "AsyncClient", Cliente)
+    monkeypatch.setattr(fastapi.testclient, "TestClient", Cliente)
+    texto, _, tokens, modelo = await evaluar.generar_con_cliente({"tipo": "peticion", "datos": {}}, servidor_url=servidor)
+    assert texto == "Documento simulado por el transporte de prueba."
+    assert tokens["total"] == 5 and modelo == "provider-test"
+    assert llamadas[0][0] == "POST"
+    assert llamadas[0][1] == (servidor or "") + "/api/redactar"
+    assert llamadas[0][2]["headers"]["Authorization"] == "Bearer " + token
+    output = capsys.readouterr()
+    assert token not in output.out + output.err
+
+
+@pytest.mark.asyncio
+async def test_mock_no_necesita_token_y_no_invoca_ia_ni_fuentes_remotas(monkeypatch):
+    from scripts import evaluar
+    import httpx
+    from unittest.mock import AsyncMock
+    monkeypatch.delenv("MEMORIALISTA_ACCESS_TOKEN", raising=False)
+    no_red = AsyncMock(side_effect=AssertionError("Una simulación no puede acceder a red ni IA."))
+    monkeypatch.setattr(evaluar, "generar_con_cliente", no_red)
+    monkeypatch.setattr(evaluar, "verificar_citas", no_red)
+    monkeypatch.setattr(evaluar, "revisar_requisitos", no_red)
+    def cliente_prohibido(*args, **kwargs):
+        pytest.fail("--mock no debe abrir clientes HTTP.")
+    monkeypatch.setattr(httpx, "AsyncClient", cliente_prohibido)
+    caso = evaluar.cargar_casos(filtro_caso="tutela_02_debido_proceso_universidad")[0]
+    resultado = await evaluar.evaluar_caso(caso, mock=True)
+    assert resultado["simulacion"] is True
+    assert resultado["texto"]
+    assert resultado["error_generacion"] is None
+    assert resultado["citas"]["resumen"]["verde"] == 0
+    assert all(cita["estado"] == "sin_verificar" for cita in resultado["citas"]["lista"])
+    no_red.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_cli_mock_identifica_reporte_como_simulacion_sin_habilitar_despliegue(monkeypatch, capsys, tmp_path):
+    from scripts import evaluar
+    monkeypatch.delenv("MEMORIALISTA_ACCESS_TOKEN", raising=False)
+    salida = tmp_path / "simulacion.html"
+    monkeypatch.setattr("sys.argv", ["evaluar.py", "--mock", "--caso", "tutela_02_debido_proceso_universidad", "--salida", str(salida)])
+    assert await evaluar.main_async() == 0
+    contenido = salida.read_text(encoding="utf-8")
+    assert "SIMULACIÓN LOCAL" in contenido
+    assert "no autoriza un despliegue" in contenido
+    output = capsys.readouterr().out
+    assert "SIMULACIÓN LOCAL COMPLETADA" in output
+    assert "APTO PARA DESPLIEGUE" not in output

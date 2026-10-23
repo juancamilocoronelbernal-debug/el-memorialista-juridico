@@ -1,3 +1,4 @@
+import pytest
 """
 Pruebas unitarias para el comparador de versiones y exportación a Word
 con control de cambios (w:ins y w:del) en El Memorialista.
@@ -14,7 +15,7 @@ from app.services.comparador_versiones import (
     CompararVersionesRequest,
 )
 
-client = TestClient(app)
+client = TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"})
 
 
 def test_tokenizar_texto():
@@ -134,3 +135,5 @@ def test_endpoint_api_versiones_exportar_docx():
         doc_xml = z.read("word/document.xml").decode("utf-8")
         assert "<w:ins" in doc_xml
         assert "<w:del" in doc_xml
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

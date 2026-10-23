@@ -137,6 +137,12 @@ class PlazosRequest(BaseModel):
 
 @router.get("/health")
 async def health_check():
+    return {"status": "online", "app": "El Memorialista", "version": get_settings().VERSION}
+
+
+@router.get("/estado")
+async def estado_servicio():
+    """Diagnóstico de proveedores exclusivo del usuario autenticado, sin claves."""
     return {"status": "online", "app": "El Memorialista", "version": get_settings().VERSION, **gemini_service.estado()}
 
 
@@ -160,11 +166,14 @@ async def obtener_catalogo():
 
 
 @router.post("/catalogo/auditar/{tipo_id}")
-async def endpoint_auditar_tipo(tipo_id: str):
+async def endpoint_auditar_tipo(tipo_id: str, request: Request):
     """Ejecuta la auditoría jurídica automatizada con IA sobre un tipo del catálogo."""
     from app.services.auditor_catalogo import auditar_tipo_por_id
+    # Una sesión de usuario no autoriza reescribir el catálogo normativo global.
+    # El resultado se devuelve para revisión; su publicación es administrativa.
+    limitador.verificar(request, "redactar")
     try:
-        dictamen = await auditar_tipo_por_id(tipo_id, actualizar_json=True)
+        dictamen = await auditar_tipo_por_id(tipo_id, actualizar_json=False)
         return dictamen
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Tipo de escrito '{tipo_id}' no encontrado en el catálogo.")

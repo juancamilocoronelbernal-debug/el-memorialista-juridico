@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 from app.main import app
 from app.services.supabase_service import (
@@ -84,33 +84,35 @@ def test_endpoint_auth_config():
 
 @pytest.mark.asyncio
 async def test_validar_token_supabase_mock():
-    """Verifica que validar_token_supabase resuelva tokens mock de prueba."""
-    user = await validar_token_supabase("mock-user123-token")
-    assert user is not None
-    assert user["id"] == "user123"
-    assert user["email"] == "user123@memorialista.test"
+    """Los tokens ficticios no autentican en ningún entorno."""
+    assert await validar_token_supabase("mock-user123-token") is None
+    assert await validar_token_supabase("test-admin-token") is None
 
     # Token vacío
     assert await validar_token_supabase("") is None
     assert await validar_token_supabase("   ") is None
 
 
-def test_endpoint_perfil_usuario_autenticado():
+def test_endpoint_perfil_usuario_autenticado(autenticacion_pruebas):
     """Verifica que GET /api/usuario/perfil responda con el usuario autenticado."""
-    headers = {"Authorization": "Bearer mock-abogado456-token"}
+    headers = {"Authorization": "Bearer unit-test-bearer"}
     resp = client.get("/api/usuario/perfil", headers=headers)
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is True
-    assert data["id"] == "abogado456"
+    assert data["id"] == "unit-test-user"
     assert "email" in data
     assert data["limite_diario"] > 0
 
 
-def test_endpoint_exportar_datos_usuario():
+def test_endpoint_exportar_datos_usuario(autenticacion_pruebas, monkeypatch):
     """Verifica que GET /api/usuario/exportar-datos retorne el archivo JSON con todas las tablas."""
-    headers = {"Authorization": "Bearer mock-abogado789-token"}
+    headers = {"Authorization": "Bearer unit-test-bearer"}
+    exportacion = {"exportado_el": "2026-10-22", "usuario_id": "unit-test-user", "perfil": {}, "firma": {}, "clientes": [], "casos": [], "documentos": [], "versiones": []}
+    mock_exportar = AsyncMock(return_value=exportacion)
+    monkeypatch.setattr("app.routers.auth.exportar_todos_los_datos", mock_exportar)
     resp = client.get("/api/usuario/exportar-datos", headers=headers)
+    mock_exportar.assert_awaited_once_with(user_id="unit-test-user", token="unit-test-bearer")
     assert resp.status_code == 200
     assert "attachment" in resp.headers.get("content-disposition", "")
     assert "el_memorialista_mis_datos" in resp.headers.get("content-disposition", "")
@@ -118,7 +120,7 @@ def test_endpoint_exportar_datos_usuario():
     data = resp.json()
     assert "exportado_el" in data
     assert "usuario_id" in data
-    assert data["usuario_id"] == "abogado789"
+    assert data["usuario_id"] == "unit-test-user"
     assert "perfil" in data
     assert "firma" in data
     assert "clientes" in data
@@ -127,14 +129,17 @@ def test_endpoint_exportar_datos_usuario():
     assert "versiones" in data
 
 
-def test_endpoint_eliminar_cuenta_usuario():
+def test_endpoint_eliminar_cuenta_usuario(autenticacion_pruebas, monkeypatch):
     """Verifica que DELETE /api/usuario/eliminar-cuenta procese la baja del usuario."""
-    headers = {"Authorization": "Bearer mock-abogadoborra-token"}
+    headers = {"Authorization": "Bearer unit-test-bearer"}
+    mock_eliminar = AsyncMock(return_value=True)
+    monkeypatch.setattr("app.routers.auth.eliminar_cuenta_usuario", mock_eliminar)
     resp = client.delete("/api/usuario/eliminar-cuenta", headers=headers)
+    mock_eliminar.assert_awaited_once_with(user_id="unit-test-user", token="unit-test-bearer")
     assert resp.status_code == 200
     data = resp.json()
     assert data["ok"] is True
-    assert "eliminados definitivamente" in data["mensaje"]
+    assert "fueron eliminados" in data["mensaje"]
 
 
 def test_limite_uso_por_usuario():
@@ -162,32 +167,21 @@ def test_limite_uso_por_usuario():
     assert any("u:user-cuota-test" in k for k in claves)
 
 
-def test_frontend_html_auth_y_cuenta_modales():
-    """Verifica que el frontend contenga los modales de autenticación, cuenta, exportación y eliminación."""
-    resp = client.get("/")
+def test_frontend_html_auth_y_cuenta_modales(autenticacion_pruebas):
+    """El área profesional conserva cuenta y herramientas, tras el guard real."""
+    resp = client.get("/app", headers={"Authorization": "Bearer unit-test-bearer"})
     assert resp.status_code == 200
     html = resp.text
-
-    # SDK Supabase y elementos de cabecera
-    assert "supabase-js" in html
+    assert '/static/vendor/supabase.js' in html
+    assert '/static/auth/session.js' in html
     assert 'id="btnAuthHeader"' in html
     assert "iniciarSupabase" in html
-
-    # Modal de Auth con Magic Link
-    assert 'id="modalAuth"' in html
-    assert 'id="authEmail"' in html
-    assert 'id="formAuthMagicLink"' in html
-    assert "enlace mágico" in html.lower()
-
-    # Modal de Cuenta y Privacidad
     assert 'id="modalCuenta"' in html
     assert 'id="btnExportarDatosCuenta"' in html
     assert 'id="btnEliminarCuentaModal"' in html
     assert 'id="btnSincronizarNube"' in html
-
-    # Funciones de migración, exportación y borrado
     assert "migrarDatosNavegadorASupabase" in html
     assert "exportarTodosMisDatos" in html
     assert "eliminarMiCuenta" in html
-    assert "archivos-privados" in html
-
+    assert "mock-" not in html
+    assert "dev-user-local" not in html

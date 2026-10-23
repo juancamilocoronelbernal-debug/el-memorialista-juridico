@@ -1,7 +1,26 @@
-"""Actualiza index.html para integrar el nuevo verificador de citas oficiales."""
+"""Migración histórica anterior a v3; no ejecutar sobre la arquitectura actual.
+
+El código se conserva como referencia de la evolución del generador. Reaplicarlo
+puede reintroducir lógica antigua y romper autenticación, catálogo o auditoría.
+Los cambios actuales se hacen directamente en app/private/generador.html.
+"""
 import re
 
-INDEX_PATH = "/Users/juan/.gemini/antigravity/scratch/el-memorialista-app/app/static/index.html"
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+INDEX_PATH = PROJECT_ROOT / "app" / "private" / "generador.html"
+
+# Guardia previa a toda lectura/modificación: esta migración no es compatible
+# con el generador privado ni con la portada ciudadana de v3. Sin bypass.
+if INDEX_PATH.is_file() or (PROJECT_ROOT / "app" / "static" / "asesor").is_dir():
+    raise SystemExit(
+        "Migración histórica bloqueada: El Memorialista v3 ya separa asesor y "
+        "generador privado. No reapliques código anterior. Edita "
+        "app/private/generador.html y sus servicios de sesión directamente."
+    )
+if not INDEX_PATH.is_file():
+    raise SystemExit("No existe un destino compatible para esta migración histórica.")
 
 with open(INDEX_PATH, "r", encoding="utf-8") as f:
     content = f.read()
@@ -284,4 +303,4 @@ else:
 with open(INDEX_PATH, "w", encoding="utf-8") as f:
     f.write(content)
 
-print("¡index.html actualizado con verificador de citas!")
+print("Migración histórica del verificador aplicada al generador privado.")

@@ -33,7 +33,7 @@ from app.services.plazos import (
     buscar_precarga,
 )
 
-client = TestClient(app)
+client = TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"})
 
 
 # -----------------------------------------------------------------------------
@@ -413,3 +413,5 @@ def test_endpoint_post_plazos_ics_download():
     assert resp.headers["content-type"].startswith("text/calendar")
     assert "attachment" in resp.headers["content-disposition"]
     assert "BEGIN:VCALENDAR" in resp.text
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

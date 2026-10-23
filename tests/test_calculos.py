@@ -25,7 +25,7 @@ from app.services.calculos import (
     SalarioVariableItem,
 )
 
-client = TestClient(app)
+client = TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"})
 
 
 # -----------------------------------------------------------------------------
@@ -408,3 +408,5 @@ def test_endpoint_catalogos_sfc_e_ipc():
     assert resp_ipc.status_code == 200
     data_ipc = resp_ipc.json()
     assert len(data_ipc["series"]) > 30
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

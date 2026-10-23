@@ -1,5 +1,7 @@
 import json
 import subprocess
+import shutil
+import os
 from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
@@ -15,21 +17,20 @@ from app.services.radicado import (
 from app.services.numeros_letras import numero_a_letras
 from app.services.prompt import listar_tipos, obtener_tipo, valor_legible
 
-AUDITOR_JS_PATH = Path(__file__).resolve().parent.parent / "app" / "static" / "auditor.js"
+AUDITOR_JS_PATH = Path(__file__).resolve().parent.parent / "app" / "private" / "auditor.js"
 
 
 def ejecutar_js(codigo_js: str) -> dict:
-    """Ejecuta código JavaScript evaluando auditor.js a través de osascript."""
+    """Evalúa los mismos cálculos JS en Node en Windows, macOS o Linux."""
+    node = shutil.which("node") or os.environ.get("CODEX_PRIMARY_RUNTIME_NODE")
+    if not node:
+        pytest.skip("Node.js es necesario para comparar el auditor de navegador.")
     script = f"""
-    eval(ObjC.unwrap($.NSString.stringWithContentsOfFileEncodingError("{AUDITOR_JS_PATH}", $.NSUTF8StringEncoding, null)));
-    {codigo_js}
+    const auditor = require({json.dumps(str(AUDITOR_JS_PATH))});
+    const resultado = require('node:vm').runInNewContext({json.dumps(codigo_js)}, {{...auditor}});
+    process.stdout.write(String(resultado));
     """
-    res = subprocess.run(
-        ["osascript", "-l", "JavaScript", "-e", script],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    res = subprocess.run([node, "-e", script], capture_output=True, text=True, check=True)
     salida = res.stdout.strip()
     return json.loads(salida) if salida else {}
 
@@ -301,7 +302,7 @@ def test_formateo_iso_fecha_en_prompt():
 
 def test_endpoints_api_nuevos():
     """Prueba los endpoints HTTP para validación de NIT, radicado y número a letras."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as client:
         # 1. /api/catalogo incluye radicado
         r_cat = client.get("/api/catalogo")
         assert r_cat.status_code == 200
@@ -330,3 +331,5 @@ def test_endpoints_api_nuevos():
         r_nl = client.get("/api/numero-a-letras", params={"valor": "80000000"})
         assert r_nl.status_code == 200
         assert r_nl.json()["letras"] == "OCHENTA MILLONES DE PESOS M/CTE."
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

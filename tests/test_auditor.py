@@ -1,13 +1,15 @@
 import json
 import subprocess
+import shutil
+import os
 from pathlib import Path
 import pytest
 
-AUDITOR_JS_PATH = Path(__file__).resolve().parent.parent / "app" / "static" / "auditor.js"
+AUDITOR_JS_PATH = Path(__file__).resolve().parent.parent / "app" / "private" / "auditor.js"
 
 
 def auditar_js(datos: dict, texto: str, perfil: dict, fecha_hoy: str = "2026-10-21") -> dict:
-    """Ejecuta la función auditarDatosYEscrito en JavaScript usando el motor de JavaScript nativo (osascript)."""
+    """Ejecuta la función auditarDatosYEscrito en JavaScript usando el Node.js."""
     assert AUDITOR_JS_PATH.exists(), f"No se encontró {AUDITOR_JS_PATH}"
 
     payload = {
@@ -17,20 +19,27 @@ def auditar_js(datos: dict, texto: str, perfil: dict, fecha_hoy: str = "2026-10-
         "opciones": {"fechaHoy": fecha_hoy},
     }
 
-    js_code = f"""
-    eval(ObjC.unwrap($.NSString.stringWithContentsOfFileEncodingError("{AUDITOR_JS_PATH}", $.NSUTF8StringEncoding, null)));
-    const params = {json.dumps(payload, ensure_ascii=False)};
-    const resultado = auditarDatosYEscrito(params.datos, params.texto, params.perfil, params.opciones);
-    JSON.stringify(resultado);
-    """
-
-    res = subprocess.run(
-        ["osascript", "-l", "JavaScript", "-e", js_code],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return json.loads(res.stdout.strip())
+    node = shutil.which("node") or os.environ.get("CODEX_PRIMARY_RUNTIME_NODE")
+    if node:
+        js_code = f"""
+        const auditor = require({json.dumps(str(AUDITOR_JS_PATH))});
+        const params = {json.dumps(payload, ensure_ascii=False)};
+        const resultado = auditor.auditarDatosYEscrito(params.datos, params.texto, params.perfil, params.opciones);
+        process.stdout.write(JSON.stringify(resultado));
+        """
+        res = subprocess.run([node, "-e", js_code], capture_output=True, text=True, check=True)
+        return json.loads(res.stdout.strip())
+    elif shutil.which("osascript"):
+        js_code = f"""
+        eval(ObjC.unwrap($.NSString.stringWithContentsOfFileEncodingError("{AUDITOR_JS_PATH}", $.NSUTF8StringEncoding, null)));
+        const params = {json.dumps(payload, ensure_ascii=False)};
+        const resultado = auditarDatosYEscrito(params.datos, params.texto, params.perfil, params.opciones);
+        JSON.stringify(resultado);
+        """
+        res = subprocess.run(["osascript", "-l", "JavaScript", "-e", js_code], capture_output=True, text=True, check=True)
+        return json.loads(res.stdout.strip())
+    else:
+        pytest.skip("Node.js u osascript son necesarios para comparar el auditor de navegador.")
 
 
 def test_ejemplo_1_tutela_omisiones():

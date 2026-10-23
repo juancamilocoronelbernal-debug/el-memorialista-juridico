@@ -1,33 +1,65 @@
-"""Script para extraer el catálogo de index.html y generar los archivos JSON en app/catalogo/"""
+"""Extractor histórico del catálogo embebido del generador privado.
+
+En v3 el catálogo canónico está en app/catalogo/*.json y se carga por API.
+Este extractor aborta sin escrituras si encuentra el catálogo dinámico actual.
+Solo conserva soporte de mantenimiento para una fuente histórica con catálogo
+embebido y delimitadores explícitos; utiliza Node.js, no herramientas de macOS.
+"""
 import os
 import json
+import re
 import subprocess
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-INDEX_HTML = os.path.join(BASE_DIR, "app", "static", "index.html")
-CATALOGO_DIR = os.path.join(BASE_DIR, "app", "catalogo")
-TIPOS_DIR = os.path.join(CATALOGO_DIR, "tipos")
+BASE_DIR = Path(__file__).resolve().parents[1]
+INDEX_HTML = BASE_DIR / "app" / "private" / "generador.html"
+CATALOGO_DIR = BASE_DIR / "app" / "catalogo"
+TIPOS_DIR = CATALOGO_DIR / "tipos"
 
-os.makedirs(TIPOS_DIR, exist_ok=True)
+if not INDEX_HTML.is_file():
+    raise SystemExit("No existe app/private/generador.html; no se modificó el catálogo.")
+source = INDEX_HTML.read_text(encoding="utf-8")
+if re.search(r"(?:let|const)\s+TIPOS_LISTA\s*=\s*\[\s*\]", source):
+    raise SystemExit(
+        "Extracción histórica bloqueada: v3 carga el catálogo desde /api/catalogo. "
+        "Edita los JSON canónicos de app/catalogo y valida las pruebas; no extraigas "
+        "ni sobrescribas el catálogo desde el HTML dinámico."
+    )
 
-# 1. Extraer TIPOS_LISTA mediante osascript
-with open(INDEX_HTML, "r", encoding="utf-8") as f:
-    lines = f.readlines()
-
-# Líneas donde se definen C, DESP, TIPOS_LISTA
-js_code = "".join(lines[706:1201])
-full_js = js_code + "\nJSON.stringify(TIPOS_LISTA);"
-
-tmp_js = "/tmp/extract_tipos.js"
-with open(tmp_js, "w", encoding="utf-8") as f:
-    f.write(full_js)
-
-res = subprocess.run(["osascript", "-l", "JavaScript", tmp_js], capture_output=True, text=True)
+# Usar delimitadores semánticos, nunca números de línea del HTML original.
+start_marker = "/* =========================================================\n   Catálogo de escritos"
+end_marker = "/* Escrito de ejemplo para la primera vista */"
+start = source.find(start_marker)
+end = source.find(end_marker, start)
+if start < 0 or end < 0 or end <= start:
+    raise SystemExit("La fuente no tiene los delimitadores históricos esperados; no se escribió ningún archivo.")
+js_code = source[start:end]
+runner = r"""
+const fs = require('node:fs');
+const vm = require('node:vm');
+const source = fs.readFileSync(0, 'utf8');
+const context = vm.createContext({});
+const value = vm.runInContext(source + '\nJSON.stringify(TIPOS_LISTA);', context, { timeout: 2000 });
+process.stdout.write(value);
+"""
+try:
+    res = subprocess.run(["node", "-e", runner], input=js_code, capture_output=True, text=True, timeout=10)
+except FileNotFoundError:
+    raise SystemExit("Se requiere Node.js para evaluar el catálogo histórico; no se escribió ningún archivo.") from None
 if res.returncode != 0:
-    raise RuntimeError(f"Error evaluando JS: {res.stderr}")
-
-tipos_lista = json.loads(res.stdout.strip())
-print(f"Extraídos {len(tipos_lista)} tipos de documentos.")
+    raise RuntimeError(f"No se pudo evaluar el catálogo histórico; no se escribió ningún archivo: {res.stderr}")
+tipos_lista = json.loads(res.stdout)
+if not isinstance(tipos_lista, list) or not tipos_lista:
+    raise SystemExit("El catálogo extraído no es una lista válida y no vacía; no se escribió ningún archivo.")
+ids = []
+for tipo in tipos_lista:
+    if not isinstance(tipo, dict) or not re.fullmatch(r"[a-z0-9_]+", str(tipo.get("id", ""))):
+        raise SystemExit("El catálogo contiene un identificador no válido; no se escribió ningún archivo.")
+    ids.append(tipo["id"])
+if len(ids) != len(set(ids)):
+    raise SystemExit("El catálogo contiene identificadores repetidos; no se escribió ningún archivo.")
+TIPOS_DIR.mkdir(parents=True, exist_ok=True)
+print(f"Extraídos {len(tipos_lista)} tipos de documentos del generador histórico.")
 
 FUENTES_POR_TIPO = {
     "tutela": [

@@ -297,8 +297,13 @@ async def run_browser_test():
             app_proc.terminate()
 
 import os
+import sys
 import pytest
 
+@pytest.mark.skipif(
+    os.environ.get("MEMORIALISTA_RUN_LEGACY_BROWSER_TEST") != "1" or sys.platform != "darwin",
+    reason="Prueba manual heredada de dictado: requiere macOS, Chrome y habilitación explícita; la nueva frontera de login se verifica por separado.",
+)
 @pytest.mark.asyncio
 async def test_dictado_por_voz_en_navegador():
     chrome_bin = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'

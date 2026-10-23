@@ -126,7 +126,7 @@ def _redactar(cliente, **extra):
 
 def test_flujo_normal(preparar):
     falso = preparar([ok("**PRIMERO.** Hecho uno. ", "Fin del escrito.")])
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c)
     assert r.status_code == 200
     assert r.text == "**PRIMERO.** Hecho uno. Fin del escrito."
@@ -145,7 +145,7 @@ def test_continua_si_se_corta_por_tokens(preparar):
         ok("Primera parte del escrito que se corta en la pala", motivo="MAX_TOKENS"),
         ok("palabra siguiente y final."),
     ])
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c)
     assert r.status_code == 200
     assert r.text == "Primera parte del escrito que se corta en la palabra siguiente y final."
@@ -158,7 +158,7 @@ def test_fallo_a_mitad_continua_sin_duplicar(preparar):
         corte("Inicio del escrito. ", "Segundo párrafo incompleto"),
         ok(" que continúa sin repetir. Fin."),
     ])
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c)
     assert r.status_code == 200
     assert r.text == "Inicio del escrito. Segundo párrafo incompleto que continúa sin repetir. Fin."
@@ -168,7 +168,7 @@ def test_fallo_a_mitad_continua_sin_duplicar(preparar):
 
 def test_salta_modelo_que_no_existe(preparar):
     falso = preparar([falla(404), ok("Escrito del modelo b.")])
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c)
     assert r.status_code == 200
     assert r.text == "Escrito del modelo b."
@@ -178,7 +178,7 @@ def test_salta_modelo_que_no_existe(preparar):
 
 def test_si_todo_falla_responde_error_http_y_no_texto(preparar):
     preparar([falla(500)] * 4)
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c)
     assert r.status_code == 503
     assert "detail" in r.json()
@@ -186,7 +186,7 @@ def test_si_todo_falla_responde_error_http_y_no_texto(preparar):
 
 def test_reintenta_sin_parametros_opcionales_si_hay_400(preparar):
     falso = preparar([falla(400), ok("Texto.")], GEMINI_THINKING_DEFAULT="low")
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c)
     assert r.text == "Texto."
     assert falso.llamadas[0]["cuerpo"]["generationConfig"]["thinkingConfig"] == {"thinkingLevel": "low"}
@@ -195,7 +195,7 @@ def test_reintenta_sin_parametros_opcionales_si_hay_400(preparar):
 
 def test_protocolo_ndjson(preparar):
     preparar([ok("Hola ", "mundo.")])
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c, protocolo="ndjson")
     eventos = [json.loads(linea) for linea in r.text.splitlines() if linea.strip()]
     tipos = [e["t"] for e in eventos]
@@ -209,7 +209,7 @@ def test_marca_incompleto_si_no_logra_terminar(preparar):
         ok(texto, motivo="MAX_TOKENS") for texto in ("Parte dos. ", "Parte tres. ", "Parte cuatro. ")
     ]
     preparar(guion)
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c)
     assert r.status_code == 200
     assert r.text.startswith("Parte uno. Parte dos. ")
@@ -218,16 +218,17 @@ def test_marca_incompleto_si_no_logra_terminar(preparar):
 
 def test_codigo_de_acceso(preparar):
     preparar([ok("Texto.")], APP_ACCESS_CODE="secreto")
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
+        c.headers.pop("Authorization", None)
         sin_codigo = _redactar(c)
         con_codigo = c.post("/api/redactar", json={"prompt": PROMPT}, headers={"X-Codigo-Acceso": "secreto"})
     assert sin_codigo.status_code == 401
-    assert con_codigo.status_code == 200 and con_codigo.text == "Texto."
+    assert con_codigo.status_code == 401  # El código legado ya no autoriza acceso.
 
 
 def test_limite_de_uso(preparar):
     preparar([ok("Uno."), ok("Dos.")], LIMITE_POR_VENTANA=1)
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         primero = _redactar(c)
         segundo = _redactar(c)
     assert primero.status_code == 200
@@ -250,7 +251,7 @@ def test_analizar_estilo(preparar):
     ficha = {"encabezado": "Señor Juez", "cierre": "Atentamente,"}
     respuesta = {"candidates": [{"content": {"parts": [{"text": json.dumps(ficha, ensure_ascii=False)}]}}]}
     preparar([lambda req: httpx.Response(200, json=respuesta)])
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = c.post("/api/analizar-estilo", json={"muestra": "Señor Juez, respetuosamente me permito presentar. " * 5})
     assert r.status_code == 200
     assert "Encabezado: Señor Juez" in r.json()["ficha"]
@@ -264,7 +265,7 @@ def test_modelo_fuera_del_plan_se_salta_sin_reintentar(preparar):
     )
     sin_plan = lambda req: httpx.Response(429, json={"error": {"code": 429, "message": mensaje}})  # noqa: E731
     falso = preparar([sin_plan, ok("Escrito con el modelo equilibrado.")])
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c, calidad="complex")
     assert r.status_code == 200
     assert r.text == "Escrito con el modelo equilibrado."
@@ -280,7 +281,7 @@ def test_variables_viejas_en_render_usan_respaldo_vigente(preparar):
         GEMINI_MODEL="gemini-1.5-flash",
         GEMINI_FALLBACK_MODELS="gemini-2.0-flash",
     )
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = _redactar(c)
     assert r.status_code == 200
     assert r.text == "Escrito con el respaldo vigente."
@@ -289,16 +290,18 @@ def test_variables_viejas_en_render_usan_respaldo_vigente(preparar):
 
 def test_health_no_expone_la_clave(preparar):
     preparar([])
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = c.get("/api/health")
     assert r.status_code == 200
-    assert r.json()["gemini_configured"] is True
+    assert set(r.json()) == {"status", "app", "version"}
     assert "clave-de-prueba" not in r.text
 
 
 def test_endpoint_auditor_js():
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as c:
         r = c.get("/auditor.js")
     assert r.status_code == 200
     assert "application/javascript" in r.headers["content-type"]
     assert "auditarDatosYEscrito" in r.text
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

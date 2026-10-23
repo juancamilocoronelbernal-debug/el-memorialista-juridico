@@ -142,7 +142,7 @@ def test_cache_30_dias():
 
 
 def test_endpoint_api_verificar_citas():
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as client:
         res = client.post("/api/verificar-citas", json={
             "texto": "Según el artículo 86 de la Constitución y el artículo 82 del CGP..."
         })
@@ -201,3 +201,5 @@ def test_opcion_jurisprudencia_verificables_en_prompt():
     datos["_juris"] = "verificables"
     prompt = construir_prompt("tutela", datos, {})
     assert "el sistema verificará automáticamente su existencia en relatoría oficial" in prompt
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

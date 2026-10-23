@@ -10,7 +10,7 @@ from app.services.revisor_requisitos import revisar_requisitos
 
 def test_catalogo_todos_tipos_tienen_requisitos():
     """Verifica que todos los tipos del catálogo incluyan 'requisitos' con id, texto, norma y critico."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as client:
         res = client.get("/api/catalogo")
         assert res.status_code == 200
         data = res.json()
@@ -108,7 +108,7 @@ Demandado: calle 100 # 15-20, correo notificaciones@clinicasanjose.com."""
 
 def test_endpoint_revisar_http():
     """Prueba el endpoint HTTP POST /api/revisar."""
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as client:
         # 1. Error con escrito vacío
         r_vacio = client.post("/api/revisar", json={"escrito": "   ", "tipo": "tutela"})
         assert r_vacio.status_code == 400
@@ -149,7 +149,7 @@ def test_revisar_con_salida_simulada_ia(monkeypatch):
     from app.services.gemini_service import gemini_service
     monkeypatch.setattr(gemini_service, "evaluar_requisitos_json", mock_evaluar)
 
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as client:
         res = client.post("/api/revisar", json={"escrito": "Texto del escrito", "tipo": "tutela"})
         assert res.status_code == 200
         items = res.json()
@@ -161,3 +161,5 @@ def test_revisar_con_salida_simulada_ia(monkeypatch):
         assert mapa["juramento_no_otra_tutela"]["estado"] == "no_cumple"
         assert mapa["juramento_no_otra_tutela"]["critico"] is True
         assert "art. 37" in mapa["juramento_no_otra_tutela"]["sugerencia"]
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")

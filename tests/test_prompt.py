@@ -10,8 +10,11 @@ import datetime
 import json
 import os
 import subprocess
+import shutil
 import pytest
 from fastapi.testclient import TestClient
+
+pytestmark = pytest.mark.usefixtures("autenticacion_pruebas")
 
 from app.config import get_settings
 from app.main import app
@@ -58,43 +61,31 @@ def perfil_prueba():
 
 
 def _generar_prompt_en_js(tipo_id, datos, perfil):
-    """Ejecuta la función JS original de referencia mediante JXA (JavaScript for Automation)."""
+    """Compara Python con la referencia JavaScript original, ejecutada en Node.
+
+    El código y los datos pasan por stdin; no requiere macOS ni escribe archivos
+    temporales compartidos. TZ=UTC mantiene la misma fecha que la prueba Python.
+    """
+    node = os.environ.get("NODE_BINARY") or shutil.which("node")
+    if not node:
+        pytest.skip("Node.js es necesario para verificar equivalencia Python/JavaScript")
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    ref_js = os.path.join(base_dir, "tests", "reference_prompt.js")
-    with open(ref_js, "r", encoding="utf-8") as f:
-        code_ref = f.read()
-
-    js_code = f"""
-let state = {{
-    tipo: '{tipo_id}',
-    datos: {json.dumps(datos)},
-    perfil: {json.dumps(perfil)}
-}};
-
-{code_ref}
-
-construirPrompt();
-"""
-    tmp_path = f"/tmp/test_eval_prompt_{tipo_id}.js"
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        f.write(js_code)
-
-    res = subprocess.run(["osascript", "-l", "JavaScript", tmp_path], capture_output=True, text=True)
-    if os.path.exists(tmp_path):
-        os.remove(tmp_path)
-    if res.returncode != 0:
-        raise RuntimeError(f"Error evaluando JS en {tipo_id}: {res.stderr}")
-
-    out = res.stdout
-    if out.endswith("\n"):
-        out = out[:-1]
-    return out
+    with open(os.path.join(base_dir, "tests", "reference_prompt.js"), encoding="utf-8") as source:
+        reference = source.read()
+    state = {"tipo": tipo_id, "datos": datos, "perfil": perfil}
+    script = "const state = " + json.dumps(state, ensure_ascii=False) + ";\n"
+    script += reference + "\nprocess.stdout.write(construirPrompt());\n"
+    result = subprocess.run([node, "-"], input=script, capture_output=True, text=True,
+                            timeout=20, env={**os.environ, "TZ": "UTC"})
+    if result.returncode != 0:
+        raise RuntimeError(f"Error evaluando JS en {tipo_id}: {result.stderr}")
+    return result.stdout
 
 
 def test_prompt_identico_tutela(perfil_prueba):
     tutela_meta = obtener_tipo("tutela")
     datos = tutela_meta["ejemplo"]
-    hoy = datetime.date.today()
+    hoy = datetime.datetime.now(datetime.timezone.utc).date()
 
     py_prompt = construir_prompt("tutela", datos, perfil_prueba, fecha_ref=hoy)
     js_prompt = _generar_prompt_en_js("tutela", datos, perfil_prueba)
@@ -105,7 +96,7 @@ def test_prompt_identico_tutela(perfil_prueba):
 def test_prompt_identico_peticion(perfil_prueba):
     peticion_meta = obtener_tipo("peticion")
     datos = peticion_meta["ejemplo"]
-    hoy = datetime.date.today()
+    hoy = datetime.datetime.now(datetime.timezone.utc).date()
 
     py_prompt = construir_prompt("peticion", datos, perfil_prueba, fecha_ref=hoy)
     js_prompt = _generar_prompt_en_js("peticion", datos, perfil_prueba)
@@ -129,7 +120,7 @@ def test_prompt_identico_demanda_verbal(perfil_prueba):
         "pruebas": "Copia del contrato y requerimientos.",
         "notificaciones": "Demandante: notificaciones@norte.com. Demandada: judicial@andinas.com."
     }
-    hoy = datetime.date.today()
+    hoy = datetime.datetime.now(datetime.timezone.utc).date()
 
     py_prompt = construir_prompt("demanda_verbal", datos, perfil_prueba, fecha_ref=hoy)
     js_prompt = _generar_prompt_en_js("demanda_verbal", datos, perfil_prueba)
@@ -138,7 +129,7 @@ def test_prompt_identico_demanda_verbal(perfil_prueba):
 
 
 def test_api_catalogo():
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as client:
         res = client.get("/api/catalogo")
         assert res.status_code == 200
         data = res.json()
@@ -160,7 +151,7 @@ def test_validacion_campos_requeridos():
     errores = validar_datos_tipo(tutela_meta, {})
     assert len(errores) > 0
 
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as client:
         res = client.post("/api/redactar", json={
             "tipo": "tutela",
             "datos": {},
@@ -174,7 +165,7 @@ def test_rechazo_prompt_libre_en_produccion(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "production")
     get_settings.cache_clear()
 
-    with TestClient(app) as client:
+    with TestClient(app, headers={"Authorization": "Bearer unit-test-bearer"}) as client:
         # Intento de enviar prompt libre en producción -> debe retornar 400
         res = client.post("/api/redactar", json={
             "prompt": "Redacta una tutela libremente sin tipo ni datos validados.",

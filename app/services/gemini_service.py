@@ -14,6 +14,7 @@ Qué cambia frente a la versión anterior:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import random
