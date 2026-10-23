@@ -157,12 +157,20 @@ async def lifespan(app: FastAPI):
     url_keep = (settings.RENDER_EXTERNAL_URL or settings.APP_BASE_URL or "").strip()
     if settings.KEEP_ALIVE and "onrender.com" in url_keep:
         tareas.append(asyncio.create_task(keep_alive_worker(url_keep)))
-    if settings.DESPACHO_MONITORS_ENABLED and settings.SUPABASE_SERVICE_ROLE_KEY:
-        from app.services.despacho_monitors import monitor_worker
-        tareas.append(asyncio.create_task(monitor_worker()))
-    if settings.DESPACHO_AGENT_WORKER_ENABLED and settings.SUPABASE_SERVICE_ROLE_KEY:
-        from app.services.despacho_agent import agent_worker
-        tareas.append(asyncio.create_task(agent_worker()))
+    if settings.DESPACHO_MONITORS_ENABLED:
+        if settings.SUPABASE_SERVICE_ROLE_KEY:
+            from app.services.despacho_monitors import monitor_worker
+            tareas.append(asyncio.create_task(monitor_worker()))
+            log.info("Trabajador de monitores iniciado (sondeo cada %d s).", settings.DESPACHO_MONITOR_POLL_SECONDS)
+        else:
+            log.warning("DESPACHO_MONITORS_ENABLED=True pero falta SUPABASE_SERVICE_ROLE_KEY en el servidor.")
+    if settings.DESPACHO_AGENT_WORKER_ENABLED:
+        if settings.SUPABASE_SERVICE_ROLE_KEY:
+            from app.services.despacho_agent import agent_worker
+            tareas.append(asyncio.create_task(agent_worker()))
+            log.info("Trabajador del agente iniciado (sondeo cada %d s).", settings.DESPACHO_AGENT_POLL_SECONDS)
+        else:
+            log.warning("DESPACHO_AGENT_WORKER_ENABLED=True pero falta SUPABASE_SERVICE_ROLE_KEY en el servidor.")
     try:
         yield
     finally:

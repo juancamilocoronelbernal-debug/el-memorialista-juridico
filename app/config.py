@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     AUTH_COOKIE_MAX_AGE_SECONDS: int = Field(3600, ge=60, le=86400)
 
     # Despacho profesional: mismo Auth y base existente, migraciones adicionales.
-    DESPACHO_MONITORS_ENABLED: bool = False
+    DESPACHO_MONITORS_ENABLED: bool = True
     DESPACHO_MONITOR_POLL_SECONDS: int = Field(60, ge=30, le=3600)
     DESPACHO_MONITOR_ALLOWED_HOSTS: str = (
         "corteconstitucional.gov.co,cortesuprema.gov.co,consejodeestado.gov.co,"
@@ -89,7 +89,7 @@ class Settings(BaseSettings):
     DESPACHO_MONITOR_AI_ENABLED: bool = True
 
     # Encargos persistidos, programación y navegador supervisado.
-    DESPACHO_AGENT_WORKER_ENABLED: bool = False
+    DESPACHO_AGENT_WORKER_ENABLED: bool = True
     DESPACHO_AGENT_POLL_SECONDS: int = Field(30, ge=10, le=600)
     DESPACHO_AUTOMATION_DAILY_USER_CALLS: int = Field(100, ge=0, le=100000)
     DESPACHO_AUTOMATION_DAILY_GLOBAL_CALLS: int = Field(1000, ge=0, le=1000000)
