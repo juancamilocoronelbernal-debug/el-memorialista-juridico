@@ -29,7 +29,7 @@ class ChatRequest(BaseModel):
     document_ids: list[UUID] = Field(default_factory=list, max_length=20)
     matter_id: UUID | None = None
     playbook_id: UUID | None = None
-    knowledge_scope: Literal["auto", "off", "documents", "legal", "all"] = "auto"
+    knowledge_scope: Literal["auto", "off", "documents", "legal", "all", "official"] = "auto"
 
     @field_validator("message")
     @classmethod

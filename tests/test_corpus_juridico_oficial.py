@@ -100,3 +100,48 @@ def test_rutas_corpus_rechazan_visitas_sin_sesion():
         assert client.get('/api/despacho/official/status').status_code in (401, 403)
         assert client.post('/api/despacho/official/search',json={'query':'reparación directa'}).status_code in (401, 403)
         assert client.post('/api/despacho/official/constitutional-metadata',json={'query':'T-100/24'}).status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_agente_recupera_contexto_corpus_oficial(monkeypatch):
+    from app.services import despacho_ai as ai
+    from app.services import despacho_corpus_fuentes as official
+
+    async def fake_search(token, query, limit=16, semantic=True):
+        return {
+            'results': [
+                {'title': 'Sentencia T-100/24', 'excerpt': 'Protección a la maternidad en servicio militar.',
+                 'source_url': 'https://www.corteconstitucional.gov.co/relatoria/2024/T-100-24.htm',
+                 'source_id': 'constitucional', 'date': '2024-04-05', 'version': 1, 'segment': 3,
+                 'score': 0.03, 'method': 'hybrid'}
+            ],
+            'method': 'hybrid',
+            'warnings': []
+        }
+
+    async def fake_status(token):
+        return {'published_documents': 1, 'published_sources': 1, 'indexed_fragments': 41}
+
+    monkeypatch.setattr(official, 'search_corpus', fake_search)
+    monkeypatch.setattr(official, 'corpus_status', fake_status)
+
+    context = {'payload': [], 'passages': [], 'sources': [], 'coverage': {'document_ids': []}, 'warnings': []}
+    res_ctx = await ai.augment_indexed_context('user-1', 'jwt-test', {'message': 'T-100/24 maternidad', 'knowledge_scope': 'official'}, context)
+
+    assert len(res_ctx['passages']) == 1
+    assert res_ctx['passages'][0]['id'] == 'O1-S3'
+    assert res_ctx['passages'][0]['kind'] == 'official'
+    assert len(res_ctx['sources']) == 1
+    assert res_ctx['sources'][0]['id'] == 'O1-S3'
+    assert res_ctx['sources'][0]['kind'] == 'official'
+    assert res_ctx['coverage']['scope'] == 'official'
+    assert res_ctx['coverage']['official_documents'] == 1
+    assert res_ctx['coverage']['retrieved_passages'] == 1
+    assert res_ctx['coverage']['selected_passages'] == 1
+
+
+def test_esquema_chat_admite_official_scope():
+    from app.routers.despacho_ai import ChatRequest
+    req = ChatRequest(message="Consulta oficial", knowledge_scope="official")
+    assert req.knowledge_scope == "official"
+
