@@ -131,7 +131,8 @@ def test_private_html_never_available_through_static_or_anonymous_routes(auth_re
     for path in ("/app", "/app/", "/generador", "/generador/"):
         response = client.get(path, follow_redirects=False)
         assert response.status_code == 303
-        assert response.headers["location"] == "/login?next=/app"
+        target = "/generador" if path.startswith("/generador") else "/app"
+        assert response.headers["location"] == "/login?next=" + target
         assert "formRedactar" not in response.text
     for path in ("/static/generador.html", "/private/generador.html", "/static/../private/generador.html"):
         assert client.get(path).status_code == 404

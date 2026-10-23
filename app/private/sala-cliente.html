@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+  <title>Sala de documentos · El Memorialista</title>
+  <link rel="icon" href="/static/asesor/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/sala-cliente/sala-cliente.css">
+  <script src="/static/sala-cliente/sala-cliente.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Ir a los documentos</a>
+  <header class="header"><div class="brand"><span class="mark" aria-hidden="true">M<span>·</span></span><div>El Memorialista<small>SALA DE DOCUMENTOS</small></div></div><span class="private">Acceso por enlace privado</span></header>
+  <main id="main" tabindex="-1">
+    <section id="loading" class="panel loading" aria-live="polite"><p class="eyebrow">ACCESO A LA SALA</p><h1>Comprobando tu enlace</h1><p>Verificamos los permisos y la vigencia de los documentos compartidos.</p></section>
+    <section id="error" class="panel" hidden role="alert"><p class="eyebrow">ACCESO NO DISPONIBLE</p><h1>No pudimos abrir la sala</h1><p id="error-message"></p><button id="retry" class="button" type="button">Volver a comprobar</button></section>
+    <div id="room" hidden>
+      <section class="heading"><p class="eyebrow">UN ESPACIO PARA REVISAR Y COMPARTIR</p><h1 id="room-title"></h1><p id="description" class="description"></p><div class="metadata"><span id="link-label" class="badge"></span><span id="expiry"></span></div></section>
+      <div class="layout">
+        <section class="panel documents" aria-labelledby="documents-title"><div class="section-heading"><div><p class="eyebrow">DOCUMENTOS COMPARTIDOS</p><h2 id="documents-title">Copias para tu revisión</h2></div><button id="refresh" class="button secondary" type="button">Actualizar acceso</button></div>
+          <p class="help">Las copias corresponden al contenido fijado al crear esta sala. Los archivos que no eran PDF se preparan desde su texto y pueden cambiar de formato.</p>
+          <div id="document-list"></div><p id="document-status" class="status" role="status" aria-live="polite"></p>
+          <p class="help small">Las copias llevan una marca de la sala. La huella mostrada identifica el original congelado; la copia marcada tiene una huella diferente. Si puedes ver un documento, su contenido puede guardarse o capturarse desde el dispositivo.</p>
+        </section>
+        <aside class="panel upload" aria-labelledby="upload-title"><p class="eyebrow">APORTAR DOCUMENTOS</p><h2 id="upload-title">Envía un archivo a revisión</h2><p id="upload-permission" class="help"></p>
+          <form id="upload-form" hidden><label class="file-box" for="upload-file"><span>Selecciona tu archivo</span><small>PDF, Word DOCX o TXT · hasta 10 MB</small><input id="upload-file" type="file" accept=".pdf,.docx,.txt" required></label><p class="help small">El aporte llegará al responsable de la sala. Se incorporará al expediente cuando lo revise y lo acepte.</p><button id="upload-submit" class="button" type="submit">Enviar este archivo</button></form>
+          <p id="upload-status" class="status" role="status" aria-live="polite"></p><div id="received-list" class="received"></div>
+          <div class="access-note"><h3>Sobre este acceso</h3><p id="access-note" class="help"></p><p class="help">Conserva el enlace original para volver a entrar. Compártelo sólo con las personas autorizadas por quien preparó la sala.</p></div>
+        </aside>
+      </div>
+    </div>
+    <dialog id="viewer" aria-labelledby="viewer-title"><div class="viewer-header"><h2 id="viewer-title">Documento</h2><button id="viewer-close" type="button" class="button secondary">Cerrar</button></div><p class="help">Copia con marca de acceso. Comprueba todas las páginas antes de tomar una decisión.</p><iframe id="pdf-frame" title="Documento compartido" referrerpolicy="no-referrer"></iframe><p class="help small" id="viewer-help">Si tu navegador no muestra PDF, utiliza Descargar cuando el enlace tenga ese permiso.</p></dialog>
+  </main>
+  <footer><span>EL MEMORIALISTA</span><span>Documentos, permisos y trazabilidad en un mismo lugar.</span></footer>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex,nofollow">
+  <title>El Memorialista · Despacho</title>
+  <link rel="icon" href="/static/asesor/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app/assets/despacho.css">
+  <script src="/static/vendor/supabase.js" defer></script>
+  <script src="/static/auth/session.js" defer></script>
+  <script src="/app/assets/despacho.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir al contenido</a>
+  <div class="app-shell">
+    <aside id="sidebar" class="sidebar" aria-label="Navegación del despacho">
+      <a href="/app" class="brand" aria-label="El Memorialista, inicio"><span class="brand-symbol" aria-hidden="true">M<span>·</span></span><span class="brand-name">El Memorialista<small>DESPACHO JURÍDICO</small></span></a>
+      <button id="new-chat" class="new-chat" type="button"><span aria-hidden="true">+</span> Nuevo encargo <kbd>⌘ K</kbd></button>
+      <div class="sidebar-scroll">
+      <nav id="main-nav" aria-label="Productos"></nav>
+      <div class="sidebar-recent"><div class="section-label">CONVERSACIONES <button id="all-conversations" type="button" aria-label="Ver todas las conversaciones">↗</button></div><div id="recent-chats"></div></div>
+      </div>
+      <div class="sidebar-bottom"><a class="generator-link" href="/generador"><span aria-hidden="true">↗</span><span>Generador de escritos<small>Tu flujo de redacción especializado</small></span></a><button id="account-button" class="account-button" type="button"><span id="avatar" class="avatar">M</span><span><strong id="user-name">Tu espacio privado</strong><small id="user-email">Conectando la sesión…</small></span><span aria-hidden="true">⌄</span></button></div>
+    </aside>
+    <button class="sidebar-scrim" id="sidebar-scrim" type="button" aria-label="Cerrar navegación" hidden></button>
+    <div class="workspace">
+      <header class="topbar"><div class="topbar-left"><button class="icon-button mobile-menu" id="mobile-menu" type="button" aria-label="Abrir navegación" aria-expanded="false" aria-controls="sidebar">☰</button><span class="breadcrumb">Mi despacho <span aria-hidden="true">/</span> <strong id="page-name">Agente</strong></span></div><div class="topbar-right"><span class="country"><span class="country-dot" aria-hidden="true"></span> Colombia</span><button id="quick-search" class="quick-search" type="button">Buscar en mi despacho <kbd>⌘ /</kbd></button><button id="refresh-button" class="icon-button" type="button" aria-label="Actualizar despacho">↻</button></div></header>
+      <div id="workspace-notice" class="workspace-notice" hidden></div>
+      <main id="main" tabindex="-1"><section class="boot-state"><div class="brand-symbol" aria-hidden="true">M<span>·</span></div><h1>Abriendo tu despacho</h1><p>Comprobamos tu sesión y recuperamos tus asuntos.</p><div class="loading-bar" aria-label="Cargando"></div></section></main>
+      <footer class="workspace-footer"><span>EL MEMORIALISTA</span><span>El criterio y la aprobación siempre son tuyos.</span></footer>
+    </div>
+  </div>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+  <dialog id="modal" aria-labelledby="modal-title"><div class="modal-heading"><h2 id="modal-title"></h2><button id="modal-close" class="icon-button" type="button" aria-label="Cerrar ventana">×</button></div><div id="modal-body"></div><div id="modal-footer"></div></dialog>
+  <input id="upload-input" type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.tif,.tiff,.eml" multiple hidden>
+  <input id="backup-input" type="file" accept=".json,application/json" hidden>
+  <input id="version-input" type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.tif,.tiff,.eml" hidden>
+</body>
+</html>

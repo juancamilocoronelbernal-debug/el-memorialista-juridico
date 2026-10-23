@@ -20,26 +20,16 @@ def auditar_js(datos: dict, texto: str, perfil: dict, fecha_hoy: str = "2026-10-
     }
 
     node = shutil.which("node") or os.environ.get("CODEX_PRIMARY_RUNTIME_NODE")
-    if node:
-        js_code = f"""
-        const auditor = require({json.dumps(str(AUDITOR_JS_PATH))});
-        const params = {json.dumps(payload, ensure_ascii=False)};
-        const resultado = auditor.auditarDatosYEscrito(params.datos, params.texto, params.perfil, params.opciones);
-        process.stdout.write(JSON.stringify(resultado));
-        """
-        res = subprocess.run([node, "-e", js_code], capture_output=True, text=True, check=True)
-        return json.loads(res.stdout.strip())
-    elif shutil.which("osascript"):
-        js_code = f"""
-        eval(ObjC.unwrap($.NSString.stringWithContentsOfFileEncodingError("{AUDITOR_JS_PATH}", $.NSUTF8StringEncoding, null)));
-        const params = {json.dumps(payload, ensure_ascii=False)};
-        const resultado = auditarDatosYEscrito(params.datos, params.texto, params.perfil, params.opciones);
-        JSON.stringify(resultado);
-        """
-        res = subprocess.run(["osascript", "-l", "JavaScript", "-e", js_code], capture_output=True, text=True, check=True)
-        return json.loads(res.stdout.strip())
-    else:
-        pytest.skip("Node.js u osascript son necesarios para comparar el auditor de navegador.")
+    if not node:
+        pytest.skip("Node.js es necesario para comparar el auditor de navegador.")
+    js_code = f"""
+    const auditor = require({json.dumps(str(AUDITOR_JS_PATH))});
+    const params = {json.dumps(payload, ensure_ascii=False)};
+    const resultado = auditor.auditarDatosYEscrito(params.datos, params.texto, params.perfil, params.opciones);
+    process.stdout.write(JSON.stringify(resultado));
+    """
+    res = subprocess.run([node, "-e", js_code], capture_output=True, text=True, check=True)
+    return json.loads(res.stdout.strip())
 
 
 def test_ejemplo_1_tutela_omisiones():

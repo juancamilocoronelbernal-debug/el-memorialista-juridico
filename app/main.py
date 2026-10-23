@@ -22,6 +22,9 @@ from starlette.datastructures import MutableHeaders
 
 from app.config import get_settings
 from app.routers import asesor_paginas, asesor_pwa, auth, calculos, documents
+from app.routers import despacho_ai, despacho_data, despacho_export, despacho_signatures, despacho_word
+from app.routers import despacho_agent, despacho_connections, despacho_knowledge, despacho_signing_v5
+from app.routers import despacho_rooms_v5
 from app.services.asesor_paginas import metadatos_publicos
 from app.services.gemini_service import gemini_service
 from app.services.limites import verificar_acceso
@@ -154,6 +157,12 @@ async def lifespan(app: FastAPI):
     url_keep = (settings.RENDER_EXTERNAL_URL or settings.APP_BASE_URL or "").strip()
     if settings.KEEP_ALIVE and "onrender.com" in url_keep:
         tareas.append(asyncio.create_task(keep_alive_worker(url_keep)))
+    if settings.DESPACHO_MONITORS_ENABLED and settings.SUPABASE_SERVICE_ROLE_KEY:
+        from app.services.despacho_monitors import monitor_worker
+        tareas.append(asyncio.create_task(monitor_worker()))
+    if settings.DESPACHO_AGENT_WORKER_ENABLED and settings.SUPABASE_SERVICE_ROLE_KEY:
+        from app.services.despacho_agent import agent_worker
+        tareas.append(asyncio.create_task(agent_worker()))
     try:
         yield
     finally:
@@ -164,6 +173,9 @@ async def lifespan(app: FastAPI):
                 await tarea
         with contextlib.suppress(BaseException):
             await gemini_service.cerrar()
+        with contextlib.suppress(BaseException):
+            from app.services.despacho_agent import close
+            await close()
 
 
 es_produccion = settings.ENVIRONMENT == "production"
@@ -185,13 +197,17 @@ class AccesoAPI:
     La cookie de navegación no sustituye el Bearer exigido por verificar_acceso.
     """
     PUBLICAS = frozenset({"/api/health", "/api/auth/config", "/api/auth/sesion"})
+    FIRMAS_PUBLICAS = frozenset({"/api/firmas-publicas/ver", "/api/firmas-publicas/aceptar",
+        "/api/firmas-v5/view", "/api/firmas-v5/document", "/api/firmas-v5/otp", "/api/firmas-v5/accept",
+        "/api/salas-v5/view", "/api/salas-v5/document", "/api/salas-v5/upload"})
 
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http" and scope.get("path", "").startswith("/api/"):
-            if scope["path"] not in self.PUBLICAS and scope.get("method") != "OPTIONS":
+            firma_por_enlace = scope["path"] in self.FIRMAS_PUBLICAS and scope.get("method") == "POST"
+            if scope["path"] not in self.PUBLICAS and not firma_por_enlace and scope.get("method") != "OPTIONS":
                 try:
                     await verificar_acceso(Request(scope))
                 except HTTPException as exc:
@@ -219,10 +235,13 @@ class CabecerasSeguridad:
                 cabeceras.setdefault("Referrer-Policy", "no-referrer")
                 cabeceras.setdefault("X-Frame-Options", "DENY")
                 path = scope.get("path", "")
+                if path == "/word":
+                    # El panel Word se integra en hosts de Office declarados en su CSP.
+                    del cabeceras["X-Frame-Options"]
                 if (cabeceras.get("content-type", "").startswith("text/html")
                         and path in {"/asesor/", "/asesor/offline-shell.html"}):
                     cabeceras.setdefault("Content-Security-Policy", csp_archivo_publico(asesor_pwa.PWA_DIR / "shell.html"))
-                if path.startswith(("/api/", "/app", "/generador", "/auth/", "/login")) or path == "/auditor.js":
+                if path.startswith(("/api/", "/app", "/generador", "/auth/", "/login", "/word", "/firmar", "/sala-cliente", "/oauth/")) or path == "/auditor.js":
                     cabeceras["Cache-Control"] = "private, no-store, max-age=0"
                     cabeceras["Pragma"] = "no-cache"
                     cabeceras["Vary"] = "Cookie, Authorization"
@@ -238,13 +257,50 @@ class CabecerasSeguridad:
 app.add_middleware(AccesoAPI)
 app.add_middleware(CabecerasSeguridad)
 
+
+class LimiteCuerpoDespacho:
+    """Límite de transporte, incluso sin Content-Length, antes del parseo completo."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or not scope.get("path", "").startswith(("/api/despacho/", "/api/firmas-publicas/", "/api/firmas-v5/", "/api/salas-v5/")):
+            return await self.app(scope, receive, send)
+        headers = dict(scope.get("headers", []))
+        multipart = headers.get(b"content-type", b"").startswith(b"multipart/form-data")
+        # 24 MiB de respaldo + envoltorio JSON y margen de transporte.
+        maximum = 60 * 1024 * 1024 if multipart else 26 * 1024 * 1024
+        if scope["path"].startswith("/api/salas-v5/"):
+            maximum = 11 * 1024 * 1024 if multipart else 64 * 1024
+        elif scope["path"].startswith("/api/firmas-v5/"):
+            maximum = 64 * 1024
+        try:
+            declared = int(headers.get(b"content-length", b"0"))
+        except (ValueError, TypeError):
+            declared = 0
+        if declared > maximum:
+            return await JSONResponse({"detail":"La solicitud supera el límite de tamaño del despacho."}, status_code=413)(scope, receive, send)
+        total = 0
+        async def limited_receive():
+            nonlocal total
+            message = await receive()
+            if message["type"] == "http.request":
+                total += len(message.get("body", b""))
+                if total > maximum:
+                    raise HTTPException(413, "La solicitud supera el límite de tamaño del despacho.")
+            return message
+        await self.app(scope, limited_receive, send)
+
+
+app.add_middleware(LimiteCuerpoDespacho)
+
 origenes = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
 if origenes:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origenes,
         allow_credentials=False,
-        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
     )
 
@@ -263,6 +319,20 @@ app.include_router(documents.router)
 app.include_router(calculos.router)
 app.include_router(asesor_paginas.router)
 app.include_router(asesor_pwa.router)
+app.include_router(despacho_ai.router)
+app.include_router(despacho_data.router)
+app.include_router(despacho_export.router)
+app.include_router(despacho_signatures.router)
+app.include_router(despacho_signatures.public_router)
+app.include_router(despacho_word.router)
+app.include_router(despacho_agent.router)
+app.include_router(despacho_connections.router)
+app.include_router(despacho_connections.callback_router)
+app.include_router(despacho_knowledge.router)
+app.include_router(despacho_signing_v5.router)
+app.include_router(despacho_signing_v5.public_router)
+app.include_router(despacho_rooms_v5.router)
+app.include_router(despacho_rooms_v5.public_router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 PRIVATE_DIR = Path(__file__).resolve().parent / "private"
@@ -300,14 +370,61 @@ async def login_page(request: Request):
 
 @app.get("/app", include_in_schema=False)
 @app.get("/app/", include_in_schema=False)
-@app.get("/generador", include_in_schema=False)
-@app.get("/generador/", include_in_schema=False)
 async def espacio_profesional(request: Request):
     if not await usuario_de_sesion(request):
         response = RedirectResponse("/login?next=/app", status_code=303, headers=SIN_CACHE)
         borrar_cookie_sesion(response, request)
         return response
+    csp = csp_archivo_publico(PRIVATE_DIR / "despacho.html", ingreso=True).replace("frame-src 'none'", "frame-src 'self'")
+    return FileResponse(PRIVATE_DIR / "despacho.html", headers={**SIN_CACHE, "Content-Security-Policy":csp})
+
+
+@app.get("/generador", include_in_schema=False)
+@app.get("/generador/", include_in_schema=False)
+async def generador_profesional(request: Request):
+    if not await usuario_de_sesion(request):
+        response = RedirectResponse("/login?next=/generador", status_code=303, headers=SIN_CACHE)
+        borrar_cookie_sesion(response, request)
+        return response
     return FileResponse(PRIVATE_DIR / "generador.html", headers=SIN_CACHE)
+
+
+@app.get("/app/assets/{filename}", include_in_schema=False)
+async def despacho_asset(filename: str, request: Request):
+    if filename not in {"despacho.js", "despacho.css"}:
+        raise HTTPException(404, "Recurso no encontrado.")
+    if not await usuario_de_sesion(request):
+        raise HTTPException(401, "Inicia sesión para acceder al despacho.", headers=SIN_CACHE)
+    media = "application/javascript" if filename.endswith(".js") else "text/css"
+    return FileResponse(PRIVATE_DIR / filename, media_type=media, headers=SIN_CACHE)
+
+
+@app.get("/firmar", include_in_schema=False)
+async def firma_por_enlace(request: Request):
+    # Sólo una invitación de alta entropía permite leer un documento; esta página
+    # contiene exclusivamente el formulario de aceptación y nunca datos del despacho.
+    return FileResponse(PRIVATE_DIR / "firmar.html", headers={**SIN_CACHE,
+        "Content-Security-Policy":csp_archivo_publico(PRIVATE_DIR / "firmar.html")})
+
+
+@app.get("/word", include_in_schema=False)
+async def word_panel(request: Request):
+    csp = csp_archivo_publico(PRIVATE_DIR / "word.html", ingreso=True)
+    csp = csp.replace("script-src 'self'", "script-src 'self' https://appsforoffice.microsoft.com")
+    csp = csp.replace("frame-ancestors 'none'", "frame-ancestors 'self' https://*.officeapps.live.com https://*.office.com https://*.microsoft365.com https://*.cloud.microsoft")
+    return FileResponse(PRIVATE_DIR / "word.html", headers={**SIN_CACHE,"Content-Security-Policy":csp})
+
+
+@app.get("/firmar-v5", include_in_schema=False)
+async def firma_verificada_page(request: Request):
+    return FileResponse(PRIVATE_DIR / "firma-v5.html", headers={**SIN_CACHE,
+        "Content-Security-Policy": csp_archivo_publico(PRIVATE_DIR / "firma-v5.html").replace("frame-src 'none'", "frame-src 'self' blob:")})
+
+
+@app.get("/sala-cliente", include_in_schema=False)
+async def sala_cliente_page(request: Request):
+    return FileResponse(PRIVATE_DIR / "sala-cliente.html", headers={**SIN_CACHE,
+        "Content-Security-Policy": csp_archivo_publico(PRIVATE_DIR / "sala-cliente.html").replace("frame-src 'none'", "frame-src 'self' blob:")})
 
 
 @app.get("/auditor.js", include_in_schema=False)

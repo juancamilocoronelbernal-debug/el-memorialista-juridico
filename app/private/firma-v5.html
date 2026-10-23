@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>Revisar y firmar · El Memorialista</title>
+  <link rel="icon" href="/static/asesor/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/firma-v5/firma-v5.css">
+  <script src="/static/firma-v5/firma-v5.js" defer></script>
+</head>
+<body>
+  <a href="#main" class="skip-link">Ir a los documentos</a>
+  <header class="sign-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">M<span>·</span></span><div>El Memorialista<small>FIRMA ELECTRÓNICA</small></div></div>
+    <span class="private-label">Acceso por enlace privado</span>
+  </header>
+  <main id="main" tabindex="-1">
+    <section id="loading" class="loading" aria-live="polite"><h1>Recuperando tu solicitud</h1><p>Comprobamos el enlace y el estado de los documentos.</p><span class="loading-line" aria-hidden="true"></span></section>
+    <section id="error" class="error-panel" hidden role="alert"><h1>No pudimos abrir la solicitud</h1><p id="error-message"></p><button id="retry" type="button" class="button">Volver a comprobar</button></section>
+    <div id="request" hidden>
+      <section class="request-heading"><p class="eyebrow">REVISA · VERIFICA · ACEPTA</p><h1 id="request-title"></h1><p id="request-subtitle"></p><div class="request-meta"><span id="request-status" class="badge">Pendiente de aceptación</span><span id="request-expiry"></span></div></section>
+      <div id="request-notice" class="notice" hidden></div>
+      <div class="sign-layout">
+        <section class="documents-panel" aria-labelledby="documents-heading">
+          <div class="section-heading"><div><p class="step-label">01 · DOCUMENTOS</p><h2 id="documents-heading">Lee el contenido completo</h2></div><button id="download" type="button" class="button secondary">Descargar PDF</button></div>
+          <p class="help">La aceptación corresponde al PDF congelado de esta solicitud. Descárgalo y revisa todas sus páginas: el texto de apoyo puede omitir formato, tablas o imágenes.</p>
+          <div id="document-list"></div>
+          <details class="integrity"><summary>Comprobar la huella de los documentos</summary><p class="help">La huella SHA-256 identifica el contenido fijado para esta solicitud.</p><code id="manifest-hash"></code><div id="document-hashes"></div></details>
+        </section>
+        <aside class="accept-panel" aria-labelledby="accept-heading">
+          <p class="step-label">02 · VERIFICACIÓN Y ACEPTACIÓN</p><h2 id="accept-heading">Tu decisión, registrada</h2>
+          <div id="signer-label" class="signer-label"></div>
+          <p class="help">Envía un código al correo indicado para confirmar que tienes acceso a él. Verificar el correo no sustituye una comprobación documental de identidad.</p>
+          <button id="send-code" type="button" class="button">Enviar código a mi correo</button>
+          <p id="code-status" class="form-status" role="status" aria-live="polite"></p>
+          <form id="accept-form">
+            <div class="field"><label for="signer-name">Nombre completo de quien acepta</label><input id="signer-name" name="name" type="text" autocomplete="name" minlength="2" maxlength="160" required></div>
+            <div class="field"><label for="otp">Código recibido por correo</label><input id="otp" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="6 dígitos" required aria-describedby="otp-help"><small id="otp-help">El código es de uso limitado y caduca. Solicita otro si vence.</small></div>
+            <label class="consent"><input id="consent" name="consent" type="checkbox" required><span id="consent-text">He revisado los documentos del expediente y su huella, verifico mi acceso al correo destinatario y acepto firmarlos electrónicamente.</span></label>
+            <div id="accept-error" class="form-error" hidden role="alert"></div>
+            <button id="accept-button" type="submit" class="button primary">Aceptar y firmar estos documentos</button>
+          </form>
+          <p class="evidence-note">Se conservarán el consentimiento, las huellas del contenido, la fecha, la dirección IP y los datos técnicos de esta aceptación.</p>
+        </aside>
+      </div>
+    </div>
+    <section id="success" class="success-panel" hidden aria-live="polite"><div class="success-check" aria-hidden="true">✓</div><p class="eyebrow">ACEPTACIÓN REGISTRADA</p><h1>Tu firma quedó registrada</h1><p id="success-message"></p><p id="success-date"></p><p class="help">Puedes cerrar esta página. La persona que preparó la solicitud podrá consultar el estado y la evidencia.</p></section>
+  </main>
+  <footer><span>EL MEMORIALISTA</span><span>Lee los documentos y verifica su alcance antes de aceptar.</span></footer>
+</body>
+</html>

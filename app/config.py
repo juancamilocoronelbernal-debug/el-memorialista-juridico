@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
-    VERSION: str = "3.0.0"
+    VERSION: str = "5.0.1"
 
     # Render (Render define RENDER_EXTERNAL_URL automáticamente)
     RENDER_EXTERNAL_URL: str = ""
@@ -67,6 +67,59 @@ class Settings(BaseSettings):
     APP_BASE_URL: str = ""           # URL pública canónica (opcional; sin barra final)
     AUTH_ALLOW_SIGNUP: bool = False # usuarios nuevos: habilitar explícitamente en Supabase
     AUTH_COOKIE_MAX_AGE_SECONDS: int = Field(3600, ge=60, le=86400)
+
+    # Despacho profesional: mismo Auth y base existente, migraciones adicionales.
+    DESPACHO_MONITORS_ENABLED: bool = False
+    DESPACHO_MONITOR_POLL_SECONDS: int = Field(60, ge=30, le=3600)
+    DESPACHO_MONITOR_ALLOWED_HOSTS: str = (
+        "corteconstitucional.gov.co,cortesuprema.gov.co,consejodeestado.gov.co,"
+        "ramajudicial.gov.co,suin-juriscol.gov.co,funcionpublica.gov.co,"
+        "secretariasenado.gov.co,diariooficial.imprenta.gov.co,sic.gov.co,"
+        "dian.gov.co,mintrabajo.gov.co"
+    )
+    DESPACHO_SIGNING_ENABLED: bool = True  # además requiere service_role y migración
+
+    # Biblioteca documental, OCR y búsqueda conceptual (migración V5).
+    DESPACHO_EMBEDDINGS_ENABLED: bool = False
+    DESPACHO_EMBEDDING_MODEL: str = "gemini-embedding-001"
+    DESPACHO_OCR_ENABLED: bool = True
+    DESPACHO_OCR_LANGUAGES: str = "spa+eng"
+    DESPACHO_OCR_MAX_PAGES: int = Field(30, ge=1, le=100)
+    DESPACHO_OCR_PAGE_TIMEOUT_SECONDS: int = Field(25, ge=5, le=90)
+    DESPACHO_MONITOR_AI_ENABLED: bool = True
+
+    # Encargos persistidos, programación y navegador supervisado.
+    DESPACHO_AGENT_WORKER_ENABLED: bool = False
+    DESPACHO_AGENT_POLL_SECONDS: int = Field(30, ge=10, le=600)
+    DESPACHO_AUTOMATION_DAILY_USER_CALLS: int = Field(100, ge=0, le=100000)
+    DESPACHO_AUTOMATION_DAILY_GLOBAL_CALLS: int = Field(1000, ge=0, le=1000000)
+    DESPACHO_BROWSER_ENABLED: bool = False
+    DESPACHO_BROWSER_PROVIDER: str = "local"
+    BROWSERBASE_API_KEY: str = ""
+    BROWSERBASE_PROJECT_ID: str = ""
+    DESPACHO_BROWSER_EXECUTABLE: str = ""
+    DESPACHO_BROWSER_ALLOWED_HOSTS: str = (
+        "corteconstitucional.gov.co,cortesuprema.gov.co,consejodeestado.gov.co,"
+        "ramajudicial.gov.co,suin-juriscol.gov.co,funcionpublica.gov.co,"
+        "secretariasenado.gov.co,sic.gov.co,dian.gov.co,mintrabajo.gov.co"
+    )
+    DESPACHO_BROWSER_SESSION_TTL_SECONDS: int = Field(900, ge=60, le=3600)
+
+    # OAuth: secretos exclusivamente en el servidor; tokens cifrados en reposo.
+    DESPACHO_CONNECTIONS_ENABLED: bool = False
+    DESPACHO_TOKEN_ENCRYPTION_KEY: str = ""
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    MICROSOFT_OAUTH_CLIENT_ID: str = ""
+    MICROSOFT_OAUTH_CLIENT_SECRET: str = ""
+    MICROSOFT_OAUTH_TENANT: str = "common"
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = Field(587, ge=1, le=65535)
+    SMTP_TLS_MODE: str = "starttls"
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    DESPACHO_SIGNING_OTP_SECRET: str = ""
 
     # Acceso y límites de uso (por usuario y por IP)
     APP_ACCESS_CODE: str = ""        # obsoleto: ignorado; conservado solo para migración

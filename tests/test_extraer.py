@@ -346,7 +346,7 @@ def test_prompt_instrucciones_especiales_providencias_y_contestacion():
 
 def test_frontend_asistente_hechos_y_banner_plazos():
     """Verifica que el HTML del frontend contenga el banner superior de plazos y el asistente de hechos art. 96 CGP."""
-    resp = client.get("/app")
+    resp = client.get("/generador")
     assert resp.status_code == 200
     html = resp.text
 

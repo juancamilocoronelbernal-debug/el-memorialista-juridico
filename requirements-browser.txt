@@ -1,0 +1,5 @@
+# Extensión opcional: navegador supervisado local o Browserbase/CDP.
+# Instalar además Chromium con `python -m playwright install --with-deps chromium`
+# si se selecciona DESPACHO_BROWSER_PROVIDER=local.
+-r requirements.txt
+playwright>=1.48,<2.0

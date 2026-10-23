@@ -169,7 +169,7 @@ def test_limite_uso_por_usuario():
 
 def test_frontend_html_auth_y_cuenta_modales(autenticacion_pruebas):
     """El área profesional conserva cuenta y herramientas, tras el guard real."""
-    resp = client.get("/app", headers={"Authorization": "Bearer unit-test-bearer"})
+    resp = client.get("/generador", headers={"Authorization": "Bearer unit-test-bearer"})
     assert resp.status_code == 200
     html = resp.text
     assert '/static/vendor/supabase.js' in html

@@ -16,6 +16,7 @@ from typing import Any, Optional
 from urllib.parse import quote
 
 import httpx
+from fastapi import HTTPException
 
 from app.config import get_settings
 
@@ -149,10 +150,11 @@ async def exportar_todos_los_datos(user_id: str, token: str) -> dict[str, Any]:
     base, headers = _configurar_datos(token)
     result = {
         "exportado_el": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "aplicacion": "El Memorialista Jurídico", "version_esquema": "3.0.0",
+        "aplicacion": "El Memorialista Jurídico", "version_esquema": "5.0.0",
         "usuario_id": user_id, "perfil": {}, "firma": {}, "clientes": [],
         "casos": [], "documentos": [], "versiones": [],
-        "alcance": "Registros propios y perfil de la firma accesibles mediante tu sesión. Los binarios del almacenamiento no se incluyen en este JSON.",
+        "despacho": {"elementos": [], "auditoria": [], "firmas_electronicas": []},
+        "alcance": "Registros propios, despacho privado, evidencias de firma y perfil de la firma accesibles mediante tu sesión. Los binarios del almacenamiento y los secretos de acceso a firmas no se incluyen en este JSON. Para restaurar el despacho usa su copia de respaldo específica.",
     }
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -165,7 +167,30 @@ async def exportar_todos_los_datos(user_id: str, token: str) -> dict[str, Any]:
                     result["firma"] = firmas[0] if firmas else {}
             for tabla, campo in [("clientes", "user_id"), ("casos", "user_id"), ("documentos", "creado_por"), ("versiones", "creado_por")]:
                 result[tabla] = await _filas(client, f"{base}/rest/v1/{tabla}", headers, {campo: f"eq.{user_id}"})
+            for tabla, campo in [("despacho_items", "elementos"), ("despacho_auditoria", "auditoria")]:
+                result["despacho"][campo] = await _filas(client, f"{base}/rest/v1/{tabla}", headers, {"owner_id": f"eq.{user_id}"})
+            # El hash del enlace secreto no aporta evidencia documental y nunca
+            # debe salir en una exportación. La huella del documento sí se incluye.
+            result["despacho"]["firmas_electronicas"] = await _filas(
+                client, f"{base}/rest/v1/despacho_firmas", headers,
+                {"owner_id": f"eq.{user_id}", "select":
+                 "id,owner_id,title,document_text,document_hash,signer_name,signer_email,status,created_at,expires_at,signed_at,signed_name,signed_email,signer_ip,signer_agent,consent_text,audit"},
+            )
+            from app.services.despacho_agent import PUBLIC_JOB_KEYS, PUBLIC_SCHEDULE_KEYS
+            for table, field, columns in [
+                ("despacho_agent_jobs", "encargos", PUBLIC_JOB_KEYS),
+                ("despacho_agent_schedules", "programaciones", PUBLIC_SCHEDULE_KEYS),
+                ("despacho_agent_events", "eventos_agente", ("id", "job_id", "owner_id", "at", "event", "detail")),
+            ]:
+                result["despacho"][field] = await _filas(client, f"{base}/rest/v1/{table}", headers,
+                    {"owner_id": f"eq.{user_id}", "select": ",".join(columns)})
+            from app.services import despacho_signing_v5, despacho_connections, despacho_rooms_v5
+            result["despacho"]["firmas_verificadas"] = await despacho_signing_v5.export_owner(user_id, token)
+            result["despacho"]["conexiones"] = await despacho_connections.export_owner(user_id, token)
+            result["despacho"]["salas"] = await despacho_rooms_v5.export_owner(user_id, token)
         return result
+    except HTTPException as exc:
+        raise ErrorSupabase("La exportación no pudo completarse: " + str(exc.detail) + " Ningún archivo parcial se presenta como completo.") from None
     except httpx.HTTPError:
         raise ErrorSupabase("La exportación se interrumpió al consultar tus datos. Puedes volver a intentarlo.") from None
     except (ValueError, TypeError):
@@ -255,6 +280,13 @@ async def eliminar_cuenta_usuario(user_id: str, token: str) -> bool:
                         ajenos = ajenos or any(row.get(campo) != user_id for row in registros)
                     if not ajenos:
                         firmas_personales.append(firma["id"])
+            from app.services.despacho_store import borrar_archivos_despacho
+            await borrar_archivos_despacho(client, base, headers, user_id)
+            from app.services import despacho_signing_v5, despacho_connections, despacho_browser, despacho_rooms_v5
+            await despacho_browser.close_owner(user_id)
+            await despacho_signing_v5.purge_owner_storage(user_id)
+            await despacho_rooms_v5.purge_owner_storage(user_id)
+            await despacho_connections.cleanup_owner_connections(user_id)
             await _borrar_archivos_usuario(client, base, headers, user_id)
             for tabla, campo in [("versiones", "creado_por"), ("documentos", "creado_por"), ("casos", "user_id"), ("clientes", "user_id")]:
                 r = await client.delete(f"{base}/rest/v1/{tabla}", headers=headers, params={campo: f"eq.{user_id}"})
@@ -269,6 +301,8 @@ async def eliminar_cuenta_usuario(user_id: str, token: str) -> bool:
                 raise ErrorSupabase("Los registros se procesaron, pero la cuenta no pudo eliminarse. Contacta con el administrador.")
         _TOKEN_CACHE.clear()
         return True
+    except HTTPException as exc:
+        raise ErrorSupabase("La eliminación se detuvo antes de cerrar la cuenta: " + str(exc.detail) + " Puede haber cambios parciales; revisa el estado antes de reintentar.") from None
     except httpx.HTTPError:
         raise ErrorSupabase("La eliminación se interrumpió y puede ser parcial. Contacta con el administrador para completarla.") from None
     except (ValueError, TypeError, KeyError):
