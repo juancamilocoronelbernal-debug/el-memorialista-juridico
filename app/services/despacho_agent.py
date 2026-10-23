@@ -223,7 +223,7 @@ def _previous(job: dict) -> str:
 
 def _bound_result(result: dict) -> dict:
     keep = {key: copy.deepcopy(value) for key, value in result.items()
-            if key in {"answer", "sources", "warnings", "coverage", "provider", "model", "usage", "search_performed", "url", "title", "text", "document_id", "browser"}}
+            if key in {"answer", "sources", "warnings", "coverage", "provider", "model", "usage", "search_performed", "url", "title", "text", "document_id", "browser", "timing"}}
     for key in ("answer", "text"):
         if isinstance(keep.get(key), str) and len(keep[key]) > MAX_RESULT_CHARS:
             keep[key] = keep[key][:MAX_RESULT_CHARS]

@@ -16,6 +16,7 @@ import ipaddress
 import json
 import logging
 import re
+import time
 import unicodedata
 import zipfile
 from datetime import datetime, timezone
@@ -428,7 +429,7 @@ def _history_messages(history: list[dict]) -> tuple[list[tuple[str, str]], bool]
 
 
 async def _call_provider(messages: list[tuple[str, str]], *, mode: str, search: bool = False, json_output: bool = False) -> dict:
-    """Llama a motores configurados con errores sanitizados y tiempo total acotado."""
+    """Llama a motores configurados con errores sanitizados, métricas seguras y tiempo acotado."""
     motors = gemini_service.candidatos("complex" if mode in {"draft", "analyze", "timeline"} else "default")
     if search:
         motors = [motor for motor in motors if motor.proveedor == "gemini"]
@@ -445,10 +446,19 @@ async def _call_provider(messages: list[tuple[str, str]], *, mode: str, search: 
         candidates.append(motor)
     client = await gemini_service._cliente()
     settings = get_settings()
+
+    total_chars = sum(len(text) for _, text in messages)
+    is_complex = search or (mode in {"draft", "analyze", "timeline"}) or total_chars > 20_000
+    single_timeout = 75.0 if is_complex else 30.0
+    overall_timeout = 160.0 if is_complex else 65.0
+
+    t_start = time.monotonic()
     last_status = 502
+    attempts_history = []
     try:
-        async with async_timeout(150):
+        async with async_timeout(overall_timeout):
             for motor in candidates:
+                t_m0 = time.monotonic()
                 try:
                     if motor.proveedor == "gemini":
                         payload = {"systemInstruction": {"parts": [{"text": _system(mode, search=search)}]},
@@ -459,7 +469,7 @@ async def _call_provider(messages: list[tuple[str, str]], *, mode: str, search: 
                         if search:
                             payload["tools"] = [{"googleSearch": {}}]
                         response = await client.post(f"{settings.GEMINI_API_BASE.rstrip('/')}/v1beta/models/{motor.modelo}:generateContent",
-                                                     json=payload, headers=gemini_service._cab_gemini(), timeout=90.0)
+                                                     json=payload, headers=gemini_service._cab_gemini(), timeout=single_timeout)
                     else:
                         payload = {"model": motor.modelo, "messages": [{"role": "system", "content": _system(mode)}] + [
                             {"role": "assistant" if role == "model" else "user", "content": text} for role, text in messages],
@@ -467,11 +477,23 @@ async def _call_provider(messages: list[tuple[str, str]], *, mode: str, search: 
                         if json_output:
                             payload["response_format"] = {"type": "json_object"}
                         response = await client.post(f"{settings.GROQ_API_BASE.rstrip('/')}/chat/completions", json=payload,
-                                                     headers={"Authorization": "Bearer " + settings.GROQ_API_KEY.strip(), "Content-Type": "application/json"}, timeout=90.0)
+                                                     headers={"Authorization": "Bearer " + settings.GROQ_API_KEY.strip(), "Content-Type": "application/json"}, timeout=single_timeout)
+
+                    dur_attempt = time.monotonic() - t_m0
+
                     if response.status_code != 200:
                         last_status = response.status_code
-                        log.warning("Despacho: proveedor=%s status=%s", motor.proveedor, response.status_code)
+                        attempts_history.append({"provider": motor.proveedor, "model": motor.modelo, "status": response.status_code, "duration": round(dur_attempt, 2)})
+                        if response.status_code == 404:
+                            # Invalida inmediatamente el modelo no disponible para no volverlo a intentar
+                            gemini_service.no_disponibles[motor.modelo] = time.monotonic()
+                            log.warning("Despacho AI: modelo '%s' no encontrado (HTTP 404). Descartado de candidatos.", motor.modelo)
+                        elif response.status_code == 429:
+                            log.warning("Despacho AI: cuota temporalmente agotada en '%s' (HTTP 429). Intentando respaldo...", motor.modelo)
+                        else:
+                            log.warning("Despacho AI: proveedor=%s modelo=%s error HTTP %s en %.2fs. Intentando respaldo...", motor.proveedor, motor.modelo, response.status_code, dur_attempt)
                         continue
+
                     result = response.json()
                     if motor.proveedor == "gemini":
                         candidates_data = result.get("candidates") or []
@@ -489,21 +511,49 @@ async def _call_provider(messages: list[tuple[str, str]], *, mode: str, search: 
                         raw_usage = result.get("usage") or {}
                         usage = {"input_tokens": raw_usage.get("prompt_tokens"), "output_tokens": raw_usage.get("completion_tokens")}
                     if not answer.strip():
+                        attempts_history.append({"provider": motor.proveedor, "model": motor.modelo, "status": "empty_answer", "duration": round(dur_attempt, 2)})
                         continue
                     warnings = []
                     if finish in {"MAX_TOKENS", "length", "CONTINUATION"} or len(answer) >= MAX_REPLY_CHARS:
                         warnings.append("La respuesta alcanzó el límite de salida. Revisa el final y pide continuar antes de utilizar el borrador.")
                     if search and not sources:
                         warnings.append("El proveedor no devolvió fuentes web utilizables. La respuesta no acredita una investigación con fuentes ni vigencia normativa.")
+
+                    dur_provider = time.monotonic() - t_m0
+                    total_time = time.monotonic() - t_start
+                    log.info(
+                        "Despacho AI completado: proveedor=%s modelo=%s modo=%s tiempo_ia=%.2fs intentos=%d tiempo_total=%.2fs",
+                        motor.proveedor, motor.modelo, mode, dur_provider, len(attempts_history) + 1, total_time
+                    )
+                    timing = {
+                        "provider_ms": round(dur_provider * 1000),
+                        "total_ms": round(total_time * 1000),
+                        "attempts": len(attempts_history) + 1,
+                        "model": motor.modelo,
+                        "provider": motor.proveedor,
+                    }
                     return {"answer": answer[:MAX_REPLY_CHARS], "sources": sources, "warnings": warnings,
                             "provider": motor.proveedor, "model": motor.modelo, "usage": usage,
                             "search_queries": queries, "search_suggestions_html": suggestions,
-                            "search_performed": bool(sources or queries), "finish_reason": finish}
-                except (httpx.HTTPError, ValueError, TypeError, KeyError):
-                    log.warning("Despacho: respuesta no disponible de %s", motor.proveedor)
+                            "search_performed": bool(sources or queries), "finish_reason": finish,
+                            "timing": timing}
+                except httpx.TimeoutException:
+                    dur_attempt = time.monotonic() - t_m0
+                    last_status = 504
+                    attempts_history.append({"provider": motor.proveedor, "model": motor.modelo, "status": "timeout", "duration": round(dur_attempt, 2)})
+                    log.warning("Despacho AI: tiempo de espera agotado (%.1fs) para proveedor=%s modelo=%s. Probando siguiente motor...", single_timeout, motor.proveedor, motor.modelo)
+                    continue
+                except (httpx.HTTPError, ValueError, TypeError, KeyError) as exc:
+                    dur_attempt = time.monotonic() - t_m0
+                    attempts_history.append({"provider": motor.proveedor, "model": motor.modelo, "status": type(exc).__name__, "duration": round(dur_attempt, 2)})
+                    log.warning("Despacho AI: respuesta no disponible de %s modelo=%s (%s). Probando siguiente...", motor.proveedor, motor.modelo, type(exc).__name__)
                     continue
     except TimeoutError:
+        total_time = time.monotonic() - t_start
+        log.warning("Despacho AI: tiempo total agotado (%.1fs) tras %d intentos.", total_time, len(attempts_history))
         raise HTTPException(504, "La IA tardó demasiado. Conserva tu consulta y vuelve a intentarlo con menos documentos.") from None
+    total_time = time.monotonic() - t_start
+    log.error("Despacho AI: todos los proveedores fallaron en %.2fs. Intentos: %s", total_time, attempts_history)
     if last_status == 429:
         raise HTTPException(429, "El proveedor de IA agotó temporalmente su cuota. Revisa el plan o intenta más tarde.")
     raise HTTPException(503, "No se pudo completar la consulta con los proveedores configurados. Revisa sus claves, modelos y disponibilidad.")
@@ -631,11 +681,17 @@ async def chat(user_id: str, token: str, request: dict) -> dict:
 
 
 async def _chat(user_id: str, token: str, request: dict) -> dict:
+    t_chat_start = time.monotonic()
+    t_doc_start = time.monotonic()
     documents, matter, playbook, warnings = await load_context(user_id, token, document_ids=request.get("document_ids") or [],
                                                              matter_id=request.get("matter_id"), playbook_id=request.get("playbook_id"))
     message, mode = request["message"], request.get("mode", "general")
     context = build_context(documents, message)
     context = await augment_indexed_context(user_id, token, request, context)
+    t_doc_duration = time.monotonic() - t_doc_start
+    log.info("Despacho AI contexto preparado: tiempo_docs=%.2fs documentos=%d fragmentos=%d",
+             t_doc_duration, len(documents), len(context.get("passages", [])))
+
     warnings += context["warnings"]
     history, history_cut = _history_messages(request.get("history") or [])
     if history_cut:
@@ -668,6 +724,13 @@ async def _chat(user_id: str, token: str, request: dict) -> dict:
     result["plan"] = [{"label": "Preparar contexto autorizado", "status": "completed"},
                       {"label": "Consultar fuentes web" if mode == "research" else "Analizar el encargo", "status": "completed" if mode != "research" or result.get("search_performed") else "unverified"},
                       {"label": "Revisión y aprobación del abogado", "status": "pending"}]
+
+    t_chat_total = time.monotonic() - t_chat_start
+    if "timing" in result:
+        result["timing"]["docs_ms"] = round(t_doc_duration * 1000)
+        result["timing"]["total_chat_ms"] = round(t_chat_total * 1000)
+    log.info("Despacho AI chat completado: modo=%s tiempo_total=%.2fs tiempo_docs=%.2fs proveedor=%s modelo=%s",
+             mode, t_chat_total, t_doc_duration, result.get("provider"), result.get("model"))
     return result
 
 

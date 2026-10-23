@@ -80,7 +80,7 @@ class Settings(BaseSettings):
     DESPACHO_SIGNING_ENABLED: bool = True  # además requiere service_role y migración
 
     # Biblioteca documental, OCR y búsqueda conceptual (migración V5).
-    DESPACHO_EMBEDDINGS_ENABLED: bool = False
+    DESPACHO_EMBEDDINGS_ENABLED: bool = True
     DESPACHO_EMBEDDING_MODEL: str = "gemini-embedding-001"
     DESPACHO_OCR_ENABLED: bool = True
     DESPACHO_OCR_LANGUAGES: str = "spa+eng"
