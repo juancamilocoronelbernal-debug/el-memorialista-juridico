@@ -85,6 +85,8 @@ async function fixture(t,{viewport={width:1440,height:1000}}={}){
     if(p.startsWith('/api/despacho/connections/')&&p.endsWith('/import'))return json({item:add('document','Contrato de conexión.txt',{text:'Contenido importado de prueba.',versions:[]}),warnings:[]});
     if(p.startsWith('/api/despacho/connections/')&&method==='DELETE'){state.connections=[];return json({disconnected:true,warnings:[]});}
     if(p==='/api/despacho/knowledge/status')return json({ocr:{available:true,languages:['spa'],engine:'controlled'},embeddings:{configured:true,model:'fixture'}});
+    if(p==='/api/despacho/knowledge/research')return json({answer:'## Análisis jurídico de prueba\nCriterios y fuentes <img src=x onerror=alert(1)>',query:'vías',model:'gemini-3.6-flash',provider:'gemini',search_performed:true,coverage:'Investigación externa no exhaustiva.',warnings:[],search_queries:['vías jurisprudencia'],sources:[{title:'Providencia <script>alert(1)</script>',url:'https://www.corteconstitucional.gov.co/relatoria/2025/t-100-25.htm',host:'www.corteconstitucional.gov.co',importable:true,status:'Contenido no comprobado',support_text:'Referencia del proveedor, no revisión del original.'},{title:'Referencia externa',url:'https://www.ejemplo.org/fuente',host:'ejemplo.org',importable:false,status:'Fuente externa',support_text:''}]});
+    if(p==='/api/despacho/knowledge/verify')return json({title:'Providencia comprobada',excerpt:'Texto ficticio recuperado en la fuente oficial.',text_length:80,document_retrieved:true,legal_validity_checked:false,notice:'Lectura del original, no vigencia.'});
     if(p==='/api/despacho/knowledge/search'){const b=request.postDataJSON();return json({results:state.items.filter(i=>i.kind==='document').slice(0,1).map(i=>({document_id:i.id,title:i.title,excerpt:'Cláusula de prueba <img src=x onerror=alert(1)>',page:2,source_url:'https://www.corteconstitucional.gov.co/',method:'semantic'})),method:'semantic',coverage:'Un documento de prueba',warnings:['Resultado controlado: requiere revisión.']});}
     if(p==='/api/despacho/knowledge/reindex')return json({items:state.items.filter(i=>i.kind==='document').map(i=>({document_id:i.id,indexed:true})),errors:[{document_id:'no-text-fixture',message:'Documento de prueba sin texto extraíble.'}],next_offset:null,has_more:false});
     if(p==='/api/despacho/knowledge/documents')return json({items:state.items.filter(i=>i.data?.source_url),has_more:false});
@@ -330,7 +332,7 @@ test('Índice y lote oficial conservan los errores parciales y cuentan los resul
   await page.getByRole('button',{name:'Preparar índice',exact:true}).click();
   await page.getByText('Documentos procesados: 1. Errores: 1. Actualización terminada.',{exact:true}).waitFor();
   await page.getByText('no-text-fixture: Documento de prueba sin texto extraíble.',{exact:true}).waitFor();await close();
-  await nav('Jurisprudencia');await page.getByRole('button',{name:'Incorporar varias fuentes',exact:true}).click();
+  await nav('Jurisprudencia');await page.getByRole('tab',{name:'Mi biblioteca jurídica'}).click();await page.getByRole('button',{name:'Incorporar varias fuentes',exact:true}).click();
   await page.getByLabel('Página oficial con enlaces a documentos').fill('https://www.corteconstitucional.gov.co/');
   await page.getByRole('button',{name:'Revisar enlaces e importar',exact:true}).click();
   await page.getByText('1 documentos incorporados o ya existentes. 1 errores.',{exact:true}).waitFor();
@@ -338,6 +340,31 @@ test('Índice y lote oficial conservan los errores parciales y cuentan los resul
   await page.getByRole('button',{name:'Ver biblioteca incorporada',exact:true}).click();
   await page.getByText('Fuente oficial de prueba',{exact:true}).waitFor();
   assert.equal(state.requests.find(r=>r.p.endsWith('/knowledge/crawl')).body.max_documents,5);clean();
+},{timeout:30000});
+
+test('Investigación jurídica: consulta web, referencias no verificadas y guardado explícito',async t=>{
+  const{page,state,nav,clean}=await fixture(t);
+  await nav('Jurisprudencia');
+  assert.equal(await page.getByRole('tab',{name:'Investigar con IA'}).count(),1);
+  await page.getByLabel('Problema jurídico').fill('Competencia y reparación vial en Bucaramanga');
+  await page.getByLabel('Lugar o jurisdicción (opcional)').fill('Bucaramanga');
+  await page.getByRole('button',{name:'Investigar con fuentes'}).click();
+  await page.getByText('Investigación externa no exhaustiva.',{exact:true}).waitFor();
+  assert.equal(await page.locator('.v5-external-source').count(),2);
+  assert.equal(await page.locator('.v5-external-source button').count(),1);
+  assert.equal(await page.locator('.v5-external-source img,.v5-external-source script').count(),0);
+  const request=state.requests.find(r=>r.p==='/api/despacho/knowledge/research');
+  assert.equal(request.body.territory,'Bucaramanga');
+  assert.equal(state.requests.filter(r=>r.p==='/api/despacho/knowledge/import').length,0);
+  await page.getByRole('button',{name:'Comprobar el original'}).click();
+  await page.getByText('Texto ficticio recuperado en la fuente oficial.',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Incorporar a mi biblioteca'}).click();
+  await page.getByRole('dialog').getByRole('button',{name:'Guardar en mi biblioteca'}).click();
+  await page.getByText('Fuente oficial incorporada.',{exact:true}).waitFor();
+  assert.equal(state.requests.filter(r=>r.p==='/api/despacho/knowledge/import').length,1);
+  await page.getByRole('tab',{name:'Mi biblioteca jurídica'}).click();
+  await page.getByRole('button',{name:'Ver biblioteca incorporada'}).waitFor();
+  clean();
 },{timeout:30000});
 
 test('Capturas de UI V5 con datos ficticios y sin conexiones a servicios reales',async t=>{

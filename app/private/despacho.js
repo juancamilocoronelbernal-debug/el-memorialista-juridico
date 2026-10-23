@@ -145,7 +145,7 @@ async function init(){initEvents();try{const{client}=await MemAuth.init();S.clie
 /* Despacho V5: flujos persistidos, conexiones y evidencia. Sin sesiones simuladas. */
 const V5 = {
   jobs: [], job: null, schedules: [], agentStatus: null, providers: [], connections: [],
-  envelopes: [], rooms: [], roomsOffset: 0, roomsHasMore: false, roomsSequence: 0, roomsCaps: null, signatureView: 'verified', knowledgeStatus: null, sources: [],
+  envelopes: [], rooms: [], roomsOffset: 0, roomsHasMore: false, roomsSequence: 0, roomsCaps: null, legalTab: 'research', legalResearch: {query:'', territory:'', result:null}, signatureView: 'verified', knowledgeStatus: null, sources: [],
   results: {documents: null, legal: null}, knowledgeDraft: {documents: '', legal: ''},
   loaded: new Set(), errors: {}, controllers: new Set(), generation: 0, runningJob: null,
   browserUrls: new Set(), searchSequence: 0, resourceSequence: 0, scheduleDirty: false
@@ -423,6 +423,102 @@ async function v5BrowseConnection(connection, resourceOptions={}) {
   for(const warning of result.warnings||[])body.append(el('div',{class:'callout warning'},text(warning)));
   showModal(connection.label||'Archivos conectados',body,[button('Cerrar',closeModal),Object.keys(resourceOptions).some(k=>['folder_id','drive_id','site_id'].includes(k)&&resourceOptions[k])?button('Volver al inicio',()=>v5BrowseConnection(connection),{icon:'folder'}):null,result.next_cursor?button('Página siguiente',()=>v5BrowseConnection(connection,{...resourceOptions,cursor:result.next_cursor}),{icon:'arrow'}):null].filter(Boolean),true);
 }
+/* Investigación externa: separada del chat del Agente y de las búsquedas privadas. */
+function v5ResearchImport(source, verified) {
+  if(!verified || !source.importable)throw new Error('Comprueba primero el documento oficial antes de incorporarlo.');
+  const title=field('Título de la fuente',{value:source.title||''});
+  const court=field('Corporación o entidad (opcional)');
+  const year=field('Año (opcional)',{type:'number',min:1800,max:2200});
+  const type=field('Tipo de documento',{options:[{value:'sentencia',label:'Sentencia'},{value:'ley',label:'Ley'},{value:'decreto',label:'Decreto'},{value:'auto',label:'Auto'},{value:'resolucion',label:'Resolución'},{value:'concepto',label:'Concepto'},{value:'otro',label:'Otro'}]});
+  formModal('Incorporar fuente comprobada',[title,court,year,type],async()=>{
+    const body={url:source.url,title:title.input.value.trim()||source.title,document_type:type.input.value};
+    if(court.input.value.trim())body.court=court.input.value.trim();
+    if(year.input.value)body.year=Number(year.input.value);
+    const result=await v5api('/knowledge/import',{method:'POST',body});
+    if(result.item)mergeItem(result.item);
+    toast(result.duplicate?'La fuente ya estaba en tu biblioteca.':'Fuente oficial incorporada.');
+    for(const warning of result.warnings||[])toast(text(warning),'error');
+  },{label:'Guardar en mi biblioteca',extra:el('p',{class:'inline-help'},'Se conserva una copia del original. Debes revisar su vigencia y la pertinencia jurídica; la lectura automática no las acredita.')});
+}
+async function v5ResearchVerify(source) {
+  if(!source.importable)throw new Error('Esta URL no pertenece a los dominios oficiales permitidos en el servidor. Puedes abrirla y revisar el sitio, o incorporar manualmente una dirección oficial admitida.');
+  const status=el('div',{role:'status'},v5Loading('Comprobando el documento original…'));
+  showModal('Comprobar fuente oficial',status,[button('Cerrar',closeModal)],true);
+  try{
+    const result=await v5api('/knowledge/verify',{method:'POST',body:{url:source.url}});
+    if(!status.isConnected)return;
+    status.replaceChildren(el('div',{class:'callout'},result.notice||'Se recuperó texto del documento original.'),
+      el('p',{class:'inline-help'},(result.title||source.title)+' · '+(result.text_length||0)+' caracteres recuperados'),
+      el('pre',{class:'v5-source-preview'},result.excerpt||''));
+    for(const warning of result.warnings||[])status.append(el('div',{class:'callout warning'},text(warning)));
+    $('#modal-footer').replaceChildren(button('Cerrar',closeModal),button('Incorporar a mi biblioteca',()=>{closeModal();v5ResearchImport(source,true);},{class:'button primary',icon:'plus'}));
+  }catch(error){if(!status.isConnected||error.name==='AbortError')return;status.replaceChildren(el('div',{class:'callout error',role:'alert'},error.message));}
+}
+function v5LegalResearchPanel() {
+  const state=V5.legalResearch;
+  const panel=el('section',{class:'v5-knowledge v5-legal-research','aria-label':'Investigar nuevas fuentes jurídicas'});
+  panel.append(el('div',{class:'section-heading'},el('h2',{},'Investiga jurisprudencia con IA'),
+    el('p',{class:'inline-help'},'Busca en la web con Gemini y revisa las fuentes encontradas antes de guardarlas. No necesitas una biblioteca previamente cargada.')));
+  const query=field('Problema jurídico',{type:'textarea',value:state.query,placeholder:'Ej. normas, competencia municipal y jurisprudencia sobre el mantenimiento de las vías de Bucaramanga…',rows:4});
+  query.input.maxLength=3000;
+  const territory=field('Lugar o jurisdicción (opcional)',{value:state.territory,placeholder:'Ej. Bucaramanga, Santander, Colombia'});
+  territory.input.maxLength=120;
+  query.input.addEventListener('input',()=>state.query=query.input.value);
+  territory.input.addEventListener('input',()=>state.territory=territory.input.value);
+  const submit=el('button',{type:'submit',class:'button primary'},icon('search'),'Investigar con fuentes');
+  const form=el('form',{class:'v5-knowledge-form'},query.wrap,territory.wrap,
+    el('div',{class:'actions'},submit));
+  const output=el('div',{class:'v5-external-results','aria-live':'polite'});
+  const draw=()=>{
+    const result=state.result;output.replaceChildren();if(!result)return;
+    output.append(el('div',{class:'v5-search-summary'},el('strong',{},'Resultado de investigación'),badge(result.model||'Gemini','neutral')),
+      el('p',{class:'inline-help'},result.coverage||'Las fuentes deben comprobarse individualmente.'),
+      el('article',{class:'v5-research-answer'},plainRich(result.answer||'No se recibió un análisis.')),
+      el('div',{class:'actions'},button('Copiar análisis',()=>copy(result.answer||''),{icon:'copy',class:'button small'}),
+        button('Guardar informe en DMS',async()=>{
+          const body=[result.query,'',result.answer,'','Fuentes sugeridas (pendientes de comprobación):',...(result.sources||[]).map(src=>src.title+' — '+src.url)].join('\n');
+          const saved=await createItem('document','Investigación jurídica · '+result.query.slice(0,85),
+            {text:body,mime:'text/plain',pages:[],pagination:'segments',versions:[],source:'investigacion_externa',review_required:true},'');
+          toast('Informe guardado como borrador para revisar.');mergeItem(saved);
+        },{icon:'file',class:'button small'})));
+    for(const warning of result.warnings||[])output.append(el('div',{class:'callout warning'},text(warning)));
+    output.append(el('h3',{},'Fuentes encontradas ('+(result.sources?.length||0)+')'),
+      el('p',{class:'inline-help'},'Los enlaces proceden de las referencias del proveedor. Un dominio admitido no significa que el contenido o su vigencia se hayan verificado.'));
+    if(!result.sources?.length)output.append(el('div',{class:'callout warning'},'El proveedor no suministró enlaces comprobables. No utilices esta respuesta como jurisprudencia confirmada.'));
+    for(const source of result.sources||[]){
+      output.append(el('article',{class:'v5-search-hit v5-external-source'},
+        el('h3',{},source.title||source.host||'Fuente'),
+        el('span',{class:'source-meta'},source.host||''),
+        source.support_text?el('p',{class:'v5-excerpt'},source.support_text):null,
+        el('p',{class:'inline-help'},source.status||'Documento no comprobado'),
+        el('div',{class:'actions'},link('Abrir referencia ↗',source.url,'button small'),
+          source.importable?button('Comprobar el original',()=>v5ResearchVerify(source),{class:'button small',icon:'check'}):null)));
+    }
+    if(result.search_queries?.length)output.append(el('details',{class:'v5-search-queries'},el('summary',{},'Consultas realizadas por el proveedor'),el('ul',{},result.search_queries.map(q=>el('li',{},q)))));
+  };
+  form.addEventListener('submit',act(async event=>{
+    event.preventDefault();const q=query.input.value.trim();if(q.length<12)throw new Error('Describe el problema jurídico con al menos 12 caracteres.');
+    await busy(submit,async()=>{output.replaceChildren(v5Loading('Consultando fuentes web con IA…'));try{
+      const result=await v5api('/knowledge/research',{method:'POST',body:{query:q,territory:territory.input.value.trim()}});
+      state.query=q;state.territory=territory.input.value.trim();state.result=result;draw();
+    }catch(error){if(error.name!=='AbortError')output.replaceChildren(el('div',{class:'callout error',role:'alert'},error.message));}});
+  }));
+  panel.append(form,output);draw();return panel;
+}
+function v5JurisprudenciaWorkspace(chatPage) {
+  const container=el('section',{class:'page v5-legal-workspace'},pageHeader('Jurisprudencia',
+    'Investiga nuevas fuentes en la web o consulta tu biblioteca privada. Las referencias requieren revisión.',[],'INVESTIGACIÓN JURÍDICA'));
+  const choices=[['research','Investigar con IA'],['library','Mi biblioteca jurídica'],['chat','Chat jurídico']];
+  const tabs=el('nav',{class:'v5-legal-tabs',role:'tablist','aria-label':'Vistas de Jurisprudencia'},choices.map(([value,label])=>{
+    const selected=V5.legalTab===value;
+    return el('button',{type:'button',role:'tab','aria-selected':selected?'true':'false',class:'v5-legal-tab '+(selected?'active':''),on:{click:()=>{V5.legalTab=value;render();}}},label);
+  }));
+  container.append(tabs);
+  if(V5.legalTab==='library')container.append(v5KnowledgePanel('legal'));
+  else if(V5.legalTab==='chat')container.append(chatPage);
+  else container.append(v5LegalResearchPanel());
+  return container;
+}
 function v5KnowledgePanel(scope) {
   const legal=scope==='legal', wrap=el('section',{class:'v5-knowledge','aria-label':legal?'Biblioteca de fuentes jurídicas':'Búsqueda documental'});
   const heading=el('div',{class:'section-heading'},el('div',{},el('h2',{},legal?'Tu biblioteca jurídica':'Encuentra el fragmento que necesitas'),el('p',{class:'inline-help'},legal?'Busca en las fuentes oficiales que hayas incorporado y conserva el documento original.':'Pregunta por conceptos, cláusulas o hechos dentro de los documentos de tu cuenta.')));
@@ -655,9 +751,7 @@ function v5EnhancePage(page) {
     const panel=el('div',{class:'v5-agent-entry'},el('div',{},el('h2',{},'¿Necesitas varios pasos?'),el('p',{},'Prepara un plan de lectura, investigación y redacción. Revisa las etapas antes de ejecutarlas.')),el('div',{class:'actions'},button('Planificar y ejecutar',v5CreateJob,{icon:'spark',class:'button primary'}),button('Ver encargos',()=>setPage('encargos'),{class:'text-button'})));
     const composer=page.querySelector('.composer-note');if(composer)composer.after(panel);else page.append(panel);
   }
-  if(S.page==='investigacion'){
-    const panel=v5KnowledgePanel('legal');const context=page.querySelector('.chat-context');if(context)context.after(panel);else page.prepend(panel);
-  }
+  if(S.page==='investigacion')return v5JurisprudenciaWorkspace(page);
   if(S.page==='biblioteca'){
     const heading=page.querySelector('.page-header');if(heading){heading.querySelector('.actions')?.append(button('Salas para compartir',()=>setPage('salas'),{icon:'lock'}));heading.after(v5KnowledgePanel('documents'));}
     const ocr=V5.knowledgeStatus?.ocr;

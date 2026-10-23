@@ -76,3 +76,18 @@
 @media(max-width:1200px){.v5-agent-entry{align-items:flex-start;flex-direction:column}.v5-workgrid{grid-template-columns:minmax(165px,215px) minmax(0,1fr)}.v5-job-detail{padding:20px}.v5-step-heading{align-items:flex-start;flex-direction:column;gap:5px}}
 @media(max-width:850px){.v5-workgrid{grid-template-columns:1fr}.v5-job-list{display:flex;overflow-x:auto;position:static;max-height:none;padding:2px 2px 7px}.v5-job-card{width:210px;flex:0 0 210px}.v5-job-detail{padding:20px}.v5-three-fields{grid-template-columns:1fr 1fr}.v5-three-fields>.field:first-child{grid-column:1/-1}.v5-upgrade-bar{flex-direction:column;align-items:flex-start}}
 @media(max-width:520px){.v5-agent-entry,.v5-upgrade-bar{padding:17px;gap:14px}.v5-agent-entry h2,.v5-upgrade-bar h2{font-size:19px}.v5-agent-entry .actions{flex-wrap:wrap;flex-shrink:1}.v5-workgrid{gap:16px}.v5-job-detail{padding:15px}.v5-detail-header{flex-direction:column}.v5-detail-header h2{font-size:23px}.v5-job-actions{gap:7px}.v5-job-actions .button{font-size:10px;padding:8px 10px}.v5-plan-step{gap:10px}.v5-step-number{width:27px;height:27px;flex-basis:27px}.v5-plan-step:not(:last-child):before{left:13px;top:34px}.v5-step-result{padding:10px}.v5-two-fields,.v5-three-fields{grid-template-columns:1fr;gap:0}.v5-plan-fieldset,.v5-signer-row{padding:12px}.v5-knowledge{padding:16px}.v5-knowledge h2{font-size:20px}.v5-search-summary{flex-direction:column;align-items:flex-start}.v5-search-hit{padding:14px}.v5-connection-search{align-items:flex-start;flex-direction:column;gap:0}.v5-connection-search>.field{width:100%}.v5-connection-search>.button{margin:0 0 14px}.v5-order-row{font-size:11px}.v5-document-manifest{padding-left:18px}.v5-tabs{flex-wrap:wrap}.v5-card-heading h2{font-size:16px}}
+/* Jurisprudencia: investigación externa y biblioteca propia, sin cambios al chat del Agente. */
+.v5-legal-workspace{width:100%;min-width:0;max-width:1400px;margin:0 auto}
+.v5-legal-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 20px;padding:5px;border:1px solid #dce5d4;border-radius:10px;background:#f1f5ed}
+.v5-legal-tab{padding:12px 16px;border-radius:8px;font-size:12px;font-weight:600;color:#58705e;min-width:135px}
+.v5-legal-tab.active{background:#fff;color:#24483b;box-shadow:0 2px 8px #25403116}
+.v5-legal-workspace .v5-knowledge{margin-top:0}
+.v5-legal-research textarea{min-height:128px;width:100%;max-width:100%;resize:vertical;border:1px solid #d6e0cf;border-radius:7px;padding:13px;background:#fff;color:var(--text)}
+.v5-external-results{margin-top:20px;min-width:0}
+.v5-research-answer{background:#fff;border:1px solid #dce5d4;padding:18px 22px;border-radius:9px;line-height:1.8;white-space:normal;overflow-wrap:anywhere}
+.v5-research-answer .message-content>div{margin:8px 0}
+.v5-external-source .actions{flex-wrap:wrap}
+.v5-external-source .button{white-space:normal;text-align:left}
+.v5-source-preview{font-family:inherit;white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f7ef;border:1px solid #dce5d4;padding:15px;border-radius:8px;max-height:360px;overflow:auto;line-height:1.6}
+.v5-search-queries{margin-top:18px;color:#61775e;font-size:12px}
+@media(max-width:560px){.v5-legal-tab{min-width:0;flex:1 1 auto;padding:11px 9px}.v5-research-answer{padding:14px}.v5-legal-workspace .page-header{gap:16px}}

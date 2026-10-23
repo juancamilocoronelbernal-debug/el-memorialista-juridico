@@ -6,6 +6,7 @@ from typing import Literal
 
 from app.routers.despacho_data import identity
 from app.services import despacho_knowledge as knowledge
+from app.services import despacho_legal_research as legal_research
 from app.services import despacho_store as store
 from app.services.limites import limitador
 
@@ -40,6 +41,32 @@ class Crawl(BaseModel):
     url: str = Field(max_length=2048)
     max_documents: int = Field(5, ge=1, le=10)
 
+
+
+class ResearchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    query: str = Field(min_length=12, max_length=3000)
+    territory: str = Field(default="", max_length=120)
+
+
+class VerifySourceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    url: str = Field(min_length=12, max_length=2048)
+
+
+@router.post("/research")
+async def research(payload: ResearchRequest, request: Request):
+    # Investigación explícita: nunca se mezclan documentos privados en el prompt.
+    uid, _ = await identity(request)
+    limitador.verificar(request, "citas", user_id=uid)
+    return await legal_research.investigate(payload.query, payload.territory)
+
+
+@router.post("/verify")
+async def verify_source(payload: VerifySourceRequest, request: Request):
+    uid, _ = await identity(request)
+    limitador.verificar(request, "citas", user_id=uid)
+    return await legal_research.verify_source(payload.url)
 
 @router.get("/status")
 async def status(request: Request):
