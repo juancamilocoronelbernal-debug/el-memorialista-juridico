@@ -16,7 +16,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, quote
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -76,6 +76,44 @@ async def ingest(source_id: str, url: str, title: str, *, semantic: bool = False
     chunks = make_chunks(data['text'])
     if data.get('extraction_coverage', {}).get('complete') is False or data.get('warnings'):
         raise ValueError('La extracción es incompleta o advierte errores. Revisa el original y prepara una copia legible.')
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip()
+    if not key:
+        raise ValueError('Falta la clave de servicio en el entorno del servidor (nunca en el navegador).')
+    sha = hashlib.sha256(data['text'].encode('utf-8')).hexdigest()
+
+    # Comprobación previa de idempotencia: si el documento idéntico ya está publicado, no recomputar embeddings
+    try:
+        existing = await store.db_request(
+            'GET',
+            f'despacho_corpus_documentos?source_url=eq.{quote(data["url"], safe="")}&select=id,version,content_hash,source_id,published',
+            key,
+            service=True
+        )
+        if isinstance(existing, list) and existing:
+            doc_ex = existing[0]
+            if doc_ex.get('content_hash') == sha and doc_ex.get('source_id') == source_id and doc_ex.get('published'):
+                seg_count = await store.db_request(
+                    'GET',
+                    f'despacho_corpus_fragmentos?document_id=eq.{doc_ex["id"]}&select=ordinal',
+                    key,
+                    service=True
+                )
+                total_segs = len(seg_count) if isinstance(seg_count, list) else len(chunks)
+                return {
+                    'id': str(doc_ex['id']),
+                    'version': doc_ex.get('version', 1),
+                    'unchanged': True,
+                    'segments': total_segs,
+                    'source_id': source_id,
+                    'sha256': sha,
+                    'title': title[:240],
+                    'semantic': semantic,
+                    'note': 'Publicación puntual y revisada; el documento ya se encontraba indexado sin cambios.'
+                }
+    except Exception:
+        pass
+
     if semantic:
         if not embedding_status()['configured']:
             raise ValueError('Embeddings no configurados. Ejecuta sin --semantic o habilita una clave válida.')
@@ -84,11 +122,6 @@ async def ingest(source_id: str, url: str, title: str, *, semantic: bool = False
             vectors = await embed_texts([c['content'] for c in batch])
             for c, vec in zip(batch, vectors):
                 c.update(embedding=vec, embedding_model=get_settings().DESPACHO_EMBEDDING_MODEL)
-    settings = get_settings()
-    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip()
-    if not key:
-        raise ValueError('Falta la clave de servicio en el entorno del servidor (nunca en el navegador).')
-    sha = hashlib.sha256(data['text'].encode('utf-8')).hexdigest()
     result = await store.db_request('POST', 'rpc/despacho_publicar_documento_corpus', key, service=True, json={
         'p_source_id': source_id, 'p_source_url': data['url'], 'p_title': title.strip()[:240],
         'p_hash': sha, 'p_chunks': chunks,

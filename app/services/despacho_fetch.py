@@ -211,6 +211,15 @@ async def fetch_source(url: str) -> dict:
                         extraction_coverage = document["extraction_coverage"]
                     else:
                         encoding = response.encoding or "utf-8"
+                        if mime in {"text/html", "application/xhtml+xml"}:
+                            meta_charset = re.search(rb"<meta[^>]+charset=[\"']?([a-zA-Z0-9_-]+)", content[:2048], re.I)
+                            if meta_charset:
+                                try:
+                                    declared = meta_charset.group(1).decode("ascii", errors="ignore").lower()
+                                    content.decode(declared)
+                                    encoding = declared
+                                except (LookupError, UnicodeDecodeError):
+                                    pass
                         decoded = content.decode(encoding, errors="replace")
                         text, title = html_to_text(decoded) if mime != "text/plain" else (decoded, "Publicación oficial")
                         if mime != "text/plain":
