@@ -151,8 +151,9 @@ async def keep_alive_worker(url_base: str) -> None:
 async def lifespan(app: FastAPI):
     await gemini_service.iniciar()
     tareas = [asyncio.create_task(gemini_service.descubrir_modelos())]
-    if settings.KEEP_ALIVE and "onrender.com" in settings.RENDER_EXTERNAL_URL:
-        tareas.append(asyncio.create_task(keep_alive_worker(settings.RENDER_EXTERNAL_URL)))
+    url_keep = (settings.RENDER_EXTERNAL_URL or settings.APP_BASE_URL or "").strip()
+    if settings.KEEP_ALIVE and "onrender.com" in url_keep:
+        tareas.append(asyncio.create_task(keep_alive_worker(url_keep)))
     try:
         yield
     finally:
