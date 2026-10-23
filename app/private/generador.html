@@ -405,21 +405,21 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .asistente-hecho-del:hover{color:#dc2626;background:rgba(220,38,38,.08)}
 
 /* ---------- autenticación y cuenta con supabase ---------- */
-.modal-dialog{border:none;border-radius:var(--r);background:var(--superficie);box-shadow:0 20px 40px rgba(0,0,0,.25);max-width:480px;width:calc(100vw - 32px);padding:0;overflow:hidden}
+.modal-dialog{border:1px solid var(--regla);border-radius:var(--r);background:var(--superficie);color:var(--tinta);box-shadow:0 20px 40px rgba(0,0,0,.35);max-width:480px;width:calc(100vw - 32px);padding:0;overflow:hidden}
 .modal-dialog::backdrop{background:rgba(15,23,42,.65);backdrop-filter:blur(3px)}
-.modal-cab{padding:16px 20px;border-bottom:1px solid var(--regla);display:flex;justify-content:space-between;align-items:center;background:#f8fafc}
-.modal-cab h3{margin:0;font-size:16px;font-weight:750;color:var(--tinta);display:flex;align-items:center;gap:8px}
-.modal-cuerpo{padding:20px;display:grid;gap:16px}
-.modal-pie{padding:14px 20px;background:#f8fafc;border-top:1px solid var(--regla);display:flex;justify-content:flex-end;gap:10px}
-.btn-cerrar-modal{background:none;border:none;font-size:18px;color:#94a3b8;cursor:pointer;padding:4px 8px;border-radius:4px}
+.modal-cab{padding:16px 20px;border-bottom:1px solid var(--regla);display:flex;justify-content:space-between;align-items:center;background:var(--superficie-2)}
+.modal-cab h3{margin:0;font-size:15px;font-weight:750;color:var(--tinta);display:flex;align-items:center;gap:8px}
+.modal-cuerpo{padding:20px;display:grid;gap:16px;background:var(--superficie);color:var(--tinta)}
+.modal-pie{padding:14px 20px;background:var(--superficie-2);border-top:1px solid var(--regla);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.btn-cerrar-modal{background:none;border:none;font-size:18px;color:var(--tinta-3);cursor:pointer;padding:4px 8px;border-radius:4px}
 .btn-cerrar-modal:hover{color:#dc2626;background:rgba(220,38,38,.08)}
 .perfil-chip.autenticado{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
-.perfil-chip.auth-pendiente{background:#f8fafc;border-color:#cbd5e1;color:var(--tinta-2)}
-.tarjeta-usuario{background:#f8fafc;border:1px solid var(--regla);border-radius:6px;padding:12px 14px;display:grid;gap:6px}
+.perfil-chip.auth-pendiente{background:var(--superficie-2);border-color:var(--regla);color:var(--tinta-2)}
+.tarjeta-usuario{background:var(--superficie-2);border:1px solid var(--regla);border-radius:6px;padding:12px 14px;display:grid;gap:7px;color:var(--tinta)}
 .linea-dato-usuario{display:flex;justify-content:space-between;font-size:12.5px}
-.linea-dato-usuario strong{color:var(--tinta)}
+.linea-dato-usuario strong{color:var(--tinta);font-weight:600}
 .linea-dato-usuario span{color:var(--tinta-2)}
-.barra-cuota-uso{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:4px}
+.barra-cuota-uso{height:7px;background:var(--regla);border-radius:999px;overflow:hidden;margin-top:4px}
 .barra-cuota-progreso{height:100%;background:#2563eb;border-radius:999px;transition:width .3s}
 .btn-peligro{background:#dc2626;color:#fff;border:none;border-radius:var(--r);padding:8px 14px;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .btn-peligro:hover{background:#b91c1c}
@@ -458,7 +458,8 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
     </nav>
     <div class="barra-derecha" style="display: flex; align-items: center; gap: 8px;">
       <button class="perfil-chip pendiente" id="perfilChip" type="button"><span class="ini" aria-hidden="true">?</span><span class="txt">Configura tu membrete</span></button>
-      <button class="btn chico" id="btnAuthHeader" type="button" style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600; padding: 6px 12px; font-size: 12.5px;">🔒 Iniciar sesión</button>
+      <button class="btn chico fantasma" id="btnAuthHeader" type="button" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 6px 12px; font-size: 12.5px;" title="Ajustes de cuenta, respaldos y privacidad">⚙️ <span id="txtAuthHeader">Ajustes</span></button>
+      <button class="btn chico" id="btnCerrarSesionTop" type="button" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 6px 13px; font-size: 12px; background: rgba(220, 38, 38, 0.08); color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); border-radius: 4px;" title="Cerrar sesión de forma segura">🚪 <span>Cerrar sesión</span></button>
     </div>
   </div>
 </header>
@@ -957,7 +958,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 <!-- Modal de Mi Cuenta / Sesión y Datos -->
 <dialog id="modalCuenta" class="modal-dialog">
   <div class="modal-cab">
-    <h3><span>👤</span> Mi Cuenta en El Memorialista</h3>
+    <h3><span>⚙️</span> Ajustes de Cuenta y Respaldo</h3>
     <button type="button" class="btn-cerrar-modal" id="btnCerrarModalCuenta" title="Cerrar">✕</button>
   </div>
   <div class="modal-cuerpo">
@@ -985,31 +986,39 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
       </div>
     </div>
 
-    <div style="display: grid; gap: 10px;">
-      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: var(--tinta);">Gestión de datos y privacidad</h4>
+    <div style="display: grid; gap: 10px; background: var(--superficie-2); border: 1px solid var(--regla); border-radius: 6px; padding: 14px;">
+      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: var(--tinta);">Copias de seguridad y exportación</h4>
       <button type="button" class="btn chico" id="btnExportarDatosCuenta" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; font-weight: 600;">
         📦 Exportar mis datos de la nube (JSON)
       </button>
       <button type="button" class="btn chico fantasma" id="btnSincronizarNube" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px;">
         🔄 Respaldar mis datos en la nube
       </button>
-      <button type="button" class="btn chico" id="btnRecuperarNube">↓ Recuperar mis escritos de la nube</button>
-      <p class="ayuda">Los borradores de este navegador permanecen separados por cuenta. La recuperación conserva las versiones locales diferentes.</p>
+      <button type="button" class="btn chico fantasma" id="btnRecuperarNube" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px;">
+        ☁️ Recuperar mis escritos de la nube
+      </button>
+      <p class="ayuda" style="margin: 0; font-size: 11.5px; color: var(--tinta-2);">
+        Los borradores de este navegador permanecen sincronizados y protegidos en tu cuenta privada.
+      </p>
     </div>
 
-    <div style="border-top: 1px solid #fee2e2; padding-top: 14px; margin-top: 4px; display: grid; gap: 8px;">
-      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: #dc2626;">Zona de peligro</h4>
-      <p style="margin: 0; font-size: 11.5px; color: var(--tinta-2);">
-        Elimina tu cuenta y tus datos personales. Si tus expedientes contienen aportes de otras personas, primero se requiere una transferencia administrativa.
-      </p>
-      <button type="button" class="btn-peligro" id="btnEliminarCuentaModal" style="justify-content: center;">
-        🗑️ Eliminar mi cuenta y mis datos
-      </button>
-    </div>
+    <details style="background: rgba(220, 38, 38, 0.04); border: 1px solid rgba(220, 38, 38, 0.2); border-radius: 6px; padding: 10px 14px;">
+      <summary style="font-size: 12.5px; font-weight: 700; color: #dc2626; cursor: pointer; user-select: none;">
+        ⚠️ Zona de peligro (eliminar cuenta)
+      </summary>
+      <div style="margin-top: 10px; display: grid; gap: 8px;">
+        <p style="margin: 0; font-size: 11.5px; color: var(--tinta-2);">
+          Elimina tu cuenta y tus datos personales permanentemente. Esta acción no se puede deshacer.
+        </p>
+        <button type="button" class="btn-peligro" id="btnEliminarCuentaModal" style="justify-content: center; width: 100%;">
+          🗑️ Eliminar mi cuenta y mis datos
+        </button>
+      </div>
+    </details>
   </div>
   <div class="modal-pie" style="justify-content: space-between;">
-    <button type="button" class="btn fantasma" id="btnCerrarSesionCuenta">🚪 Cerrar sesión</button>
-    <button type="button" class="btn" id="btnCerrarCuentaDialog">Cerrar</button>
+    <button type="button" class="btn fantasma" id="btnCerrarSesionCuenta" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">🚪 Cerrar sesión</button>
+    <button type="button" class="btn primario" id="btnCerrarCuentaDialog">Listo</button>
   </div>
 </dialog>
 
@@ -1510,14 +1519,24 @@ window.addEventListener('pageshow', event => { if (event.persisted) location.rel
 
 function actualizarUiAuth() {
   const btnAuth = $('#btnAuthHeader');
+  const txtAuth = $('#txtAuthHeader');
+  const btnCerrarTop = $('#btnCerrarSesionTop');
   if (!btnAuth) return;
 
   if (state.usuario) {
-    const nombre = (state.usuario.email || 'abogado').split('@')[0];
-    btnAuth.textContent = `⚖️ ${nombre}`;
-    btnAuth.className = 'btn chico primario';
-    btnAuth.title = `Conectado como ${state.usuario.email} · Clic para ver tu cuenta`;
+    if (txtAuth) {
+      txtAuth.textContent = 'Ajustes';
+    } else {
+      btnAuth.innerHTML = '⚙️ <span id="txtAuthHeader">Ajustes</span>';
+    }
+    btnAuth.className = 'btn chico fantasma';
+    btnAuth.title = `Ajustes de cuenta, respaldos y exportación (${state.usuario.email})`;
     btnAuth.onclick = () => abrirModalCuenta();
+
+    if (btnCerrarTop) {
+      btnCerrarTop.style.display = 'inline-flex';
+      btnCerrarTop.onclick = () => cerrarSesionProfesional();
+    }
 
     const elEmail = $('#cuentaUserEmail');
     const elFirma = $('#cuentaUserFirma');
@@ -1534,10 +1553,17 @@ function actualizarUiAuth() {
       if (elProgreso) elProgreso.parentElement.hidden = true;
     }
   } else {
-    btnAuth.textContent = '🔒 Iniciar sesión';
+    if (txtAuth) {
+      txtAuth.textContent = 'Iniciar sesión';
+    } else {
+      btnAuth.innerHTML = '🔒 <span id="txtAuthHeader">Iniciar sesión</span>';
+    }
     btnAuth.className = 'btn chico';
-    btnAuth.title = 'Inicia sesión con tu enlace mágico para respaldar tus memoriales';
+    btnAuth.title = 'Inicia sesión con tu cuenta para respaldar tus memoriales';
     btnAuth.onclick = () => abrirModalAuth();
+    if (btnCerrarTop) {
+      btnCerrarTop.style.display = 'none';
+    }
   }
 }
 
@@ -7153,6 +7179,9 @@ async function iniciar() {
 
   const btnCerrarSesion = $('#btnCerrarSesionCuenta');
   if (btnCerrarSesion) btnCerrarSesion.addEventListener('click', () => cerrarSesionProfesional());
+
+  const btnCerrarSesionTop = $('#btnCerrarSesionTop');
+  if (btnCerrarSesionTop) btnCerrarSesionTop.addEventListener('click', () => cerrarSesionProfesional());
   document.documentElement.dataset.auth = 'ready';
   $('#authGate').hidden = true;
   const anterior = localStorage.getItem('memorialista:perfil') || localStorage.getItem('memorialista:borrador');
