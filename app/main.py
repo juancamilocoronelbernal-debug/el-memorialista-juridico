@@ -391,7 +391,7 @@ async def generador_profesional(request: Request):
 
 @app.get("/app/assets/{filename}", include_in_schema=False)
 async def despacho_asset(filename: str, request: Request):
-    if filename not in {"despacho.js", "despacho.css"}:
+    if filename not in {"despacho.js", "despacho.css", "generador-theme.css"}:
         raise HTTPException(404, "Recurso no encontrado.")
     if not await usuario_de_sesion(request):
         raise HTTPException(401, "Inicia sesión para acceder al despacho.", headers=SIN_CACHE)

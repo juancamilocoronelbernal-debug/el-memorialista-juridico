@@ -4,7 +4,15 @@
 
 La aplicación conserva el servidor FastAPI y el generador del proyecto entregado. Integra orientación paso a paso, búsqueda tolerante a errores, formularios, seguimiento de trámites y descargas DOCX/PDF en la parte pública, con separación entre ambas experiencias.
 
-La guía [docs/INTEGRACION_COMPLETA.md](docs/INTEGRACION_COMPLETA.md) describe la versión integrada actual y los pasos para actualizar el proyecto en Antigravity, conservar la configuración y los datos, y verificar la instalación de destino.
+La guía [docs/INTEGRACION_COMPLETA.md](docs/INTEGRACION_COMPLETA.md) describe la versión integrada actual y los pasos para actualizar el proyecto en Antigravity, conservar la configuración y los datos, y verificar la instalación de destino. La versión actual es **5.0.2 (integración visual del generador con el despacho)**.
+
+### Nuevo diseño del generador (5.0.2)
+
+La ruta `/generador` utiliza ahora el mismo lenguaje visual que `/app`: menú lateral, marfil/verde, tipografía editorial, acceso al Agente y a los cinco productos del despacho. En móvil, el menú se convierte en un panel desplegable y las cinco pestañas tradicionales siguen disponibles. El diseño está en `app/private/generador-theme.css` y se sirve solo a una sesión válida desde `/app/assets/generador-theme.css`.
+
+**Los prompts, los motores de redacción, los 26 tipos profesionales, los formularios, el historial y la exportación permanecen intactos.** Los selectores `id` originales siguen en uso. El CSS de la interfaz no cambia las propiedades tipográficas ni los márgenes de la hoja legal generada.
+
+Aprende el funcionamiento de todos los módulos en [**docs/GUIA_USO_COMPLETA.md**](docs/GUIA_USO_COMPLETA.md). Para comprobar esta mejora visual consulta [docs/CAMBIOS_DISENO_GENERADOR_V502.md](docs/CAMBIOS_DISENO_GENERADOR_V502.md).
 
 ## 1. Comportamiento de la web
 

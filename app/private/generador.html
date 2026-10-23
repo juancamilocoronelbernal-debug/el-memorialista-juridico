@@ -445,9 +445,50 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
 .alerta-revision-guia.pendiente{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
 .alerta-revision-guia.ia{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
 </style>
+<link rel="icon" href="/static/asesor/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app/assets/generador-theme.css">
+<a class="generador-skip" href="#vista-redactar">Ir al editor</a>
+<aside class="generador-sidebar" id="generadorSidebar" aria-label="Navegación de El Memorialista">
+  <a href="/app" class="generador-brand" aria-label="El Memorialista, volver al despacho">
+    <span class="generador-brand-symbol" aria-hidden="true">M<span>·</span></span>
+    <span class="generador-brand-title">El Memorialista<small>DESPACHO JURÍDICO</small></span>
+  </a>
+  <button id="nuevoEscritoNavegacion" class="generador-new" type="button"><span aria-hidden="true">+</span> Escribir documento <small>↗</small></button>
+  <div class="generador-menu-scroll">
+    <div class="generador-menu-label">GENERADOR JURÍDICO</div>
+    <nav class="generador-menu" aria-label="Herramientas del generador">
+      <button type="button" class="generador-menu-item is-current" data-generador-tab="redactar" aria-current="page"><span aria-hidden="true">✧</span> Redactar escrito</button>
+      <button type="button" class="generador-menu-item" data-generador-tab="membrete"><span aria-hidden="true">▤</span> Membrete y estilo</button>
+      <button type="button" class="generador-menu-item" data-generador-tab="historial"><span aria-hidden="true">▧</span> Historial</button>
+      <button type="button" class="generador-menu-item" data-generador-tab="plazos"><span aria-hidden="true">▦</span> Términos y plazos</button>
+      <button type="button" class="generador-menu-item" data-generador-tab="calculos"><span aria-hidden="true">▦</span> Cálculos jurídicos</button>
+    </nav>
+    <div class="generador-menu-label menu-label-space">PRODUCTOS</div>
+    <nav class="generador-menu" aria-label="Otros productos del despacho">
+      <a class="generador-menu-item" href="/app#chat"><span aria-hidden="true">✧</span> Agente</a>
+      <a class="generador-menu-item" href="/app#investigacion"><span aria-hidden="true">▥</span> Jurisprudencia</a>
+      <a class="generador-menu-item" href="/app#monitores"><span aria-hidden="true">▤</span> Monitor</a>
+      <a class="generador-menu-item" href="/app#biblioteca"><span aria-hidden="true">▱</span> DMS</a>
+      <a class="generador-menu-item" href="/app#firmas"><span aria-hidden="true">✎</span> Firma electrónica</a>
+    </nav>
+    <div class="generador-menu-label menu-label-space">MI TRABAJO</div>
+    <nav class="generador-menu" aria-label="Trabajo profesional">
+      <a class="generador-menu-item" href="/app#asuntos"><span aria-hidden="true">▣</span> Asuntos</a>
+      <a class="generador-menu-item" href="/app#documentos"><span aria-hidden="true">▤</span> Editor y versiones</a>
+      <a class="generador-menu-item" href="/app#ajustes"><span aria-hidden="true">⚙</span> Ajustes</a>
+    </nav>
+  </div>
+  <div class="generador-menu-bottom">
+    <a class="generador-return" href="/app"><span aria-hidden="true">↗</span><span>Volver a Mi despacho<small>Agente y herramientas profesionales</small></span></a>
+    <div class="generador-sidebar-note">Tu criterio y aprobación siempre son tuyos.</div>
+  </div>
+</aside>
+<button class="generador-sidebar-scrim" id="generadorSidebarScrim" type="button" hidden aria-label="Cerrar menú"></button>
 
 <header class="barra" id="barra">
   <div class="barra-in gutter">
+    <button type="button" class="generador-menu-toggle" id="generadorMenuToggle" aria-controls="generadorSidebar" aria-expanded="false" aria-label="Abrir menú del despacho"><span aria-hidden="true">☰</span></button>
+    <span class="generador-breadcrumb"><a href="/app">Mi despacho</a><span aria-hidden="true">/</span><strong>Generador</strong></span>
     <a class="sello" href="#redactar" aria-label="El Memorialista, inicio"><b>EL MEMORIALISTA</b><small id="selloFecha">Recibido</small></a>
     <nav class="pestanas" role="tablist" aria-label="Secciones">
       <button role="tab" id="tab-redactar" data-vista="redactar" aria-selected="true" aria-controls="vista-redactar">Redactar</button>
@@ -457,7 +498,7 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
       <button role="tab" id="tab-calculos" data-vista="calculos" aria-selected="false" aria-controls="vista-calculos">🧮 Cálculos jurídicos</button>
     </nav>
     <div class="barra-derecha" style="display: flex; align-items: center; gap: 8px;">
-      <a class="btn chico secundario" href="/app" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; text-decoration: none;" title="Volver al despacho jurídico principal">🏛️ <span>Mi despacho</span></a>
+      <a class="btn chico generador-volver" href="/app" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; text-decoration: none;" title="Volver al despacho jurídico principal">↗ &nbsp;Ir al Agente</a>
       <button class="perfil-chip pendiente" id="perfilChip" type="button"><span class="ini" aria-hidden="true">?</span><span class="txt">Configura tu membrete</span></button>
       <button class="btn chico fantasma" id="btnAuthHeader" type="button" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 6px 12px; font-size: 12.5px;" title="Ajustes de cuenta, respaldos y privacidad">⚙️ <span id="txtAuthHeader">Ajustes</span></button>
       <button class="btn chico" id="btnCerrarSesionTop" type="button" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 6px 13px; font-size: 12px; background: rgba(220, 38, 38, 0.08); color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); border-radius: 4px;" title="Cerrar sesión de forma segura">🚪 <span>Cerrar sesión</span></button>
@@ -7216,5 +7257,42 @@ iniciar().catch(error => {
   $('#authGateRetry').hidden = false;
   console.error('[Memorialista] Inicialización:', error.name);
 });
+</script>
+<script>
+/* Vista coherente con el despacho. No modifica el motor de generación. */
+(()=>{
+  'use strict';
+  const sidebar=document.getElementById('generadorSidebar');
+  const toggle=document.getElementById('generadorMenuToggle');
+  const scrim=document.getElementById('generadorSidebarScrim');
+  const names={redactar:'Redactar escrito',membrete:'Membrete y estilo',historial:'Historial',plazos:'Términos y plazos',calculos:'Cálculos jurídicos'};
+  const close=()=>{sidebar.classList.remove('is-open');scrim.hidden=true;toggle.setAttribute('aria-expanded','false');};
+  const open=()=>{sidebar.classList.add('is-open');scrim.hidden=false;toggle.setAttribute('aria-expanded','true');};
+  toggle.addEventListener('click',()=>sidebar.classList.contains('is-open')?close():open());
+  scrim.addEventListener('click',close);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+  const update=()=>{
+    const selected=document.querySelector('.pestanas button[aria-selected="true"]');
+    const current=selected?.dataset.vista||'redactar';
+    for(const button of sidebar.querySelectorAll('[data-generador-tab]')){
+      const active=button.dataset.generadorTab===current;
+      button.classList.toggle('is-current',active);
+      if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+    }
+    document.title=(names[current]||'Generador')+' · El Memorialista';
+  };
+  for(const button of sidebar.querySelectorAll('[data-generador-tab]'))button.addEventListener('click',()=>{
+    document.getElementById('tab-'+button.dataset.generadorTab)?.click();
+    close();
+    update();
+  });
+  document.getElementById('nuevoEscritoNavegacion').addEventListener('click',()=>{
+    document.getElementById('tab-redactar')?.click();close();update();
+    document.getElementById('zonaTipo')?.scrollIntoView({block:'nearest',behavior:'smooth'});
+  });
+  document.querySelectorAll('.pestanas button').forEach(tab=>tab.addEventListener('click',()=>queueMicrotask(update)));
+  window.addEventListener('hashchange',()=>setTimeout(update,0));
+  update();
+})();
 </script>
 </body></html>

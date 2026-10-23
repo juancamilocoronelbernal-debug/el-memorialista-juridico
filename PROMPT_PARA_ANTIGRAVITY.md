@@ -15,3 +15,20 @@ Configura el dominio, HTTPS, retornos de Supabase Auth, correo, bucket privado y
 Ejecuta las suites indicadas en la guía y el recorrido Playwright completo, incluidas PWA y copia autónoma sin conexión. Si cambias recursos públicos, regenera catálogo, HTML autónomo y PWA. Haz una prueba real con dos cuentas para comprobar aislamiento, respaldo/recuperación, sesión y permisos; verifica también acceso y recuperación por correo, una generación con IA y las exportaciones profesionales. Usa datos ficticios para estas comprobaciones.
 
 Entrega un informe de los cambios específicos de mi instalación y los resultados. Distingue pruebas con proveedores reales de respuestas simuladas; no declares funcional un servicio únicamente porque `/api/health` responda. Si falta una configuración o acceso indispensable, identifica exactamente cuál sin reemplazarlo por botones simulados ni sesiones de prueba.
+
+## Actualización 5.0.2 — unificación visual del generador
+
+Cuando integres la versión 5.0.2 conserva `app/private/generador.html` y
+`app/private/generador-theme.css` de esta entrega. Este CSS se sirve detrás de
+la autenticación en la ruta `/app/assets/generador-theme.css`, habilitada en
+`app/main.py`. No montes la carpeta `app/private` como estática pública.
+El menú lateral del generador reutiliza los cinco tabs originales por sus ID y
+los accesos a `/app#chat`, `/app#investigacion`, `/app#monitores`,
+`/app#biblioteca` y `/app#firmas`.
+
+Antes de desplegar comprueba las cinco pestañas, los cinco accesos a los módulos
+privados, el menú móvil, el formulario real, el área de edición, las exportaciones,
+el historial y la impresión de la hoja. El documento Word/PDF debe conservar el
+membrete y estilo configurados por el usuario. No sustituyas la lógica original.
+
+Entrega al propietario `docs/GUIA_USO_COMPLETA.md` para aprender los módulos.

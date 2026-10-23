@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
-    VERSION: str = "5.0.1"
+    VERSION: str = "5.0.2"
 
     # Render (Render define RENDER_EXTERNAL_URL automáticamente)
     RENDER_EXTERNAL_URL: str = ""
