@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # Google Gemini (modelos vigentes a octubre de 2026)
     GEMINI_API_KEY: str = ""
     GEMINI_API_BASE: str = "https://generativelanguage.googleapis.com"
-    GEMINI_MODEL: str = "gemini-3.8-flash"        # Calidad principal: Gemini 3.8 Flash con thinkingLevel high
+    GEMINI_MODEL: str = "gemini-3.5-flash"        # Calidad principal: Gemini 3.5 Flash de alta disponibilidad
     GEMINI_MODEL_PRO: str = "gemini-4-argon"      # Calidad avanzada: Gemini 4 Argon con thinkingLevel medium
     GEMINI_FALLBACK_MODELS: str = "gemini-4-argon,gemini-3.6-flash,gemini-3.5-flash"
     GEMINI_MAX_OUTPUT_TOKENS: int = 65536         # incluye los tokens de "pensamiento"
