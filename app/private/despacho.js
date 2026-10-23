@@ -514,16 +514,92 @@ function v5LegalResearchPanel() {
   }));
   panel.append(form,output);draw();return panel;
 }
+/* Corpus oficial compartido: explícito, separado de la biblioteca privada. */
+function v5OfficialPanel() {
+  const wrap=el('section',{class:'v5-knowledge v5-official-panel','aria-label':'Corpus jurídico oficial compartido'});
+  const status=el('div',{class:'v5-official-status','aria-live':'polite'},'La cobertura se comprobará al solicitarla.');
+  const query=field('Buscar en la base jurídica compartida',{type:'search',placeholder:'Ej. reparación directa, confianza legítima, ambiente sano…'});
+  query.input.maxLength=800;
+  const results=el('div',{class:'v5-search-results','aria-live':'polite'});
+  const submit=el('button',{type:'submit',class:'button primary'},icon('search'),'Buscar en corpus');
+  const form=el('form',{class:'v5-knowledge-form'},query.wrap,el('div',{class:'actions'},submit));
+  form.addEventListener('submit',act(async e=>{
+    e.preventDefault();results.replaceChildren(v5Loading('Buscando exclusivamente en documentos publicados…'));
+    await busy(submit,async()=>{try{
+      const r=await v5api('/official/search',{method:'POST',body:{query:query.input.value.trim(),semantic:true,limit:15}});
+      results.replaceChildren(el('div',{class:'v5-search-summary'},el('strong',{},(r.results?.length||0)+' fragmentos del corpus oficial')),
+        el('p',{class:'inline-help'},r.coverage||'La cobertura depende de los documentos realmente publicados.'));
+      for(const w of r.warnings||[])results.append(el('div',{class:'callout warning'},text(w)));
+      if(!r.results?.length)results.append(el('div',{class:'callout'},'La colección compartida no contiene fragmentos que coincidan. No se atribuirán sentencias no encontradas.'));
+      for(const x of r.results||[])results.append(el('article',{class:'v5-search-hit'},
+        el('h3',{},x.title||'Publicación'),el('small',{class:'source-meta'},(x.source_id||'')+' · '+(x.method||'text')+' · Versión '+(x.version||'—')),
+        el('p',{class:'v5-excerpt'},x.excerpt||''),
+        el('div',{class:'actions'},link('Abrir documento de origen ↗',x.source_url,'button small'),
+          button('Usar fragmento en Agente',()=>{
+            setPage('chat');
+            S.chatDraft='Examina jurídicamente este fragmento de un documento público incorporado al corpus. No atribuyas más contenido que el incluido ni afirmes vigencia sin verificar.\nTítulo: '+(x.title||'Sin título')+'\nURL: '+x.source_url+'\nFragmento recuperado:\n'+(x.excerpt||'');
+            S.mode='analyze';render();$('#chat-input')?.focus();
+          },{class:'button small'}))));
+    }catch(error){results.replaceChildren(el('div',{class:'callout error',role:'alert'},error.message));}});
+  }));
+  const metadataField=field('Consultar metadatos de sentencias de la Corte Constitucional',{type:'search',placeholder:'Ej. T-100/24, ponente, sala o radicado'});
+  metadataField.input.maxLength=120;
+  const metaResult=el('div',{class:'v5-search-results','aria-live':'polite'});
+  const metaBtn=el('button',{type:'submit',class:'button'},'Consultar índice oficial');
+  const metaForm=el('form',{class:'v5-knowledge-form'},metadataField.wrap,
+    el('div',{class:'actions'},metaBtn));
+  metaForm.addEventListener('submit',act(async e=>{
+    e.preventDefault();metaResult.replaceChildren(v5Loading('Consultando metadatos oficiales…'));
+    await busy(metaBtn,async()=>{try{
+      const r=await v5api('/official/constitutional-metadata',{method:'POST',body:{query:metadataField.input.value.trim(),limit:15}});
+      metaResult.replaceChildren(el('div',{class:'v5-search-summary'},el('strong',{},(r.items?.length||0)+' registros encontrados')),
+        el('p',{class:'inline-help'},r.notice||'Solo datos estadísticos. No es texto completo.'));
+      if(!r.items?.length)metaResult.append(el('div',{class:'callout'},'No se encontraron metadatos con ese término. El índice no busca por temas del texto de las sentencias.'));
+      for(const x of r.items||[])metaResult.append(el('article',{class:'v5-search-hit'},
+        el('h3',{},x.citation),el('p',{class:'inline-help'},[x.date,x.judge,x.chamber].filter(Boolean).join(' · ')),
+        el('p',{class:'inline-help'},'Registro oficial de metadatos, sin lectura ni verificación del texto completo.'),
+        el('div',{class:'actions'},link('Abrir conjunto público ↗',x.dataset_url,'button small'))));
+    }catch(error){metaResult.replaceChildren(el('div',{class:'callout error',role:'alert'},error.message));}});
+  }));
+  const loadStatus=async()=>{status.replaceChildren(v5Loading('Comprobando cobertura real…'));try{
+    const r=await v5api('/official/status');
+    status.replaceChildren(el('p',{},'Documentos publicados: '+(r.published_documents??0)+
+       ' · Colecciones con documentos: '+(r.published_sources??0)+' · Fragmentos: '+(r.indexed_fragments??0)),
+       el('p',{class:'inline-help'},r.note||''));}
+    catch(e){status.replaceChildren(el('div',{class:'callout warning'},'La colección compartida aún no está lista: '+e.message));}
+  };
+  const showCatalog=async()=>{
+    const body=el('div',{},v5Loading('Consultando el directorio de colecciones…'));
+    showModal('Directorio de fuentes jurídicas',body,[button('Cerrar',closeModal)],true);
+    try{const r=await v5api('/official/sources');if(!body.isConnected)return;
+      body.replaceChildren(el('p',{class:'inline-help'},r.notice||'Fuentes planificadas, no corpus descargado.'),
+        el('p',{},'Colecciones catalogadas: '+(r.listed??0)+' · Conectores de metadatos: '+(r.metadata_connectors??0)));
+      for(const x of r.sources||[])body.append(el('article',{class:'list-row v5-official-row'},
+        el('div',{class:'row-main'},el('strong',{},x.name),el('small',{},x.category+' · '+
+          (x.access==='metadata_api'?'Consulta de metadatos habilitada':x.access==='portal_manual'?'Portal de referencia':'Pendiente de evaluación')),
+          el('p',{class:'inline-help'},x.notice||'')),x.portal_url?link('Abrir portal ↗',x.portal_url,'button small'):null));
+    }catch(e){body.replaceChildren(el('div',{class:'callout error'},e.message));}
+  };
+  wrap.append(el('div',{class:'section-heading'},el('h2',{},'Corpus jurídico oficial'),
+    el('p',{class:'inline-help'},'Colección compartida propia, separada del DMS de cada usuario. Sólo contiene originales publicados tras revisión; no incluye bases de datos privadas de terceros.')),
+    el('div',{class:'actions'},button('Actualizar cobertura',loadStatus,{class:'button small'}),button('Ver fuentes catalogadas',showCatalog,{class:'button small'})),
+    status,form,results,el('hr'),el('h3',{},'Consultar registros de la Corte Constitucional'),
+    el('p',{class:'inline-help'},'Esta búsqueda consulta directamente metadatos publicados en Datos Abiertos Colombia. No incluye hechos, asuntos, razones ni texto completo del fallo.'),
+    metaForm,metaResult);
+  return wrap;
+}
+
 function v5JurisprudenciaWorkspace(chatPage) {
   const container=el('section',{class:'page v5-legal-workspace'},pageHeader('Jurisprudencia',
     'Investiga nuevas fuentes en la web o consulta tu biblioteca privada. Las referencias requieren revisión.',[],'INVESTIGACIÓN JURÍDICA'));
-  const choices=[['research','Investigar con IA'],['library','Mi biblioteca jurídica'],['chat','Chat jurídico']];
+  const choices=[['research','Investigar con IA'],['official','Corpus jurídico oficial'],['library','Mi biblioteca jurídica'],['chat','Chat jurídico']];
   const tabs=el('nav',{class:'v5-legal-tabs',role:'tablist','aria-label':'Vistas de Jurisprudencia'},choices.map(([value,label])=>{
     const selected=V5.legalTab===value;
     return el('button',{type:'button',role:'tab','aria-selected':selected?'true':'false',class:'v5-legal-tab '+(selected?'active':''),on:{click:()=>{V5.legalTab=value;render();}}},label);
   }));
   container.append(tabs);
-  if(V5.legalTab==='library')container.append(v5KnowledgePanel('legal'));
+  if(V5.legalTab==='official')container.append(v5OfficialPanel());
+  else if(V5.legalTab==='library')container.append(v5KnowledgePanel('legal'));
   else if(V5.legalTab==='chat')container.append(chatPage);
   else container.append(v5LegalResearchPanel());
   return container;

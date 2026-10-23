@@ -24,6 +24,7 @@ from app.config import get_settings
 from app.routers import asesor_paginas, asesor_pwa, auth, calculos, documents
 from app.routers import despacho_ai, despacho_data, despacho_export, despacho_signatures, despacho_word
 from app.routers import despacho_agent, despacho_connections, despacho_knowledge, despacho_signing_v5
+from app.routers import despacho_corpus_fuentes
 from app.routers import despacho_rooms_v5
 from app.services.asesor_paginas import metadatos_publicos
 from app.services.gemini_service import gemini_service
@@ -337,6 +338,7 @@ app.include_router(despacho_agent.router)
 app.include_router(despacho_connections.router)
 app.include_router(despacho_connections.callback_router)
 app.include_router(despacho_knowledge.router)
+app.include_router(despacho_corpus_fuentes.router)
 app.include_router(despacho_signing_v5.router)
 app.include_router(despacho_signing_v5.public_router)
 app.include_router(despacho_rooms_v5.router)
