@@ -95,6 +95,20 @@ async def test_research_timeout_has_specific_message(monkeypatch):
     assert exc.value.status_code == 504
 
 
+@pytest.mark.asyncio
+async def test_research_billing_quota_error_has_informative_message(monkeypatch):
+    async def billing_429(*args, **kwargs):
+        raise HTTPException(
+            429,
+            "La investigación con Google Search requiere habilitar la facturación en el proyecto de Google AI Studio (incluye 5.000 búsquedas al mes sin coste). El chat estándar sigue funcionando normalmente sin costo.",
+        )
+    monkeypatch.setattr(ai, '_call_provider', billing_429)
+    with pytest.raises(HTTPException) as exc:
+        await legal.investigate('problema jurídico largo suficiente')
+    assert exc.value.status_code == 429
+    assert 'facturación' in exc.value.detail
+
+
 def test_models_validate_research_request():
     assert router.ResearchRequest(query='Investigación de vías del municipio').query
     with pytest.raises(Exception):

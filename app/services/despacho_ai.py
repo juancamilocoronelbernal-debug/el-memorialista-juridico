@@ -483,15 +483,56 @@ async def _call_provider(messages: list[tuple[str, str]], *, mode: str, search: 
 
                     if response.status_code != 200:
                         last_status = response.status_code
-                        attempts_history.append({"provider": motor.proveedor, "model": motor.modelo, "status": response.status_code, "duration": round(dur_attempt, 2)})
+                        err_status, err_msg = "", ""
+                        try:
+                            err_data = response.json().get("error", {})
+                            err_status = str(err_data.get("status") or "")
+                            raw_msg = str(err_data.get("message") or "")
+                            err_msg = re.sub(r"key=[^&\s]+", "key=***", raw_msg)[:280]
+                        except Exception:
+                            err_msg = response.text[:150]
+
+                        is_billing_plan_error = bool(
+                            "plan and billing" in err_msg.lower()
+                            or "billing details" in err_msg.lower()
+                            or ("quota" in err_msg.lower() and "rate-limits" in err_msg.lower())
+                        )
+                        attempts_history.append({
+                            "provider": motor.proveedor,
+                            "model": motor.modelo,
+                            "status": response.status_code,
+                            "error_type": err_status or f"HTTP_{response.status_code}",
+                            "error_detail": err_msg,
+                            "is_billing_plan_error": is_billing_plan_error,
+                            "duration": round(dur_attempt, 2),
+                        })
+
                         if response.status_code == 404:
                             # Invalida inmediatamente el modelo no disponible para no volverlo a intentar
                             gemini_service.no_disponibles[motor.modelo] = time.monotonic()
                             log.warning("Despacho AI: modelo '%s' no encontrado (HTTP 404). Descartado de candidatos.", motor.modelo)
                         elif response.status_code == 429:
-                            log.warning("Despacho AI: cuota temporalmente agotada en '%s' (HTTP 429). Intentando respaldo...", motor.modelo)
+                            if search and is_billing_plan_error:
+                                log.warning(
+                                    "Despacho AI: Google Search requiere facturación en proveedor=%s modelo=%s (HTTP 429 %s). Causa: %s. (En Google AI Studio el Grounding con búsqueda requiere vincular facturación; incluye 5.000 consultas/mes sin costo).",
+                                    motor.proveedor, motor.modelo, err_status, err_msg,
+                                )
+                            else:
+                                retry_hdr = response.headers.get("retry-after")
+                                log.warning(
+                                    "Despacho AI: cuota/tasa agotada en proveedor=%s modelo=%s (HTTP 429 %s: %s). Retry-After=%s. Intentando respaldo...",
+                                    motor.proveedor, motor.modelo, err_status, err_msg, retry_hdr,
+                                )
+                                if retry_hdr and retry_hdr.isdigit():
+                                    wait_sec = min(int(retry_hdr), 4)
+                                    if wait_sec > 0:
+                                        log.info("Despacho AI: aplicando pausa de reintento controlado (%.1fs) para '%s'...", wait_sec, motor.modelo)
+                                        await asyncio.sleep(wait_sec)
                         else:
-                            log.warning("Despacho AI: proveedor=%s modelo=%s error HTTP %s en %.2fs. Intentando respaldo...", motor.proveedor, motor.modelo, response.status_code, dur_attempt)
+                            log.warning(
+                                "Despacho AI: proveedor=%s modelo=%s error HTTP %s [%s] en %.2fs: %s. Intentando respaldo...",
+                                motor.proveedor, motor.modelo, response.status_code, err_status, dur_attempt, err_msg,
+                            )
                         continue
 
                     result = response.json()
@@ -555,6 +596,11 @@ async def _call_provider(messages: list[tuple[str, str]], *, mode: str, search: 
     total_time = time.monotonic() - t_start
     log.error("Despacho AI: todos los proveedores fallaron en %.2fs. Intentos: %s", total_time, attempts_history)
     if last_status == 429:
+        if search and any(att.get("is_billing_plan_error") for att in attempts_history):
+            raise HTTPException(
+                429,
+                "La investigación con Google Search requiere habilitar la facturación en el proyecto de Google AI Studio (incluye 5.000 búsquedas al mes sin coste). El chat estándar sigue funcionando normalmente sin costo.",
+            )
         raise HTTPException(429, "El proveedor de IA agotó temporalmente su cuota. Revisa el plan o intenta más tarde.")
     raise HTTPException(503, "No se pudo completar la consulta con los proveedores configurados. Revisa sus claves, modelos y disponibilidad.")
 

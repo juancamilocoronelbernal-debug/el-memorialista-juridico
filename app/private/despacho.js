@@ -497,11 +497,20 @@ function v5LegalResearchPanel() {
     if(result.search_queries?.length)output.append(el('details',{class:'v5-search-queries'},el('summary',{},'Consultas realizadas por el proveedor'),el('ul',{},result.search_queries.map(q=>el('li',{},q)))));
   };
   form.addEventListener('submit',act(async event=>{
-    event.preventDefault();const q=query.input.value.trim();if(q.length<12)throw new Error('Describe el problema jurídico con al menos 12 caracteres.');
+    event.preventDefault();const q=query.input.value.trim(),t=territory.input.value.trim();
+    if(q.length<12)throw new Error('Describe el problema jurídico con al menos 12 caracteres.');
+    state.query=q;state.territory=t;
     await busy(submit,async()=>{output.replaceChildren(v5Loading('Consultando fuentes web con IA…'));try{
-      const result=await v5api('/knowledge/research',{method:'POST',body:{query:q,territory:territory.input.value.trim()}});
-      state.query=q;state.territory=territory.input.value.trim();state.result=result;draw();
-    }catch(error){if(error.name!=='AbortError')output.replaceChildren(el('div',{class:'callout error',role:'alert'},error.message));}});
+      const result=await v5api('/knowledge/research',{method:'POST',body:{query:q,territory:t}});
+      state.result=result;draw();
+    }catch(error){
+      if(error.name!=='AbortError'){
+        output.replaceChildren(
+          el('div',{class:'callout error',role:'alert'},error.message),
+          el('p',{class:'inline-help'},'Tu consulta permanece intacta en el formulario para reintentar cuando lo desees.')
+        );
+      }
+    }});
   }));
   panel.append(form,output);draw();return panel;
 }
