@@ -30,6 +30,30 @@
   --sombra-flota: 0 15px 46px rgba(25,45,34,.18);
   --f-ui: "Archivo", "Helvetica Neue", Arial, sans-serif;
 }
+@media (prefers-color-scheme: dark) {
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] {
+    color-scheme: light;
+    --mesa: #f8f9f6;
+    --superficie: #ffffff;
+    --superficie-2: #f1f4ed;
+    --tinta: #1e3738;
+    --tinta-2: #627467;
+    --tinta-3: #89968b;
+    --regla: #dce3d8;
+    --regla-fuerte: #c4d0c2;
+    --sello: #365344;
+    --sello-hover: #263e34;
+    --sello-tenue: #e7eee2;
+    --sello-sobre: #ffffff;
+    --ok: #42794f;
+    --error: #a93f3f;
+    --error-tenue: #fff0ec;
+    --chip-c: #faf0cf;
+    --chip-c-tinta: #765c20;
+    --chip-v: #fbe6d8;
+    --chip-v-tinta: #95542d;
+  }
+}
 html,body {background:var(--mesa);color:var(--tinta)}
 body {padding-left:249px;min-width:320px}
 a {accent-color:var(--sello)}
@@ -76,9 +100,16 @@ h1,h2,h3 {letter-spacing:-.012em}
 .barra-in .pestanas {display:none}
 .barra-derecha {margin-left:auto;min-width:0;gap:12px!important}
 .barra-derecha .generador-volver {font-size:12px}
-.perfil-chip {border-radius:8px;padding:5px 11px 5px 5px;background:#ffffff;font-size:12px;max-width:230px}
-.perfil-chip .ini {background:#e3eadf;color:#426048}
-.perfil-chip.autenticado {background:#ecf4e8;border-color:#c6dac2;color:#315e41}
+.perfil-chip {display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:5px 12px 5px 6px;background:#ffffff;border:1px solid #c4d0c2;color:#1e3738;font-weight:600;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,.04);max-width:260px;cursor:pointer;transition:all .15s ease}
+.perfil-chip:hover {border-color:#83a085;background:#f7f9f5}
+.perfil-chip .ini {width:24px;height:24px;border-radius:5px;display:grid;place-items:center;background:#e3eadf;color:#284c37;font-weight:700;font-size:11px;flex:none}
+.perfil-chip.pendiente {background:#fefce8!important;border:1.5px solid #eab308!important;color:#854d0e!important;box-shadow:0 1px 3px rgba(133,77,14,.12)!important}
+.perfil-chip.pendiente:hover {background:#fef9c3!important;border-color:#ca8a04!important;color:#713f12!important}
+.perfil-chip.pendiente .ini {background:#fef08a!important;color:#854d0e!important;font-weight:800!important}
+.perfil-chip.pendiente .txt {color:#854d0e!important;font-weight:700!important}
+.perfil-chip.autenticado {background:#f0fdf4!important;border:1px solid #86efac!important;color:#166534!important}
+.perfil-chip.autenticado .ini {background:#dcfce7!important;color:#15803d!important}
+.perfil-chip.autenticado .txt {color:#166534!important;font-weight:600!important}
 #btnAuthHeader {border-radius:8px!important;font-size:12px!important}
 /* Main left/right panes: editorial typography and gentle green surfaces. */
 .redactar {grid-template-columns:minmax(330px,440px) minmax(0,1fr)}
@@ -128,9 +159,23 @@ input:focus,select:focus,textarea:focus {outline:2px solid rgba(61,103,66,.55);o
 .dropzone-docs:hover,.dropzone-docs.dragover {border-color:#83a085;background:#edf3ea}
 .ajustes-in,.hist-in,.plazos-in,.calculos-in {padding-top:34px}
 .hist-item {border-radius:9px}
-.modal-dialog {border-radius:13px}
-.modal-cab,.modal-pie {background:#f2f5ef;border-color:#dfe6da}
-.tarjeta-usuario {background:#f2f6f0;border-color:#dce5d6}
+.modal-dialog {border-radius:13px;background:#ffffff!important;color:#1e3738!important;border:1px solid #dce3d8!important;box-shadow:0 20px 50px rgba(25,45,34,.22)!important}
+.modal-dialog::backdrop {background:rgba(19,38,31,.45)!important;backdrop-filter:blur(3px)!important}
+.modal-cab {background:#f2f5ef!important;border-bottom:1px solid #dce3d8!important;padding:16px 20px!important;color:#1e3738!important}
+.modal-cab h3,.modal-cab h3 * {color:#1e3738!important;font-size:15px!important;font-weight:750!important}
+.btn-cerrar-modal,.btn-cerrar {color:#627467!important;font-size:18px!important}
+.btn-cerrar-modal:hover,.btn-cerrar:hover {color:#dc2626!important;background:rgba(220,38,38,.08)!important}
+.modal-cuerpo {background:#ffffff!important;color:#1e3738!important;padding:20px!important}
+.tarjeta-usuario {background:#f4f7f1!important;border:1px solid #dce5d6!important;border-radius:8px!important;padding:14px 16px!important;color:#1e3738!important}
+.linea-dato-usuario {display:flex!important;justify-content:space-between!important;font-size:13px!important;line-height:1.6!important;color:#1e3738!important}
+.linea-dato-usuario strong {color:#1e3738!important;font-weight:700!important}
+.linea-dato-usuario span {color:#2e5541!important;font-weight:600!important}
+.bloque-respaldo-cuenta {background:#f8faf6!important;border:1px solid #dce5d6!important;border-radius:8px!important;padding:14px 16px!important;color:#1e3738!important}
+.bloque-respaldo-cuenta h4 {color:#1e3738!important;font-weight:700!important}
+.bloque-respaldo-cuenta .btn {background:#ffffff!important;border:1px solid #c4d0c2!important;color:#1e3738!important;font-weight:600!important}
+.bloque-respaldo-cuenta .btn:hover {background:#edf3ea!important;border-color:#83a085!important;color:#193c30!important}
+.bloque-respaldo-cuenta .ayuda {color:#627467!important}
+.modal-pie {background:#f2f5ef!important;border-top:1px solid #dce3d8!important;padding:14px 20px!important;color:#1e3738!important}
 .btn-microfono {background:#eff3ed;border-color:#d2dfd0;border-radius:8px;color:#4a6754}
 .btn-microfono:hover {background:#e5efe2;color:#2f5741;border-color:#a8bfa6}
 .vacio {border-radius:12px}

@@ -45,23 +45,10 @@
   --r:5px;
   --barra-h:62px;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --mesa:#121019;--superficie:#1b1824;--superficie-2:#24212f;--tinta:#ecebf4;--tinta-2:#a8a4ba;--tinta-3:#8a869c;--regla:#322e3f;--regla-fuerte:#4b4660;
-    --sello:#ab9bff;--sello-hover:#c4b8ff;--sello-tenue:#2b2546;--sello-sobre:#17131f;
-    --chip-c:#4a3f0c;--chip-c-tinta:#ffe48a;--chip-v:#4d2a10;--chip-v-tinta:#ffc29a;
-    --ok:#63d59d;--error:#ff8f86;--error-tenue:#3a1715;
-    --sombra-hoja:0 0 0 1px #2d2a39,0 12px 34px rgba(0,0,0,.55);--sombra-flota:0 8px 28px rgba(0,0,0,.6);
-    color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --mesa:#121019;--superficie:#1b1824;--superficie-2:#24212f;--tinta:#ecebf4;--tinta-2:#a8a4ba;--tinta-3:#8a869c;--regla:#322e3f;--regla-fuerte:#4b4660;
-  --sello:#ab9bff;--sello-hover:#c4b8ff;--sello-tenue:#2b2546;--sello-sobre:#17131f;
-  --chip-c:#4a3f0c;--chip-c-tinta:#ffe48a;--chip-v:#4d2a10;--chip-v-tinta:#ffc29a;
-  --ok:#63d59d;--error:#ff8f86;--error-tenue:#3a1715;
-  --sombra-hoja:0 0 0 1px #2d2a39,0 12px 34px rgba(0,0,0,.55);--sombra-flota:0 8px 28px rgba(0,0,0,.6);
-  color-scheme:dark;
+:root,
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 *{box-sizing:border-box}
 html,body{background:var(--mesa)}
@@ -1029,18 +1016,18 @@ button.enlace{border:0;background:none;padding:0;cursor:pointer;text-decoration:
       </div>
     </div>
 
-    <div style="display: grid; gap: 10px; background: var(--superficie-2); border: 1px solid var(--regla); border-radius: 6px; padding: 14px;">
-      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: var(--tinta);">Copias de seguridad y exportación</h4>
-      <button type="button" class="btn chico" id="btnExportarDatosCuenta" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; font-weight: 600;">
+    <div class="bloque-respaldo-cuenta" style="display: grid; gap: 10px; background: #f8faf6; border: 1px solid #dce5d6; border-radius: 8px; padding: 16px;">
+      <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: #1e3738;">Copias de seguridad y exportación</h4>
+      <button type="button" class="btn chico" id="btnExportarDatosCuenta" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; font-weight: 600; background: #ffffff; border: 1px solid #c4d0c2; color: #1e3738;">
         📦 Exportar mis datos de la nube (JSON)
       </button>
-      <button type="button" class="btn chico fantasma" id="btnSincronizarNube" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px;">
+      <button type="button" class="btn chico fantasma" id="btnSincronizarNube" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; background: #ffffff; border: 1px solid #c4d0c2; color: #1e3738;">
         🔄 Respaldar mis datos en la nube
       </button>
-      <button type="button" class="btn chico fantasma" id="btnRecuperarNube" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px;">
+      <button type="button" class="btn chico fantasma" id="btnRecuperarNube" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; background: #ffffff; border: 1px solid #c4d0c2; color: #1e3738;">
         ☁️ Recuperar mis escritos de la nube
       </button>
-      <p class="ayuda" style="margin: 0; font-size: 11.5px; color: var(--tinta-2);">
+      <p class="ayuda" style="margin: 0; font-size: 11.5px; color: #627467;">
         Los borradores de este navegador permanecen sincronizados y protegidos en tu cuenta privada.
       </p>
     </div>
@@ -5923,11 +5910,16 @@ function irVista(v) {
   if (v === 'calculos') renderVistaCalculos();
   if (v === 'redactar') { sincronizarTexto(); renderHoja(); }
   window.scrollTo(0, 0);
+  window.dispatchEvent(new CustomEvent('generador:vista', { detail: { vista: v } }));
+  if (typeof window.sincronizarSidebarGenerador === 'function') {
+    window.sincronizarSidebarGenerador(v);
+  }
 }
 function actualizarChip() {
   const ab = state.perfil.abogado, chip = $('#perfilChip');
   const ok = !!ab.nombre;
   chip.classList.toggle('pendiente', !ok);
+  chip.classList.toggle('autenticado', ok);
   chip.querySelector('.ini').textContent = ok ? ab.nombre.split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase() : '?';
   chip.querySelector('.txt').textContent = ok ? ab.nombre : 'Configura tu membrete';
 }
@@ -7266,32 +7258,47 @@ iniciar().catch(error => {
   const toggle=document.getElementById('generadorMenuToggle');
   const scrim=document.getElementById('generadorSidebarScrim');
   const names={redactar:'Redactar escrito',membrete:'Membrete y estilo',historial:'Historial',plazos:'Términos y plazos',calculos:'Cálculos jurídicos'};
-  const close=()=>{sidebar.classList.remove('is-open');scrim.hidden=true;toggle.setAttribute('aria-expanded','false');};
-  const open=()=>{sidebar.classList.add('is-open');scrim.hidden=false;toggle.setAttribute('aria-expanded','true');};
-  toggle.addEventListener('click',()=>sidebar.classList.contains('is-open')?close():open());
-  scrim.addEventListener('click',close);
+  const close=()=>{sidebar?.classList.remove('is-open');if(scrim)scrim.hidden=true;toggle?.setAttribute('aria-expanded','false');};
+  const open=()=>{sidebar?.classList.add('is-open');if(scrim)scrim.hidden=false;toggle?.setAttribute('aria-expanded','true');};
+  toggle?.addEventListener('click',()=>sidebar?.classList.contains('is-open')?close():open());
+  scrim?.addEventListener('click',close);
   document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
-  const update=()=>{
+  const update=(vistaForzada)=>{
     const selected=document.querySelector('.pestanas button[aria-selected="true"]');
-    const current=selected?.dataset.vista||'redactar';
-    for(const button of sidebar.querySelectorAll('[data-generador-tab]')){
-      const active=button.dataset.generadorTab===current;
-      button.classList.toggle('is-current',active);
-      if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+    const current=vistaForzada || selected?.dataset.vista || (window.state && window.state.vista) || 'redactar';
+    if(sidebar){
+      for(const button of sidebar.querySelectorAll('[data-generador-tab]')){
+        const active=button.dataset.generadorTab===current;
+        button.classList.toggle('is-current',active);
+        if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+      }
     }
+    document.querySelectorAll('.pestanas button').forEach(tab=>{
+      const active=tab.dataset.vista===current;
+      tab.setAttribute('aria-selected', String(active));
+    });
     document.title=(names[current]||'Generador')+' · El Memorialista';
   };
-  for(const button of sidebar.querySelectorAll('[data-generador-tab]'))button.addEventListener('click',()=>{
-    document.getElementById('tab-'+button.dataset.generadorTab)?.click();
+  window.sincronizarSidebarGenerador = update;
+  window.addEventListener('generador:vista', e => update(e.detail?.vista));
+  for(const button of (sidebar?.querySelectorAll('[data-generador-tab]')||[])){
+    button.addEventListener('click',()=>{
+      const v = button.dataset.generadorTab;
+      document.getElementById('tab-'+v)?.click();
+      if (typeof irVista === 'function') irVista(v);
+      close();
+      update(v);
+    });
+  }
+  document.getElementById('nuevoEscritoNavegacion')?.addEventListener('click',()=>{
+    document.getElementById('tab-redactar')?.click();
+    if (typeof irVista === 'function') irVista('redactar');
     close();
-    update();
-  });
-  document.getElementById('nuevoEscritoNavegacion').addEventListener('click',()=>{
-    document.getElementById('tab-redactar')?.click();close();update();
+    update('redactar');
     document.getElementById('zonaTipo')?.scrollIntoView({block:'nearest',behavior:'smooth'});
   });
-  document.querySelectorAll('.pestanas button').forEach(tab=>tab.addEventListener('click',()=>queueMicrotask(update)));
-  window.addEventListener('hashchange',()=>setTimeout(update,0));
+  document.querySelectorAll('.pestanas button').forEach(tab=>tab.addEventListener('click',()=>queueMicrotask(()=>update(tab.dataset.vista))));
+  window.addEventListener('hashchange',()=>setTimeout(()=>update(location.hash.slice(1)),0));
   update();
 })();
 </script>
