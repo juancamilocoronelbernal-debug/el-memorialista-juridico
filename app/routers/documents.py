@@ -135,7 +135,7 @@ class PlazosRequest(BaseModel):
     titulo_evento: Optional[str] = None
 
 
-@router.get("/health")
+@router.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "online", "app": "El Memorialista", "version": get_settings().VERSION}
 

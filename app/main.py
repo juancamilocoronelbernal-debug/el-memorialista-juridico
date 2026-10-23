@@ -347,7 +347,7 @@ PRIVATE_DIR = Path(__file__).resolve().parent / "private"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 
 
-@app.get("/", include_in_schema=False)
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 async def root_index(request: Request):
     if await usuario_de_sesion(request):
         return RedirectResponse("/app", status_code=303, headers=SIN_CACHE)
@@ -363,8 +363,8 @@ async def root_index(request: Request):
     })
 
 
-@app.get("/login", include_in_schema=False)
-@app.get("/auth/callback", include_in_schema=False)
+@app.api_route("/login", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/auth/callback", methods=["GET", "HEAD"], include_in_schema=False)
 async def login_page(request: Request):
     # Callback siempre se procesa en el cliente: puede traer un enlace nuevo
     # cuando existe una cookie anterior de otro usuario.
