@@ -116,6 +116,20 @@ class ConnectorTriageReviewRequest(BaseModel):
     document_id: str = Field(min_length=4, max_length=80)
     decision: Literal['approve', 'reject', 'withdraw']
     reason: Optional[str] = Field(None, max_length=500)
+    review_type: Literal['revision_juridica_humana', 'aprobacion_administrativa'] = 'revision_juridica_humana'
+    responsible_name: Optional[str] = Field(None, max_length=150)
+    responsible_role: Optional[str] = Field(None, max_length=100)
+
+
+class ConnectorPauseRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    reason: Optional[str] = Field(None, max_length=500)
+
+
+class ConnectorRetriesTriggerRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    limit: int = Field(5, ge=1, le=20)
+    force: bool = False
 
 
 @router.get('/connector/status')
@@ -138,6 +152,25 @@ async def configure_schedule_endpoint(payload: ConnectorScheduleRequest, request
         interval_minutes=payload.interval_minutes,
         run_now=payload.run_now,
     )
+
+
+@router.post('/connector/schedule/pause')
+async def pause_schedule_endpoint(request: Request, payload: Optional[ConnectorPauseRequest] = None):
+    """Pausa administrativamente la sincronización automática."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services.conector_corte_worker import pause_schedule
+    reason = payload.reason if payload else None
+    return await pause_schedule(reason=reason)
+
+
+@router.post('/connector/schedule/resume')
+async def resume_schedule_endpoint(request: Request):
+    """Reanuda la sincronización automática."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services.conector_corte_worker import resume_schedule
+    return await resume_schedule()
 
 
 @router.post('/connector/discover')
@@ -173,7 +206,7 @@ async def list_triage_endpoint(
 
 @router.post('/connector/triage/review')
 async def review_triage_endpoint(payload: ConnectorTriageReviewRequest, request: Request):
-    """Resuelve la revisión humana de un documento en triage (aprobar, rechazar o retirar)."""
+    """Resuelve la revisión humana/administrativa de un documento en triage (aprobar, rechazar o retirar)."""
     uid, _ = await identity(request)
     limitador.verificar(request, 'citas', user_id=uid)
     from app.services import conector_corte_constitucional as conector
@@ -181,7 +214,42 @@ async def review_triage_endpoint(payload: ConnectorTriageReviewRequest, request:
         document_id=payload.document_id,
         decision=payload.decision,
         reason=payload.reason,
+        review_type=payload.review_type,
+        responsible_name=payload.responsible_name or f"admin_{str(uid)[:8]}",
+        responsible_role=payload.responsible_role,
     )
+
+
+@router.get('/connector/retries')
+async def list_pending_retries_endpoint(request: Request, limit: int = 50):
+    """Lista las sentencias en cola de reintento por falta de texto en Relatoría."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    return await conector.list_pending_retries(limit=limit)
+
+
+@router.post('/connector/retries/trigger')
+async def trigger_retries_endpoint(payload: ConnectorRetriesTriggerRequest, request: Request):
+    """Dispara manualmente el procesamiento de la cola de reintentos."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    return await conector.retry_pending_source_rulings(limit=payload.limit, force=payload.force)
+
+
+@router.get('/connector/audit')
+async def list_audit_trail_endpoint(
+    request: Request,
+    document_id: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """Consulta el registro inmutable de auditoría de revisiones y cambios de estado del corpus."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    return await conector.list_audit_trail(document_id=document_id, limit=limit, offset=offset)
 
 
 @router.post('/connector/pilot')
