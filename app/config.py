@@ -88,6 +88,13 @@ class Settings(BaseSettings):
     DESPACHO_OCR_PAGE_TIMEOUT_SECONDS: int = Field(25, ge=5, le=90)
     DESPACHO_MONITOR_AI_ENABLED: bool = True
 
+    # Motor RAG Jurídico Inteligente 2.0 (Agente y Jurisprudencia)
+    DESPACHO_RAG_V2_ENABLED: bool = True
+    DESPACHO_RAG_DEFAULT_DEPTH: str = "auto"
+    DESPACHO_RAG_MEMORY_ENABLED: bool = True
+    DESPACHO_RAG_MEMORY_TTL_SECONDS: int = Field(1800, ge=60, le=86400)
+    DESPACHO_RAG_MAX_CANDIDATES: int = Field(50, ge=10, le=100)
+
     # Encargos persistidos, programación y navegador supervisado.
     DESPACHO_AGENT_WORKER_ENABLED: bool = True
     DESPACHO_AGENT_POLL_SECONDS: int = Field(30, ge=10, le=600)

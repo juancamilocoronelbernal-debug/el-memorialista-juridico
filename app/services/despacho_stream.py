@@ -196,7 +196,31 @@ async def stream_chat(user_id: str, token: str, request: dict) -> AsyncIterator[
         message, mode = request["message"], request.get("mode", "general")
         context = ai.build_context(documents, message)
         yield {"event": "status", "data": {"stage": "retrieval", "message": "Recuperando fuentes autorizadas…"}}
-        context = await ai.augment_indexed_context(user_id, token, request, context)
+        
+        # RAG 2.0: Transmisión reactiva de etapas (análisis, recuperación, reranking, selección)
+        rag_queue = asyncio.Queue()
+        async def on_rag_progress(stage: str, msg: str):
+            await rag_queue.put({"event": "status", "data": {"stage": stage, "message": msg}})
+
+        async def _run_rag():
+            try:
+                import inspect
+                sig = inspect.signature(ai.augment_indexed_context)
+                if "on_progress" in sig.parameters:
+                    return await ai.augment_indexed_context(user_id, token, request, context, on_progress=on_rag_progress)
+                return await ai.augment_indexed_context(user_id, token, request, context)
+            except TypeError:
+                return await ai.augment_indexed_context(user_id, token, request, context)
+            finally:
+                await rag_queue.put(None)
+
+        rag_task = asyncio.create_task(_run_rag())
+        while True:
+            evt = await rag_queue.get()
+            if evt is None:
+                break
+            yield evt
+        context = await rag_task
         warnings += context["warnings"]
         history, history_cut = ai._history_messages(request.get("history") or [])
         if history_cut:
@@ -237,6 +261,13 @@ async def stream_chat(user_id: str, token: str, request: dict) -> AsyncIterator[
             warnings.append("La respuesta contiene referencias no presentes en el contexto: " + ", ".join(sorted(cited_refs - valid_refs)))
         complete["warnings"] = list(dict.fromkeys(warnings + complete["warnings"]))
         complete["coverage"] = context["coverage"]
+        from app.services import despacho_rag
+        complete["cost_metrics"] = despacho_rag.estimate_tokens_and_cost(
+            prompt_chars=context.get("coverage", {}).get("chars_sent", 0),
+            input_tokens=complete.get("usage", {}).get("input_tokens"),
+            output_tokens=complete.get("usage", {}).get("output_tokens"),
+            model=complete.get("model", "gemini-3.6-flash")
+        )
         complete["plan"] = [
             {"label": "Preparar contexto autorizado", "status": "completed"},
             {"label": "Consultar fuentes web" if mode == "research" else "Analizar el encargo",

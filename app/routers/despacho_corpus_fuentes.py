@@ -1,7 +1,7 @@
 """Consulta autenticada de fuentes oficiales, separada del DMS privado."""
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,8 +23,9 @@ class MetadataQuery(BaseModel):
 class CorpusQuery(BaseModel):
     model_config = ConfigDict(extra='forbid')
     query: str = Field(min_length=2, max_length=800)
-    limit: int = Field(12, ge=1, le=30)
+    limit: int = Field(12, ge=1, le=50)
     semantic: bool = True
+    depth: Literal['auto', 'quick', 'balanced', 'deep'] = 'auto'
 
 
 @router.get('/sources')

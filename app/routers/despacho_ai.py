@@ -34,6 +34,7 @@ class ChatRequest(BaseModel):
     matter_id: UUID | None = None
     playbook_id: UUID | None = None
     knowledge_scope: Literal["auto", "off", "documents", "legal", "all", "official"] = "auto"
+    depth: Literal["auto", "quick", "balanced", "deep"] = "auto"
 
     @field_validator("message")
     @classmethod

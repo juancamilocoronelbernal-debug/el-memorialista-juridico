@@ -106,3 +106,36 @@
   color: var(--ink-muted, #60705c);
   font-size: .82rem;
 }
+
+/* RAG 2.0: Selector de profundidad y detalles del análisis */
+.depth-select {
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid #dce5d4;
+  background: #f8faf6;
+  color: var(--text, #1f2a24);
+}
+.v5-rag-details {
+  margin-top: 10px;
+  background: #f7faf5;
+  border: 1px solid #dce5d4;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  color: #3b5043;
+}
+.v5-rag-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #24483b;
+  outline: none;
+}
+.v5-rag-details ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+.v5-rag-details li {
+  margin-bottom: 3px;
+}

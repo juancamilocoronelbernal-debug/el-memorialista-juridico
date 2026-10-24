@@ -145,11 +145,11 @@ async def constitutional_metadata(query: str, *, year: int | None = None, limit:
             "notice": "Un registro demuestra metadatos de la sentencia, no su ratio decidendi ni la vigencia de la regla jurídica."}
 
 
-async def search_corpus(token: str, query: str, *, limit: int = 12, semantic: bool = True) -> dict:
+async def search_corpus(token: str, query: str, *, limit: int = 12, semantic: bool = True, depth: str = "auto") -> dict:
     """Busca únicamente un corpus global expresamente aprobado; no lee DMS privado."""
     query = query.strip()
-    if not (2 <= len(query) <= 800 and 1 <= limit <= 30):
-        raise HTTPException(422, "Escribe entre 2 y 800 caracteres y selecciona un límite válido.")
+    if not (2 <= len(query) <= 800 and 1 <= limit <= 50):
+        raise HTTPException(422, "Escribe entre 2 y 800 caracteres y selecciona un límite válido (1 a 50).")
     vector, warnings = None, []
     if semantic and embedding_status()['configured']:
         try:
@@ -176,6 +176,20 @@ async def search_corpus(token: str, query: str, *, limit: int = 12, semantic: bo
                      "date": item.get('decision_date'), "version": item.get('document_version'),
                      "segment": item.get('segment'), "score": item.get('score'), "method": item.get('method'),
                      "provenance": "Documento publicado en corpus revisado. Comprobar vigencia y pertinencia."})
+
+    # RAG 2.0: Clasificación de secciones y reranking jurídico opcional
+    if getattr(get_settings(), "DESPACHO_RAG_V2_ENABLED", True) and rows:
+        try:
+            from app.services import despacho_rag
+            for row in rows:
+                row["section"] = despacho_rag.classify_legal_section(row["excerpt"], row.get("title") or "").value
+            intent_info = despacho_rag.classify_query_intent(query)
+            d_key = depth if depth in despacho_rag.DEPTH_PROFILES else intent_info["suggested_depth"]
+            profile = despacho_rag.DEPTH_PROFILES[d_key]
+            rows = despacho_rag.rerank_candidates(rows, query, intent_info, profile)
+        except Exception as e:
+            warnings.append(f"Reranking no aplicado: {e}")
+
     return {"results": rows, "query": query, "scope": "shared_official",
             "semantic_query": bool(vector), "warnings": warnings,
             "coverage": "Exclusivamente documentos autorizados e incorporados por un administrador. No es exhaustiva.",
