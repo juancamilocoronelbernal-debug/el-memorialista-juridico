@@ -201,3 +201,141 @@ async def corpus_status(token: str) -> dict:
     if not isinstance(result, dict):
         raise HTTPException(502, 'La cobertura del corpus no está disponible.')
     return {**result, 'note': 'Sólo se contabilizan documentos revisados y publicados; el catálogo de portales es independiente.'}
+
+
+async def get_document_fragments(
+    token: str,
+    *,
+    doc_id: str | None = None,
+    source_url: str | None = None,
+    source_id: str | None = None,
+    kind: str = "official",
+    user_id: str | None = None,
+    offset: int = 0,
+    limit: int = 50,
+    q: str | None = None,
+) -> dict:
+    """Recupera la totalidad de los fragmentos indexados de un documento bajo demanda
+    con paginación y búsqueda textual interna sin sobrecargar el contexto.
+    """
+    limit = min(max(int(limit), 1), 100)
+    offset = max(int(offset), 0)
+    base, base_headers = store.connection(token)
+    headers = {
+        **base_headers,
+        "Range": f"{offset}-{offset + limit - 1}",
+        "Prefer": "count=exact"
+    }
+
+    async with httpx.AsyncClient(timeout=35) as client:
+        if kind == "official" or source_url or (doc_id and not user_id):
+            doc_query = "published=eq.true&limit=1"
+            if doc_id:
+                doc_query += f"&id=eq.{doc_id}"
+            elif source_url:
+                doc_query += f"&source_url=eq.{source_url}"
+            elif source_id:
+                doc_query += f"&source_id=eq.{source_id}"
+
+            doc_res = await client.get(
+                f"{base}/rest/v1/despacho_corpus_documentos?{doc_query}",
+                headers=base_headers
+            )
+            if doc_res.status_code >= 400 or not doc_res.json():
+                raise HTTPException(404, "Documento oficial no encontrado en el corpus compartido.")
+
+            doc_data = doc_res.json()[0]
+            actual_doc_id = doc_data["id"]
+
+            frag_query = f"document_id=eq.{actual_doc_id}&order=ordinal.asc&select=document_id,document_version,ordinal,segment,content,section"
+            if q and q.strip():
+                clean_q = re.sub(r"[^\w\s\-\.]", "", q.strip())
+                if clean_q:
+                    frag_query += f"&content=ilike.*{clean_q}*"
+
+            frags_res = await client.get(
+                f"{base}/rest/v1/despacho_corpus_fragmentos?{frag_query}",
+                headers=headers
+            )
+            if frags_res.status_code >= 400:
+                raise HTTPException(502, f"Error consultando fragmentos: {frags_res.text}")
+
+            crange = frags_res.headers.get("content-range")
+            total = int(crange.split("/")[1]) if (crange and "/" in crange) else len(frags_res.json())
+            raw_items = frags_res.json()
+            items = []
+            for it in raw_items:
+                c = it.get("content", "")
+                items.append({
+                    "ordinal": it.get("ordinal"),
+                    "segment": it.get("segment"),
+                    "content": c,
+                    "section": it.get("section") or "seccion_desconocida",
+                    "char_length": len(c),
+                    "document_version": it.get("document_version", 1),
+                })
+
+            return {
+                "document": {
+                    "id": actual_doc_id,
+                    "title": doc_data.get("title"),
+                    "source_url": doc_data.get("source_url"),
+                    "source_id": doc_data.get("source_id"),
+                    "version": doc_data.get("version", 1),
+                    "kind": "official"
+                },
+                "fragments": items,
+                "total": total,
+                "offset": offset,
+                "limit": limit,
+                "has_more": (offset + len(items)) < total
+            }
+
+        else:
+            if not doc_id:
+                raise HTTPException(422, "Se requiere document_id para consultar fragmentos del DMS.")
+            doc = await store.fetch_item(user_id, token, doc_id, kind="document")
+            frag_query = f"document_id=eq.{doc_id}&owner_id=eq.{user_id}&order=ordinal.asc&select=document_id,document_version,ordinal,segment,page,content"
+            if q and q.strip():
+                clean_q = re.sub(r"[^\w\s\-\.]", "", q.strip())
+                if clean_q:
+                    frag_query += f"&content=ilike.*{clean_q}*"
+
+            frags_res = await client.get(
+                f"{base}/rest/v1/despacho_indice?{frag_query}",
+                headers=headers
+            )
+            if frags_res.status_code >= 400:
+                raise HTTPException(502, f"Error consultando índice DMS: {frags_res.text}")
+
+            crange = frags_res.headers.get("content-range")
+            total = int(crange.split("/")[1]) if (crange and "/" in crange) else len(frags_res.json())
+            raw_items = frags_res.json()
+
+            from app.services.despacho_rag import classify_legal_section
+            items = []
+            for it in raw_items:
+                c = it.get("content", "")
+                items.append({
+                    "ordinal": it.get("ordinal"),
+                    "segment": it.get("segment"),
+                    "page": it.get("page"),
+                    "content": c,
+                    "section": classify_legal_section(c, doc.get("title", "")).value,
+                    "char_length": len(c),
+                    "document_version": it.get("document_version", 1),
+                })
+
+            return {
+                "document": {
+                    "id": doc_id,
+                    "title": doc.get("title"),
+                    "version": doc.get("version", 1),
+                    "kind": "document"
+                },
+                "fragments": items,
+                "total": total,
+                "offset": offset,
+                "limit": limit,
+                "has_more": (offset + len(items)) < total
+            }

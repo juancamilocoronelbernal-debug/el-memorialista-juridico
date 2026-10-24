@@ -6,7 +6,9 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.routers.despacho_data import identity
-from app.services.despacho_corpus_fuentes import catalog, constitutional_metadata, search_corpus, corpus_status
+from app.services.despacho_corpus_fuentes import (
+    catalog, constitutional_metadata, search_corpus, corpus_status, get_document_fragments
+)
 from app.services.limites import limitador
 
 router = APIRouter(prefix='/api/despacho/official', tags=['Corpus oficial'])
@@ -54,3 +56,30 @@ async def search(payload: CorpusQuery, request: Request):
 async def status(request: Request):
     _, token = await identity(request)
     return await corpus_status(token)
+
+
+@router.get('/document/fragments')
+async def document_fragments(
+    request: Request,
+    doc_id: Optional[str] = None,
+    source_url: Optional[str] = None,
+    source_id: Optional[str] = None,
+    kind: Literal['official', 'document'] = 'official',
+    offset: int = 0,
+    limit: int = 50,
+    q: Optional[str] = None,
+):
+    """Consulta paginada bajo demanda de todos los fragmentos indexados de un documento."""
+    uid, token = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    return await get_document_fragments(
+        token,
+        doc_id=doc_id,
+        source_url=source_url,
+        source_id=source_id,
+        kind=kind,
+        user_id=uid,
+        offset=offset,
+        limit=limit,
+        q=q,
+    )

@@ -3,7 +3,7 @@
 'use strict';
 const $ = (selector, parent = document) => parent.querySelector(selector);
 const API = '/api/despacho';
-const S = { client:null,user:null,items:[],caps:null,page:'chat',matterId:'',conversationId:null,conversationVersion:null,messages:[],mode:'general',knowledgeScope:'auto',selectedDocs:new Set(),playbookId:'',chatDraft:'',chatTask:null,chatCounter:0,chatUnsaved:false,editor:null,editorDirty:false,tableResult:null,signatures:[],signatureError:'',loadError:'',loading:true,search:'',filter:'',versionTarget:null,uploadUse:'library',modalReturn:null };
+const S = { client:null,user:null,items:[],caps:null,page:'chat',matterId:'',conversationId:null,conversationVersion:null,messages:[],mode:'general',knowledgeScope:'auto',selectedDocs:new Set(),playbookId:'',chatDraft:'',chatTask:null,chatCounter:0,chatUnsaved:false,editor:null,editorDirty:false,tableResult:null,signatures:[],signatureError:'',loadError:'',loading:true,search:'',filter:'',versionTarget:null,uploadUse:'library',modalReturn:null,selectedFragmentsState:new Map(),customSelectedFragments:[] };
 const icons = {
  chat:['M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z'],
  spark:['m12 3 2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2Z','m20 2 .6 1.4L22 4l-1.4.6L20 6l-.6-1.4L18 4l1.4-.6Z'],
@@ -150,9 +150,600 @@ function cancelChat(){
 }
 async function newChat(){if(S.chatTask){await confirmDialog('Detener el encargo actual','Se detendrá la respuesta en curso antes de abrir un nuevo encargo.',async()=>cancelChat(),'Detener y continuar');if(S.chatTask)return;}S.conversationId=null;S.conversationVersion=null;S.messages=[];S.chatDraft='';S.chatUnsaved=false;S.selectedDocs.clear();S.mode='general';S.knowledgeScope='auto';S.analysisDepth='auto';setPage('chat');$('#chat-input')?.focus();}
 function openConversation(id){if(S.chatTask){toast('Detén el encargo actual antes de abrir otra conversación.');return;}const c=item(id);if(!c)return;S.conversationId=id;S.conversationVersion=c.version;S.messages=Array.isArray(c.data?.messages)?c.data.messages.slice():[];S.matterId=c.matter_id||'';S.mode=c.data?.mode||'general';S.knowledgeScope=['auto','off','documents','legal','all','official'].includes(c.data?.knowledge_scope)?c.data.knowledge_scope:'auto';S.analysisDepth=['auto','quick','balanced','deep'].includes(c.data?.depth)?c.data.depth:'auto';S.chatDraft='';S.chatUnsaved=false;S.selectedDocs=new Set((c.data?.document_ids||[]).filter(id=>item(id)));setPage(S.mode==='research'?'investigacion':'chat');}
-function plainRich(content){const holder=el('div',{class:'message-content'});let inCode=false,code=[];for(const line of String(content||'').split('\n')){if(line.startsWith('```')){if(inCode){holder.append(el('pre',{},code.join('\n')));code=[];}inCode=!inCode;continue;}if(inCode){code.push(line);continue;}const heading=line.match(/^#{1,4}\s+(.+)/);const n=el(heading?'h3':'div');const value=heading?heading[1]:line;const pieces=value.split(/(\*\*[^*]+\*\*)/g);for(const piece of pieces)n.append(piece.startsWith('**')&&piece.endsWith('**')?el('strong',{},piece.slice(2,-2)):document.createTextNode(piece||'\u200b'));holder.append(n);}if(code.length)holder.append(el('pre',{},code.join('\n')));return holder;}
+function formatSectionName(s) {
+  const names = {
+    encabezado: 'Encabezado',
+    identificacion: 'Identificación',
+    hechos: 'Hechos',
+    antecedentes: 'Antecedentes',
+    problema_juridico: 'Problema Jurídico',
+    consideraciones: 'Consideraciones',
+    fundamentos_juridicos: 'Fundamentos Jurídicos',
+    ratio_decidendi: 'Ratio Decidendi',
+    parte_resolutiva: 'Parte Resolutiva',
+    aclaracion_voto: 'Aclaración de Voto',
+    salvamento_voto: 'Salvamento de Voto',
+    referencias_normativas: 'Referencias Normativas',
+    seccion_desconocida: 'Sección General'
+  };
+  return names[s] || s;
+}
+
+function handleCitationClick(ref, m) {
+  let sources = m?.sources || [];
+  if (!sources.length) {
+    for (const msg of S.messages.slice().reverse()) {
+      if (Array.isArray(msg.sources) && msg.sources.length) {
+        sources = msg.sources;
+        m = msg;
+        break;
+      }
+    }
+  }
+  const cleanRef = ref.replace(/\s+/g, '');
+  const matchedSource = sources.find(s => (s.id || '').replace(/\s+/g, '') === cleanRef);
+  const groupedDocs = groupSourcesByDocument(sources, m?.content || '', m?.coverage);
+  let targetGroup = null;
+  if (matchedSource) {
+    targetGroup = groupedDocs.find(g => g.fragments.some(f => (f.id || '').replace(/\s+/g, '') === cleanRef));
+  }
+  if (!targetGroup && groupedDocs.length) targetGroup = groupedDocs[0];
+  if (targetGroup) {
+    openEvidenceModal(targetGroup, 'cited', cleanRef);
+  } else {
+    toast(`Cita ${ref}: Fuente referenciada en la respuesta.`);
+  }
+}
+
+function plainRich(content, m){
+  const holder=el('div',{class:'message-content'});
+  const rawLines=String(content||'').split('\n');
+  let inCode=false,codeLines=[];
+  let i=0;
+
+  function parseInline(str){
+    const frag=document.createDocumentFragment();
+    if(!str)return frag;
+    const regex=/(\[(?:O\d+|D\d+|SEL\d*)\s*-\s*S\d+\]|\*\*[^*]+\*\*|`[^`]+`)/g;
+    const parts=str.split(regex);
+    for(const part of parts){
+      if(!part)continue;
+      if(part.startsWith('**')&&part.endsWith('**')){
+        frag.append(el('strong',{},part.slice(2,-2)));
+      }else if(part.startsWith('`')&&part.endsWith('`')){
+        frag.append(el('code',{},part.slice(1,-1)));
+      }else if(/^\[(?:O\d+|D\d+|SEL\d*)\s*-\s*S\d+\]$/i.test(part)){
+        const ref=part.slice(1,-1).trim();
+        const pill=el('button',{
+          type:'button',
+          class:'v5-citation-pill',
+          'data-ref':ref,
+          title:`Ver evidencia del fragmento ${part}`
+        },part);
+        pill.addEventListener('click',(e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          handleCitationClick(ref,m);
+        });
+        frag.append(pill);
+      }else{
+        frag.append(document.createTextNode(part));
+      }
+    }
+    return frag;
+  }
+
+  while(i<rawLines.length){
+    const line=rawLines[i];
+    if(line.startsWith('```')){
+      if(inCode){
+        holder.append(el('pre',{},codeLines.join('\n')));
+        codeLines=[];
+      }
+      inCode=!inCode;
+      i++;
+      continue;
+    }
+    if(inCode){
+      codeLines.push(line);
+      i++;
+      continue;
+    }
+
+    // Markdown Table Detection (| Col | Col |)
+    if(line.trim().startsWith('|')&&line.trim().endsWith('|')){
+      const nextLine=(i+1<rawLines.length)?rawLines[i+1].trim():'';
+      if(/^\|?\s*:?-{2,}:?\s*(\|:?-{2,}:?\s*)*\|?$/.test(nextLine)){
+        const headerCells=line.split('|').slice(1,-1).map(c=>c.trim());
+        const table=el('table',{class:'v5-markdown-table'});
+        const thead=el('thead',{},el('tr',{},headerCells.map(h=>el('th',{},parseInline(h)))));
+        const tbody=el('tbody');
+        i+=2;
+        while(i<rawLines.length&&rawLines[i].trim().startsWith('|')&&rawLines[i].trim().endsWith('|')){
+          const rowCells=rawLines[i].split('|').slice(1,-1).map(c=>c.trim());
+          tbody.append(el('tr',{},rowCells.map(c=>el('td',{},parseInline(c)))));
+          i++;
+        }
+        table.append(thead,tbody);
+        holder.append(el('div',{class:'v5-table-wrapper'},table));
+        continue;
+      }
+    }
+
+    // Encabezados
+    const hMatch=line.match(/^(#{1,4})\s+(.+)/);
+    if(hMatch){
+      const level=hMatch[1].length;
+      const tag=level===1?'h2':level===2?'h3':level===3?'h4':'h5';
+      const headingNode=el(tag);
+      headingNode.append(parseInline(hMatch[2]));
+      holder.append(headingNode);
+      i++;
+      continue;
+    }
+
+    // Citas en bloque
+    if(line.startsWith('> ')){
+      const bq=el('blockquote',{class:'v5-blockquote'});
+      bq.append(parseInline(line.slice(2)));
+      holder.append(bq);
+      i++;
+      continue;
+    }
+
+    // Listas con viñetas
+    if(/^\s*[-*]\s+/.test(line)){
+      const ul=el('ul');
+      while(i<rawLines.length&&/^\s*[-*]\s+/.test(rawLines[i])){
+        const li=el('li');
+        li.append(parseInline(rawLines[i].replace(/^\s*[-*]\s+/,'')));
+        ul.append(li);
+        i++;
+      }
+      holder.append(ul);
+      continue;
+    }
+
+    // Listas numeradas
+    if(/^\s*\d+\.\s+/.test(line)){
+      const ol=el('ol');
+      while(i<rawLines.length&&/^\s*\d+\.\s+/.test(rawLines[i])){
+        const li=el('li');
+        li.append(parseInline(rawLines[i].replace(/^\s*\d+\.\s+/,'')));
+        ol.append(li);
+        i++;
+      }
+      holder.append(ol);
+      continue;
+    }
+
+    if(!line.trim()){
+      holder.append(el('div',{class:'spacer'}));
+    }else{
+      const p=el('div');
+      p.append(parseInline(line));
+      holder.append(p);
+    }
+    i++;
+  }
+
+  if(codeLines.length){
+    holder.append(el('pre',{},codeLines.join('\n')));
+  }
+  return holder;
+}
+
+function groupSourcesByDocument(sources, content, coverage){
+  if(!Array.isArray(sources)||!sources.length)return [];
+  const groups=new Map();
+  for(const s of sources){
+    const key=s.url||s.source_url||s.document_id||s.title||s.id;
+    if(!groups.has(key)){
+      groups.set(key,{
+        key,
+        title:s.title||'Documento jurídico',
+        url:s.url||s.source_url||'',
+        kind:s.kind||'official',
+        source_id:s.source_id||'',
+        document_id:s.document_id||'',
+        date:s.date||'',
+        version:s.document_version||s.version||1,
+        fragments:[],
+        coverage:coverage||{}
+      });
+    }
+    groups.get(key).fragments.push(s);
+  }
+
+  const result=[];
+  for(const g of groups.values()){
+    // Citados en la respuesta
+    const citedFragments=g.fragments.filter(f=>{
+      if(!f.id)return false;
+      const cleanId=f.id.replace(/\s+/g,'');
+      const regex=new RegExp('\\b'+cleanId.replace('-','\\s*-\\s*')+'\\b','i');
+      return regex.test(content||'');
+    });
+    g.citedFragments=citedFragments;
+    g.citadosCount=citedFragments.length;
+    g.enviadosCount=g.fragments.length;
+    g.seleccionadosCount=g.fragments.length;
+    const totalFound=coverage?.candidates_retrieved||coverage?.available_passages||g.fragments.length;
+    g.encontradosCount=Math.max(totalFound,g.fragments.length);
+    result.push(g);
+  }
+  return result;
+}
+
+function renderFragmentItem(frag, docGroup){
+  const key=frag.id||(frag.document_id?`${frag.document_id}-${frag.segment}`:`seg-${frag.segment||Math.random()}`);
+  const isSelected=S.selectedFragmentsState.has(key);
+  const card=el('article',{
+    class:'v5-fragment-item '+(isSelected?'selected':''),
+    id:'frag-'+key
+  });
+
+  const checkbox=el('input',{type:'checkbox',class:'v5-frag-checkbox',checked:isSelected});
+  checkbox.addEventListener('change',()=>{
+    toggleFragmentSelection(frag,docGroup,checkbox.checked);
+    card.classList.toggle('selected',checkbox.checked);
+  });
+
+  const sec=frag.section||'seccion_desconocida';
+  const secBadge=el('span',{class:`v5-section-badge v5-sec-${sec}`},formatSectionName(sec));
+  const labelId=el('strong',{class:'v5-frag-id'},frag.id?`[${frag.id}]`:`Segmento ${frag.segment||1}`);
+
+  const copyBtn=button('Copiar',async(e)=>{
+    e.stopPropagation();
+    await copy(frag.excerpt||frag.text||frag.content||'');
+    toast('✓ Fragmento copiado al portapapeles');
+  },{class:'button small text-button'});
+
+  const score=frag.rerank_score||frag.score;
+  const scoreBadge=score?el('small',{class:'source-meta'},`Relevancia: ${Math.round(score*100)}%`):null;
+
+  const header=el('div',{class:'v5-frag-header'},checkbox,labelId,secBadge,scoreBadge,copyBtn);
+  const textContent=frag.excerpt||frag.text||frag.content||'';
+  const body=el('div',{class:'v5-frag-body'},textContent);
+
+  card.append(header,body);
+  return card;
+}
+
+function renderGroupedDocumentCard(docGroup, m, options={}){
+  const card=el('article',{class:'v5-grouped-card'});
+  const header=el('div',{class:'v5-grouped-header'});
+
+  const titleRow=el('div',{},
+    el('h3',{class:'v5-grouped-title'},docGroup.title),
+    el('div',{class:'v5-grouped-meta'},
+      [
+        docGroup.kind==='official'?'Corpus Jurídico Oficial':docGroup.kind==='web'?'Fuente de búsqueda':'Documento privado DMS',
+        docGroup.source_id?`Organismo: ${docGroup.source_id}`:'',
+        docGroup.date?`Fecha: ${docGroup.date}`:'',
+        docGroup.version?`Versión ${docGroup.version}`:''
+      ].filter(Boolean).join(' · ')
+    )
+  );
+  header.append(titleRow);
+
+  // Barra con los 4 Contadores Verificables
+  const countersBar=el('div',{class:'v5-counters-bar'},
+    el('div',{class:'v5-counter-item'},el('small',{},'Encontrados'),el('strong',{},String(docGroup.encontradosCount))),
+    el('div',{class:'v5-counter-item'},el('small',{},'Seleccionados RAG'),el('strong',{},String(docGroup.seleccionadosCount))),
+    el('div',{class:'v5-counter-item'},el('small',{},'Enviados a Gemini'),el('strong',{},String(docGroup.enviadosCount))),
+    el('div',{class:'v5-counter-item highlight-counter'},el('small',{},'Citados en respuesta'),el('strong',{},String(docGroup.citadosCount)))
+  );
+
+  // Acciones
+  const actions=el('div',{class:'v5-grouped-actions'});
+  const modalBtn=button('Ver evidencia completa',()=>openEvidenceModal(docGroup,'cited'),{
+    icon:'search',
+    class:'button small'
+  });
+  actions.append(modalBtn);
+
+  if(docGroup.url&&safeUrl(docGroup.url)){
+    actions.append(link('Abrir fuente original ↗',docGroup.url,'button small text-button'));
+  }else if(docGroup.document_id&&item(docGroup.document_id)){
+    actions.append(button('Abrir documento',()=>previewDocument(item(docGroup.document_id)),{class:'button small text-button'}));
+  }
+
+  // Acordeón para Jurisprudencia
+  if(options.allowAccordion&&docGroup.fragments.length){
+    let accordionOpen=false;
+    const accordionContent=el('div',{class:'v5-accordion-content',hidden:true});
+    const accordionBtn=button(`▼ Mostrar fragmentos (${docGroup.fragments.length})`,()=>{
+      accordionOpen=!accordionOpen;
+      accordionBtn.textContent=accordionOpen?`▲ Ocultar fragmentos (${docGroup.fragments.length})`:`▼ Mostrar fragmentos (${docGroup.fragments.length})`;
+      accordionContent.hidden=!accordionOpen;
+      if(accordionOpen&&!accordionContent.children.length){
+        accordionContent.append(el('div',{class:'v5-fragments-list'},docGroup.fragments.map(f=>renderFragmentItem(f,docGroup))));
+      }
+    },{class:'button small text-button'});
+    actions.append(accordionBtn);
+    card.append(header,countersBar,actions,accordionContent);
+  }else{
+    card.append(header,countersBar,actions);
+  }
+
+  return card;
+}
+
+function openEvidenceModal(docGroup, initialTab='cited', targetRef=null){
+  let activeTab=initialTab;
+  if(activeTab==='cited'&&(!docGroup.citedFragments||!docGroup.citedFragments.length)){
+    activeTab='sent';
+  }
+
+  const modalContainer=el('div',{class:'v5-evidence-modal-body'});
+  const tabsBar=el('div',{class:'v5-modal-tabs'});
+  const contentPane=el('div',{class:'v5-modal-content-pane'});
+
+  const tabs=[
+    {id:'cited',label:`Citados en respuesta (${docGroup.citadosCount||0})`},
+    {id:'sent',label:`Enviados al modelo (${docGroup.enviadosCount||0})`},
+    {id:'found',label:`Encontrados (${docGroup.encontradosCount||0})`},
+    {id:'all',label:`Todos los fragmentos (bajo demanda)`},
+  ];
+
+  const onDemandState={
+    fragments:[],
+    offset:0,
+    limit:25,
+    total:null,
+    hasMore:false,
+    loading:false,
+    query:''
+  };
+
+  async function loadOnDemandFragments(reset=false){
+    if(onDemandState.loading)return;
+    if(reset){
+      onDemandState.offset=0;
+      onDemandState.fragments=[];
+      onDemandState.total=null;
+      onDemandState.hasMore=false;
+    }
+    onDemandState.loading=true;
+    renderTabPane();
+    try{
+      const qParams=new URLSearchParams();
+      if(docGroup.url)qParams.set('source_url',docGroup.url);
+      if(docGroup.document_id)qParams.set('doc_id',docGroup.document_id);
+      qParams.set('kind',docGroup.kind||'official');
+      qParams.set('offset',String(onDemandState.offset));
+      qParams.set('limit',String(onDemandState.limit));
+      if(onDemandState.query)qParams.set('q',onDemandState.query);
+
+      const res=await v5api('/official/document/fragments?'+qParams.toString());
+      onDemandState.total=res.total;
+      onDemandState.hasMore=res.has_more;
+      onDemandState.fragments.push(...(res.fragments||[]));
+      onDemandState.offset+=(res.fragments||[]).length;
+    }catch(err){
+      toast('Error al consultar fragmentos: '+err.message,'error');
+    }finally{
+      onDemandState.loading=false;
+      renderTabPane();
+    }
+  }
+
+  function renderTabPane(){
+    tabsBar.querySelectorAll('.v5-modal-tab-btn').forEach(btn=>{
+      btn.classList.toggle('active',btn.dataset.tab===activeTab);
+    });
+
+    contentPane.replaceChildren();
+
+    if(activeTab==='cited'){
+      const list=docGroup.citedFragments||[];
+      if(!list.length){
+        contentPane.append(el('p',{class:'inline-help'},'Esta respuesta no citó fragmentos específicos de este documento con identificador formal explícito. Consulta la pestaña "Enviados al modelo" para ver el contexto completo aportado.'));
+      }else{
+        const wrap=el('div',{class:'v5-fragments-list'});
+        wrap.append(...list.map(f=>renderFragmentItem(f,docGroup)));
+        contentPane.append(wrap);
+      }
+    }else if(activeTab==='sent'){
+      const list=docGroup.fragments||[];
+      const wrap=el('div',{class:'v5-fragments-list'});
+      wrap.append(...list.map(f=>renderFragmentItem(f,docGroup)));
+      contentPane.append(wrap);
+    }else if(activeTab==='found'){
+      const list=docGroup.fragments||[];
+      const wrap=el('div',{class:'v5-fragments-list'});
+      wrap.append(el('p',{class:'inline-help'},`Mostrando ${list.length} fragmentos recuperados para esta providencia.`));
+      wrap.append(...list.map(f=>renderFragmentItem(f,docGroup)));
+      contentPane.append(wrap);
+    }else if(activeTab==='all'){
+      const searchBox=el('div',{class:'v5-modal-search'});
+      const searchInput=el('input',{
+        type:'search',
+        placeholder:'Buscar texto dentro de la totalidad de fragmentos de esta providencia…',
+        value:onDemandState.query
+      });
+      let debounceTimer=null;
+      searchInput.addEventListener('input',()=>{
+        clearTimeout(debounceTimer);
+        debounceTimer=setTimeout(()=>{
+          onDemandState.query=searchInput.value.trim();
+          loadOnDemandFragments(true);
+        },400);
+      });
+      searchBox.append(searchInput);
+
+      const statusInfo=el('div',{class:'v5-grouped-meta',style:'margin-bottom:10px;'},
+        onDemandState.total!==null?`Total indexado en BD: ${onDemandState.total} fragmentos (${onDemandState.fragments.length} cargados)`:'Consultando base de datos…'
+      );
+
+      const wrap=el('div',{class:'v5-fragments-list'});
+      if(onDemandState.fragments.length){
+        wrap.append(...onDemandState.fragments.map((f,i)=>{
+          const fragAdapted={
+            id:`SEG-${f.segment||(i+1)}`,
+            segment:f.segment,
+            section:f.section,
+            excerpt:f.content,
+            title:docGroup.title,
+            source_url:docGroup.url,
+            url:docGroup.url
+          };
+          return renderFragmentItem(fragAdapted,docGroup);
+        }));
+      }
+
+      if(onDemandState.loading){
+        wrap.append(el('div',{class:'busy-indicator'},'Cargando fragmentos…'));
+      }else if(onDemandState.hasMore){
+        const moreBtn=button('Cargar más fragmentos',()=>loadOnDemandFragments(false),{class:'button small'});
+        wrap.append(el('div',{style:'text-align:center;margin:12px 0;'},moreBtn));
+      }else if(!onDemandState.fragments.length&&!onDemandState.loading&&onDemandState.total===0){
+        wrap.append(el('p',{class:'inline-help'},'No se encontraron fragmentos para el término de búsqueda ingresado.'));
+      }
+
+      contentPane.append(searchBox,statusInfo,wrap);
+      if(onDemandState.total===null&&!onDemandState.loading){
+        loadOnDemandFragments(true);
+      }
+    }
+  }
+
+  for(const t of tabs){
+    const btn=el('button',{
+      type:'button',
+      class:'v5-modal-tab-btn '+(t.id===activeTab?'active':''),
+      'data-tab':t.id
+    },t.label);
+    btn.addEventListener('click',()=>{
+      activeTab=t.id;
+      renderTabPane();
+    });
+    tabsBar.append(btn);
+  }
+
+  modalContainer.append(tabsBar,contentPane);
+  renderTabPane();
+
+  const footerBtns=[];
+  if(docGroup.url&&safeUrl(docGroup.url)){
+    footerBtns.push(link('Abrir documento oficial ↗',docGroup.url,'button small'));
+  }
+  footerBtns.push(button('Cerrar',closeModal,{class:'button'}));
+
+  showModal(`📋 Evidencia Jurídica · ${docGroup.title}`,modalContainer,footerBtns,true);
+
+  if(targetRef){
+    setTimeout(()=>{
+      const target=document.querySelector('#frag-'+targetRef);
+      if(target){
+        target.scrollIntoView({behavior:'smooth',block:'center'});
+        target.classList.add('v5-fragment-highlight');
+        setTimeout(()=>target.classList.remove('v5-fragment-highlight'),2500);
+      }
+    },220);
+  }
+}
+
+function toggleFragmentSelection(frag,docGroup,isSelected){
+  const key=frag.id||(frag.document_id?`${frag.document_id}-${frag.segment}`:`seg-${frag.segment||Math.random()}`);
+  if(isSelected){
+    S.selectedFragmentsState.set(key,{
+      id:key,
+      title:docGroup?.title||frag.title||'Providencia judicial',
+      source_url:docGroup?.url||frag.source_url||frag.url||'',
+      source_id:docGroup?.source_id||frag.source_id||'',
+      section:frag.section||'fundamentos_juridicos',
+      segment:frag.segment||1,
+      page:frag.page,
+      excerpt:frag.excerpt||frag.text||frag.content||'',
+      text:frag.excerpt||frag.text||frag.content||'',
+      document_id:frag.document_id,
+      user_selected:true
+    });
+  }else{
+    S.selectedFragmentsState.delete(key);
+  }
+  document.querySelectorAll(`.v5-fragment-item[id="frag-${key}"]`).forEach(card=>{
+    card.classList.toggle('selected',isSelected);
+    const cb=card.querySelector('input[type="checkbox"]');
+    if(cb)cb.checked=isSelected;
+  });
+  renderFloatingSelectionBar();
+}
+
+function renderFloatingSelectionBar(){
+  let bar=document.querySelector('#v5-floating-selection-bar');
+  const count=S.selectedFragmentsState.size;
+
+  if(count===0){
+    if(bar)bar.remove();
+    return;
+  }
+
+  const uniqueDocs=new Set(Array.from(S.selectedFragmentsState.values()).map(f=>f.title||f.source_url)).size;
+
+  if(!bar){
+    bar=el('div',{class:'v5-selection-bar',id:'v5-floating-selection-bar'});
+    document.body.append(bar);
+  }
+
+  const summary=el('div',{class:'v5-selection-summary'},
+    el('span',{},'📌'),
+    el('strong',{},`${count} fragmento${count>1?'s':''} seleccionado${count>1?'s':''}`),
+    el('small',{style:'opacity:0.8;'},`de ${uniqueDocs} providencia${uniqueDocs>1?'s':''}`)
+  );
+
+  const clearBtn=button('Desmarcar todos',()=>{
+    S.selectedFragmentsState.clear();
+    document.querySelectorAll('.v5-fragment-item.selected').forEach(c=>{
+      c.classList.remove('selected');
+      const cb=c.querySelector('input[type="checkbox"]');
+      if(cb)cb.checked=false;
+    });
+    renderFloatingSelectionBar();
+  },{class:'v5-bar-btn text-only'});
+
+  const sendToAgentBtn=button('Enviar al Agente',()=>{
+    closeModal();
+    S.customSelectedFragments=Array.from(S.selectedFragmentsState.values());
+    if(S.page!=='chat')setPage('chat');
+    render();
+    const input=$('#chat-input');
+    if(input){
+      if(!input.value.trim()){
+        input.value='Analiza los fragmentos jurídicos seleccionados y evalúa su aplicación al caso:\n';
+        S.chatDraft=input.value;
+      }
+      input.focus();
+    }
+    toast(`✓ ${count} fragmentos incorporados al contexto del Agente`);
+  },{class:'v5-bar-btn secondary'});
+
+  const draftBtn=button('Utilizar en un escrito',()=>{
+    closeModal();
+    S.customSelectedFragments=Array.from(S.selectedFragmentsState.values());
+    S.mode='draft';
+    if(S.page!=='chat')setPage('chat');
+    render();
+    const input=$('#chat-input');
+    if(input){
+      const summaryText=S.customSelectedFragments.map((f,i)=>
+        `[Fuente ${i+1}: ${f.title} · ${formatSectionName(f.section)}]\n"${(f.excerpt||'').slice(0,350)}..."`
+      ).join('\n\n');
+      input.value=`Redacta un escrito jurídico profesional (ej. alegato o memorial) fundamentado rigurosamente en los siguientes fragmentos jurisprudenciales seleccionados:\n\n${summaryText}\n\nEstructura el escrito con hechos, fundamentos de derecho y peticiones concretas.`;
+      S.chatDraft=input.value;
+      input.focus();
+    }
+    toast('✓ Modo redacción jurídica activado con los fundamentos seleccionados');
+  },{class:'v5-bar-btn primary'});
+
+  const actions=el('div',{class:'v5-selection-actions'},clearBtn,sendToAgentBtn,draftBtn);
+  bar.replaceChildren(summary,actions);
+}
+
 function sourceCard(source){const label=source.title||source.id||'Fuente';const location=source.page?'Página '+source.page:source.location||(source.segment?'Segmento '+source.segment:'');const node=el('div',{class:'source-card'},el('strong',{},label),el('span',{class:'source-meta'},[source.id,location,source.kind==='web'?'Fuente de búsqueda':source.kind==='official'?'Corpus Jurídico Oficial':'Documento aportado'].filter(Boolean).join(' · ')));if(source.excerpt)node.append(el('p',{},source.excerpt));if(source.url&&safeUrl(source.url))node.append(link('Abrir fuente original ↗',source.url));else if(source.document_id&&item(source.document_id))node.append(button('Abrir documento',()=>previewDocument(item(source.document_id)),{class:''}));node.append(el('div',{class:'source-meta'},source.verified?'Fragmento contrastado con el documento; revisa su aplicación.':source.provenance||'Revisa el contenido y su aplicación jurídica.'));return node;}
-function renderMessage(m,index){if(m.role==='user')return el('article',{class:'message user','aria-label':'Tu encargo'},plainRich(m.content));const n=el('article',{class:'message assistant','aria-label':'Respuesta de El Memorialista'},el('div',{class:'message-header'},el('span',{class:'avatar'},'M'),el('span',{},'El Memorialista')),plainRich(m.content));
+function renderMessage(m,index){if(m.role==='user')return el('article',{class:'message user','aria-label':'Tu encargo'},plainRich(m.content,m));const n=el('article',{class:'message assistant','aria-label':'Respuesta de El Memorialista'},el('div',{class:'message-header'},el('span',{class:'avatar'},'M'),el('span',{},'El Memorialista')),plainRich(m.content,m));
   if(m.streaming){
     const content=n.querySelector('.message-content');
     content.classList.add('streaming-text');
@@ -164,9 +755,23 @@ function renderMessage(m,index){if(m.role==='user')return el('article',{class:'m
     n.append(el('div',{class:'message-note'},'Respuesta incompleta. No se ha guardado ni se puede exportar como documento final.'));
     return n;
   }
-  if(Array.isArray(m.sources)&&m.sources.length)n.append(el('div',{class:'sources-list'},m.sources.map(sourceCard)));if(m.search_suggestions_html){const frame=el('iframe',{class:'search-attribution',title:'Sugerencias de búsqueda de Google',sandbox:'allow-popups allow-popups-to-escape-sandbox',referrerPolicy:'no-referrer'});frame.srcdoc='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src https: data:; base-uri \'none\'; form-action \'none\'">'+m.search_suggestions_html;n.append(frame);}if(Array.isArray(m.warnings))for(const w of m.warnings)n.append(el('div',{class:'message-note'},typeof w==='string'?w:text(w)));if(m.coverage){const c=m.coverage;const covText=c.scope==='official'?('Corpus Jurídico Oficial: '+(c.official_documents||0)+' documento(s) consultado(s) · '+(c.selected_passages??'—')+' fragmento(s) utilizados de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.')):('Contexto utilizado: '+(c.selected_passages??'—')+' fragmentos de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.'));n.append(el('div',{class:'coverage'},covText));if(c.depth||c.candidates_retrieved!==undefined||m.cost_metrics){const depthLabel=c.depth_name||({quick:'Rápido',balanced:'Equilibrado',deep:'Profundo',auto:'Automático'}[c.depth]||c.depth||'Automático');const items=[];if(c.depth)items.push(el('li',{},'Profundidad: '+depthLabel));if(c.detected_intent)items.push(el('li',{},'Tipo de consulta detectada: '+c.detected_intent));if(c.candidates_retrieved!==undefined)items.push(el('li',{},'Candidatos evaluados: '+c.candidates_retrieved+' · Seleccionados: '+(c.selected_passages||0)));if(c.chars_sent!==undefined)items.push(el('li',{},'Contexto documental: '+c.chars_sent+' caracteres (~'+Math.round(c.chars_sent/4)+' tokens)'));if(c.sections_represented&&c.sections_represented.length)items.push(el('li',{},'Secciones jurídicas analizadas: '+c.sections_represented.join(', ')));if(m.model)items.push(el('li',{},'Modelo de IA: '+m.model+(m.provider?' ('+m.provider+')':'')));if(m.usage?.input_tokens)items.push(el('li',{},'Tokens consumidos: '+m.usage.input_tokens+' entrada / '+(m.usage.output_tokens||0)+' salida'));if(m.cost_metrics?.estimated_cost_usd!==undefined)items.push(el('li',{},'Coste estimado: $'+m.cost_metrics.estimated_cost_usd+' USD (estimación comercial)'));if(c.retrieval_time_seconds)items.push(el('li',{},'Tiempo de recuperación: '+c.retrieval_time_seconds+'s · Reranking: '+(c.rerank_time_seconds||0)+'s'));if(c.memory_hit)items.push(el('li',{},'Memoria documental: Contexto reutilizado de la sesión previa'));n.append(el('details',{class:'v5-rag-details'},el('summary',{},'Detalles del análisis · '+depthLabel+' ('+(c.selected_passages||0)+' fragmentos seleccionados)'),el('ul',{},items)));}}if(m.coverage?.indexed_retrieval)n.append(v5RetrievalCoverage(m.coverage.indexed_retrieval));if(Array.isArray(m.plan)&&m.plan.length)n.append(el('details',{class:'work-plan'},el('summary',{},'Trabajo realizado'),el('ul',{},m.plan.map(step=>el('li',{},typeof step==='string'?step:(step.label||'Paso')+' · '+({completed:'Completado',pending:'Pendiente de revisión',unverified:'Sin confirmar'}[step.status]||step.status||''))))));n.append(el('div',{class:'message-tools'},button('Copiar',()=>copy(m.content),{icon:'copy',class:''}),button('Guardar escrito',()=>saveAnswerDocument(m),{icon:'file',class:''}),button('Word',()=>exportDocument(m.content,conversationTitle(),'docx'),{icon:'download',class:''}),button('PDF',()=>exportDocument(m.content,conversationTitle(),'pdf'),{icon:'download',class:''})));return n;}
+  if(Array.isArray(m.sources)&&m.sources.length){
+    const groupedDocs=groupSourcesByDocument(m.sources,m.content,m.coverage);
+    n.append(el('div',{class:'sources-list'},groupedDocs.map(g=>renderGroupedDocumentCard(g,m,{allowAccordion:false}))));
+  }
+  if(m.search_suggestions_html){const frame=el('iframe',{class:'search-attribution',title:'Sugerencias de búsqueda de Google',sandbox:'allow-popups allow-popups-to-escape-sandbox',referrerPolicy:'no-referrer'});frame.srcdoc='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src https: data:; base-uri \'none\'; form-action \'none\'">'+m.search_suggestions_html;n.append(frame);}if(Array.isArray(m.warnings))for(const w of m.warnings)n.append(el('div',{class:'message-note'},typeof w==='string'?w:text(w)));if(m.coverage){const c=m.coverage;const covText=c.scope==='official'?('Corpus Jurídico Oficial: '+(c.official_documents||0)+' documento(s) consultado(s) · '+(c.selected_passages??'—')+' fragmento(s) utilizados de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.')):('Contexto utilizado: '+(c.selected_passages??'—')+' fragmentos de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.'));n.append(el('div',{class:'coverage'},covText));if(c.depth||c.candidates_retrieved!==undefined||m.cost_metrics){const depthLabel=c.depth_name||({quick:'Rápido',balanced:'Equilibrado',deep:'Profundo',auto:'Automático'}[c.depth]||c.depth||'Automático');const items=[];if(c.depth)items.push(el('li',{},'Profundidad: '+depthLabel));if(c.detected_intent)items.push(el('li',{},'Tipo de consulta detectada: '+c.detected_intent));if(c.candidates_retrieved!==undefined)items.push(el('li',{},'Candidatos evaluados: '+c.candidates_retrieved+' · Seleccionados: '+(c.selected_passages||0)));if(c.chars_sent!==undefined)items.push(el('li',{},'Contexto documental: '+c.chars_sent+' caracteres (~'+Math.round(c.chars_sent/4)+' tokens)'));if(c.sections_represented&&c.sections_represented.length)items.push(el('li',{},'Secciones jurídicas analizadas: '+c.sections_represented.join(', ')));if(m.model)items.push(el('li',{},'Modelo de IA: '+m.model+(m.provider?' ('+m.provider+')':'')));if(m.usage?.input_tokens)items.push(el('li',{},'Tokens consumidos: '+m.usage.input_tokens+' entrada / '+(m.usage.output_tokens||0)+' salida'));if(m.cost_metrics?.estimated_cost_usd!==undefined)items.push(el('li',{},'Coste estimado: $'+m.cost_metrics.estimated_cost_usd+' USD (estimación comercial)'));if(c.retrieval_time_seconds)items.push(el('li',{},'Tiempo de recuperación: '+c.retrieval_time_seconds+'s · Reranking: '+(c.rerank_time_seconds||0)+'s'));if(c.memory_hit)items.push(el('li',{},'Memoria documental: Contexto reutilizado de la sesión previa'));n.append(el('details',{class:'v5-rag-details'},el('summary',{},'Detalles del análisis · '+depthLabel+' ('+(c.selected_passages||0)+' fragmentos seleccionados)'),el('ul',{},items)));}}if(m.coverage?.indexed_retrieval)n.append(v5RetrievalCoverage(m.coverage.indexed_retrieval));if(Array.isArray(m.plan)&&m.plan.length)n.append(el('details',{class:'work-plan'},el('summary',{},'Trabajo realizado'),el('ul',{},m.plan.map(step=>el('li',{},typeof step==='string'?step:(step.label||'Paso')+' · '+({completed:'Completado',pending:'Pendiente de revisión',unverified:'Sin confirmar'}[step.status]||step.status||''))))));n.append(el('div',{class:'message-tools'},button('Copiar',()=>copy(m.content),{icon:'copy',class:''}),button('Guardar escrito',()=>saveAnswerDocument(m),{icon:'file',class:''}),button('Word',()=>exportDocument(m.content,conversationTitle(),'docx'),{icon:'download',class:''}),button('PDF',()=>exportDocument(m.content,conversationTitle(),'pdf'),{icon:'download',class:''})));return n;}
 function conversationTitle(){return item(S.conversationId)?.title||'Respuesta de El Memorialista';}
-function renderChat(){const research=S.page==='investigacion';const outer=el('section',{class:'chat-layout'});const matterSelect=el('select',{class:'context-select','aria-label':'Asunto del encargo',disabled:!!S.chatTask});for(const o of matterOptions())matterSelect.append(el('option',{value:o.value,selected:S.matterId===o.value},o.label));matterSelect.addEventListener('change',()=>{S.matterId=matterSelect.value;S.selectedDocs.clear();if(S.conversationId){S.conversationId=null;S.messages=[];}render();});const knowledge=el('select',{class:'context-select v5-knowledge-select','aria-label':'Biblioteca para el agente',disabled:!!S.chatTask});for(const[value,label]of[['auto','Biblioteca: automática'],['official','Corpus Jurídico Oficial'],['off','Biblioteca: sin recuperación'],['documents','Biblioteca: documentos DMS'],['legal','Biblioteca: fuentes jurídicas'],['all','Biblioteca: documentos y fuentes']])knowledge.append(el('option',{value,selected:S.knowledgeScope===value},label));knowledge.addEventListener('change',()=>S.knowledgeScope=knowledge.value);knowledge.title='Automática: fuentes jurídicas al investigar; documentos DMS en otros encargos. Corpus Oficial: providencias y normas publicadas del corpus compartido.';const context=el('div',{class:'context-actions'},knowledge,matterSelect);if(S.conversationId)context.append(button('⋯',showConversationMenu,{class:'icon-button',title:'Opciones de conversación'}));outer.append(el('div',{class:'chat-context'},el('span',{class:'workspace-label'},icon('lock'),research?'INVESTIGACIÓN JURÍDICA':'TU ESPACIO DE TRABAJO'),context));if(!S.messages.length){outer.append(el('div',{class:'chat-welcome'},el('div',{class:'welcome-emblem'},icon(research?'book':'spark')),el('div',{class:'eyebrow'},research?'FUENTES, CONTEXTO Y CRITERIO':'EL MEMORIALISTA · AGENTE JURÍDICO'),el('h1',{},research?'Investiga con fuentes.': 'Cada asunto, ',research?el('em',{},' Decide con criterio.'):el('em',{},'con claridad.')),el('p',{},research?'Plantea el problema jurídico y revisa las fuentes que respaldan el análisis.':'Un espacio para investigar, analizar tus documentos y preparar el siguiente escrito. Tú diriges el trabajo.')));}else outer.append(el('div',{class:'chat-messages',id:'chat-messages'},S.messages.map(renderMessage)));if(S.chatTask)outer.append(el('div',{class:'thinking',role:'status'},el('span',{class:'dots'},el('i'),el('i'),el('i')),'Procesando el encargo y sus documentos…'));if(S.chatUnsaved)outer.append(el('div',{class:'callout warning'},'La respuesta está en esta pantalla y aún no se ha guardado. ',button('Reintentar guardado',persistConversation,{class:'text-button'})));const form=el('form',{class:'composer',id:'chat-form'});const input=el('textarea',{id:'chat-input',value:S.chatDraft,placeholder:research?'¿Qué problema jurídico necesitas investigar? Incluye jurisdicción, fechas y contexto…':'Describe tu encargo o adjunta un documento para empezar…','aria-label':'Describe tu encargo',maxLength:12000,disabled:!!S.chatTask});input.addEventListener('input',()=>S.chatDraft=input.value);input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();if(!S.chatTask)form.requestSubmit();}});form.append(input);if(S.selectedDocs.size)form.append(el('div',{class:'attachment-chips'},[...S.selectedDocs].filter(id=>item(id)).map(id=>el('span',{class:'attachment-chip'},icon('file'),el('span',{},item(id).title),button('×',()=>{S.selectedDocs.delete(id);render();},{class:'',title:'Quitar '+item(id).title})))));const mode=el('select',{class:'mode-select','aria-label':'Tipo de encargo',disabled:!!S.chatTask});for(const[value,label]of[['general','General'],['analyze','Analizar'],['draft','Redactar'],['timeline','Cronología'],['research','Investigar']])mode.append(el('option',{value,selected:S.mode===value},label));mode.addEventListener('change',()=>{S.mode=mode.value;});const depthSelect=el('select',{class:'depth-select','aria-label':'Profundidad del análisis',disabled:!!S.chatTask});for(const[val,lab]of[['auto','Profundidad: Automática'],['quick','Profundidad: Rápida'],['balanced','Profundidad: Equilibrada'],['deep','Profundidad: Profunda']])depthSelect.append(el('option',{value:val,selected:(S.analysisDepth||'auto')===val},lab));depthSelect.addEventListener('change',()=>{S.analysisDepth=depthSelect.value;});const send=S.chatTask?button('Detener',cancelChat,{icon:'close',class:'send-button cancel'}):el('button',{type:'submit',class:'send-button'},'Enviar encargo',icon('up'));form.append(el('div',{class:'composer-toolbar'},el('div',{class:'composer-tools'},button('Adjuntar',chooseChatDocuments,{icon:'attach',class:'tool-button',disabled:!!S.chatTask}),button('Instrucciones',choosePlaybook,{icon:'book',class:'tool-button',disabled:!!S.chatTask}),mode,depthSelect),send));form.addEventListener('submit',act(async e=>{e.preventDefault();await sendChat();}));outer.append(form,el('div',{class:'composer-note'},icon('lock'),el('span',{},'Espacio privado. Verifica los hechos, las fuentes y el escrito antes de utilizarlo.')));if(!S.messages.length){const cards=research?[['book','Comparar criterios','Contrasta decisiones y abre sus fuentes.','Investiga los criterios jurídicos aplicables a este problema en Colombia. Explica los puntos de acuerdo y las diferencias, y cita únicamente fuentes recuperadas: '],['search','Comprobar una referencia','Revisa el contenido y el contexto de una cita.','Ayúdame a investigar esta referencia. Identifica el documento original y distingue lo confirmado de lo pendiente de verificar: '],['clock','Investigar cambios','Delimita el periodo y el problema jurídico.','Investiga novedades jurídicas sobre el siguiente tema en Colombia. Indica fecha, fuente y alcance de cada hallazgo: ']]:[['file','Analizar un expediente','Hechos, pruebas y puntos por revisar.','Analiza los documentos adjuntos. Organiza los hechos, identifica las pruebas que los respaldan y señala vacíos o contradicciones. '],['book','Investigar jurisprudencia','Fuentes para fundamentar tu argumento.','Investiga jurisprudencia colombiana sobre el siguiente problema. Cita las fuentes recuperadas y explica su pertinencia: '],['sign','Preparar un escrito','Del contexto a un borrador para revisar.','Prepara un borrador jurídico a partir de este contexto. Conserva los hechos aportados y marca los datos que faltan: ']];outer.append(el('div',{class:'prompt-grid'},cards.map(([ic,title,desc,prompt])=>button('',()=>{S.chatDraft=prompt;S.mode=ic==='book'?'research':ic==='sign'?'draft':'analyze';render();$('#chat-input')?.focus();},{class:'prompt-card'}))));outer.querySelectorAll('.prompt-card').forEach((card,i)=>card.append(icon(cards[i][0]),el('strong',{},cards[i][1]),el('small',{},cards[i][2])));outer.append(el('div',{class:'section-heading'},el('h2',{},'Tus asuntos recientes'),button('Ver asuntos →',()=>setPage('asuntos'),{class:'text-button'})));const matters=byKind('matter').slice(0,2);outer.append(matters.length?el('div',{class:'recent-matters'},matters.map(matterMini)):el('div',{class:'welcome-empty'},el('span',{},'Dale un lugar a los documentos y el contexto de cada cliente.'),button('Crear asunto +',()=>matterForm(),{class:'text-button'})));}return outer;}
+function renderChat(){const research=S.page==='investigacion';const outer=el('section',{class:'chat-layout'});const matterSelect=el('select',{class:'context-select','aria-label':'Asunto del encargo',disabled:!!S.chatTask});for(const o of matterOptions())matterSelect.append(el('option',{value:o.value,selected:S.matterId===o.value},o.label));matterSelect.addEventListener('change',()=>{S.matterId=matterSelect.value;S.selectedDocs.clear();if(S.conversationId){S.conversationId=null;S.messages=[];}render();});const knowledge=el('select',{class:'context-select v5-knowledge-select','aria-label':'Biblioteca para el agente',disabled:!!S.chatTask});for(const[value,label]of[['auto','Biblioteca: automática'],['official','Corpus Jurídico Oficial'],['off','Biblioteca: sin recuperación'],['documents','Biblioteca: documentos DMS'],['legal','Biblioteca: fuentes jurídicas'],['all','Biblioteca: documentos y fuentes']])knowledge.append(el('option',{value,selected:S.knowledgeScope===value},label));knowledge.addEventListener('change',()=>S.knowledgeScope=knowledge.value);knowledge.title='Automática: fuentes jurídicas al investigar; documentos DMS en otros encargos. Corpus Oficial: providencias y normas publicadas del corpus compartido.';const context=el('div',{class:'context-actions'},knowledge,matterSelect);if(S.conversationId)context.append(button('⋯',showConversationMenu,{class:'icon-button',title:'Opciones de conversación'}));outer.append(el('div',{class:'chat-context'},el('span',{class:'workspace-label'},icon('lock'),research?'INVESTIGACIÓN JURÍDICA':'TU ESPACIO DE TRABAJO'),context));if(!S.messages.length){outer.append(el('div',{class:'chat-welcome'},el('div',{class:'welcome-emblem'},icon(research?'book':'spark')),el('div',{class:'eyebrow'},research?'FUENTES, CONTEXTO Y CRITERIO':'EL MEMORIALISTA · AGENTE JURÍDICO'),el('h1',{},research?'Investiga con fuentes.': 'Cada asunto, ',research?el('em',{},' Decide con criterio.'):el('em',{},'con claridad.')),el('p',{},research?'Plantea el problema jurídico y revisa las fuentes que respaldan el análisis.':'Un espacio para investigar, analizar tus documentos y preparar el siguiente escrito. Tú diriges el trabajo.')));}else outer.append(el('div',{class:'chat-messages',id:'chat-messages'},S.messages.map(renderMessage)));if(S.chatTask)outer.append(el('div',{class:'thinking',role:'status'},el('span',{class:'dots'},el('i'),el('i'),el('i')),'Procesando el encargo y sus documentos…'));if(S.chatUnsaved)outer.append(el('div',{class:'callout warning'},'La respuesta está en esta pantalla y aún no se ha guardado. ',button('Reintentar guardado',persistConversation,{class:'text-button'})));const form=el('form',{class:'composer',id:'chat-form'});
+if(Array.isArray(S.customSelectedFragments)&&S.customSelectedFragments.length){
+  form.append(el('div',{class:'v5-composer-context-chip'},
+    el('span',{},`📌 ${S.customSelectedFragments.length} fragmento(s) seleccionado(s) incorporado(s) al contexto`),
+    button('×',()=>{
+      S.customSelectedFragments=[];
+      render();
+    },{class:'chip-close',title:'Quitar fragmentos seleccionados'})
+  ));
+}
+const input=el('textarea',{id:'chat-input',value:S.chatDraft,placeholder:research?'¿Qué problema jurídico necesitas investigar? Incluye jurisdicción, fechas y contexto…':'Describe tu encargo o adjunta un documento para empezar…','aria-label':'Describe tu encargo',maxLength:12000,disabled:!!S.chatTask});input.addEventListener('input',()=>S.chatDraft=input.value);input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();if(!S.chatTask)form.requestSubmit();}});form.append(input);if(S.selectedDocs.size)form.append(el('div',{class:'attachment-chips'},[...S.selectedDocs].filter(id=>item(id)).map(id=>el('span',{class:'attachment-chip'},icon('file'),el('span',{},item(id).title),button('×',()=>{S.selectedDocs.delete(id);render();},{class:'',title:'Quitar '+item(id).title})))));const mode=el('select',{class:'mode-select','aria-label':'Tipo de encargo',disabled:!!S.chatTask});for(const[value,label]of[['general','General'],['analyze','Analizar'],['draft','Redactar'],['timeline','Cronología'],['research','Investigar']])mode.append(el('option',{value,selected:S.mode===value},label));mode.addEventListener('change',()=>{S.mode=mode.value;});const depthSelect=el('select',{class:'depth-select','aria-label':'Profundidad del análisis',disabled:!!S.chatTask});for(const[val,lab]of[['auto','Profundidad: Automática'],['quick','Profundidad: Rápida'],['balanced','Profundidad: Equilibrada'],['deep','Profundidad: Profunda']])depthSelect.append(el('option',{value:val,selected:(S.analysisDepth||'auto')===val},lab));depthSelect.addEventListener('change',()=>{S.analysisDepth=depthSelect.value;});const send=S.chatTask?button('Detener',cancelChat,{icon:'close',class:'send-button cancel'}):el('button',{type:'submit',class:'send-button'},'Enviar encargo',icon('up'));form.append(el('div',{class:'composer-toolbar'},el('div',{class:'composer-tools'},button('Adjuntar',chooseChatDocuments,{icon:'attach',class:'tool-button',disabled:!!S.chatTask}),button('Instrucciones',choosePlaybook,{icon:'book',class:'tool-button',disabled:!!S.chatTask}),mode,depthSelect),send));form.addEventListener('submit',act(async e=>{e.preventDefault();await sendChat();}));outer.append(form,el('div',{class:'composer-note'},icon('lock'),el('span',{},'Espacio privado. Verifica los hechos, las fuentes y el escrito antes de utilizarlo.')));if(!S.messages.length){const cards=research?[['book','Comparar criterios','Contrasta decisiones y abre sus fuentes.','Investiga los criterios jurídicos aplicables a este problema en Colombia. Explica los puntos de acuerdo y las diferencias, y cita únicamente fuentes recuperadas: '],['search','Comprobar una referencia','Revisa el contenido y el contexto de una cita.','Ayúdame a investigar esta referencia. Identifica el documento original y distingue lo confirmado de lo pendiente de verificar: '],['clock','Investigar cambios','Delimita el periodo y el problema jurídico.','Investiga novedades jurídicas sobre el siguiente tema en Colombia. Indica fecha, fuente y alcance de cada hallazgo: ']]:[['file','Analizar un expediente','Hechos, pruebas y puntos por revisar.','Analiza los documentos adjuntos. Organiza los hechos, identifica las pruebas que los respaldan y señala vacíos o contradicciones. '],['book','Investigar jurisprudencia','Fuentes para fundamentar tu argumento.','Investiga jurisprudencia colombiana sobre el siguiente problema. Cita las fuentes recuperadas y explica su pertinencia: '],['sign','Preparar un escrito','Del contexto a un borrador para revisar.','Prepara un borrador jurídico a partir de este contexto. Conserva los hechos aportados y marca los datos que faltan: ']];outer.append(el('div',{class:'prompt-grid'},cards.map(([ic,title,desc,prompt])=>button('',()=>{S.chatDraft=prompt;S.mode=ic==='book'?'research':ic==='sign'?'draft':'analyze';render();$('#chat-input')?.focus();},{class:'prompt-card'}))));outer.querySelectorAll('.prompt-card').forEach((card,i)=>card.append(icon(cards[i][0]),el('strong',{},cards[i][1]),el('small',{},cards[i][2])));outer.append(el('div',{class:'section-heading'},el('h2',{},'Tus asuntos recientes'),button('Ver asuntos →',()=>setPage('asuntos'),{class:'text-button'})));const matters=byKind('matter').slice(0,2);outer.append(matters.length?el('div',{class:'recent-matters'},matters.map(matterMini)):el('div',{class:'welcome-empty'},el('span',{},'Dale un lugar a los documentos y el contexto de cada cliente.'),button('Crear asunto +',()=>matterForm(),{class:'text-button'})));}return outer;}
 function matterMini(m){const b=button('',()=>matterDetail(m),{class:'matter-mini'});b.append(icon('folder'),el('span',{},el('strong',{},m.title),el('small',{},m.data?.client||'Asunto privado')),badge(m.data?.status==='closed'?'Cerrado':'En curso',m.data?.status==='closed'?'neutral':''));return b;}
 async function persistConversation(){if(!S.conversationId)return;const c=item(S.conversationId);try{const saved=await updateItem({...c,version:S.conversationVersion||c.version},{data:{...c.data,messages:S.messages.filter(m=>!m.streaming&&!m.incomplete),mode:S.mode,knowledge_scope:S.knowledgeScope,depth:S.analysisDepth||'auto',document_ids:[...S.selectedDocs]},matter_id:S.matterId||null});S.conversationVersion=saved.version;S.chatUnsaved=false;render();return saved;}catch(error){S.chatUnsaved=true;throw error;}}
 async function sendChat(){
@@ -183,6 +788,9 @@ async function sendChat(){
   const historyLimited=previous.length<S.messages.filter(m=>!m.incomplete&&!m.streaming).length;
   const request={message,history:previous,mode:S.mode,knowledge_scope:S.knowledgeScope,depth:S.analysisDepth||'auto',
     document_ids:[...S.selectedDocs],matter_id:S.matterId||null,playbook_id:S.playbookId||null};
+  if(Array.isArray(S.customSelectedFragments)&&S.customSelectedFragments.length){
+    request.selected_fragments=S.customSelectedFragments;
+  }
   S.messages.push({role:'user',content:message,created_at:new Date().toISOString()});
   S.chatDraft='';
   const controller=new AbortController();
@@ -684,19 +1292,12 @@ function v5OfficialPanel() {
     e.preventDefault();results.replaceChildren(v5Loading('Buscando exclusivamente en documentos publicados…'));
     await busy(submit,async()=>{try{
       const r=await v5api('/official/search',{method:'POST',body:{query:query.input.value.trim(),semantic:true,limit:15,depth:S.analysisDepth||'auto'}});
-      results.replaceChildren(el('div',{class:'v5-search-summary'},el('strong',{},(r.results?.length||0)+' fragmentos del corpus oficial')),
+      const groupedResults=groupSourcesByDocument(r.results||[],'',{candidates_retrieved:r.results?.length||0,available_passages:r.results?.length||0});
+      results.replaceChildren(el('div',{class:'v5-search-summary'},el('strong',{},(r.results?.length||0)+' fragmentos encontrados · '+groupedResults.length+' providencia(s)')),
         el('p',{class:'inline-help'},r.coverage||'La cobertura depende de los documentos realmente publicados.'));
       for(const w of r.warnings||[])results.append(el('div',{class:'callout warning'},text(w)));
-      if(!r.results?.length)results.append(el('div',{class:'callout'},'La colección compartida no contiene fragmentos que coincidan. No se atribuirán sentencias no encontradas.'));
-      for(const x of r.results||[])results.append(el('article',{class:'v5-search-hit'},
-        el('h3',{},x.title||'Publicación'),el('small',{class:'source-meta'},(x.source_id||'')+' · '+(x.section?'Sección: '+x.section+' · ':'')+(x.method||'text')+' · Versión '+(x.version||'—')),
-        el('p',{class:'v5-excerpt'},x.excerpt||''),
-        el('div',{class:'actions'},link('Abrir documento de origen ↗',x.source_url,'button small'),
-          button('Usar fragmento en Agente',()=>{
-            setPage('chat');
-            S.chatDraft='Examina jurídicamente este fragmento de un documento público incorporado al corpus. No atribuyas más contenido que el incluido ni afirmes vigencia sin verificar.\nTítulo: '+(x.title||'Sin título')+'\nURL: '+x.source_url+'\nFragmento recuperado:\n'+(x.excerpt||'');
-            S.mode='analyze';render();$('#chat-input')?.focus();
-          },{class:'button small'}))));
+      if(!groupedResults.length)results.append(el('div',{class:'callout'},'La colección compartida no contiene fragmentos que coincidan. No se atribuirán sentencias no encontradas.'));
+      for(const g of groupedResults)results.append(renderGroupedDocumentCard(g,null,{allowAccordion:true}));
     }catch(error){results.replaceChildren(el('div',{class:'callout error',role:'alert'},error.message));}});
   }));
   const metadataField=field('Consultar metadatos de sentencias de la Corte Constitucional',{type:'search',placeholder:'Ej. T-100/24, ponente, sala o radicado'});

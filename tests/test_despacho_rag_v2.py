@@ -174,3 +174,121 @@ async def test_retrieve_and_augment_rag_official_scope(monkeypatch):
     assert result["coverage"]["depth"] == "quick"
     assert result["coverage"]["detected_intent"] == "specific_ruling"
     assert result["coverage"]["official_documents"] == 1
+
+
+def test_document_memory_supplementary_retrieval_on_new_section():
+    """Si la segunda pregunta pide una sección no presente en la caché, debe devolver None para suplementar."""
+    memory = document_memory
+    user_id = "user-supp"
+    conv_id = "conv-supp"
+    query1 = "Sentencia T-100/24 antecedentes y hechos"
+    intent1 = classify_query_intent(query1)
+    data1 = {
+        "passages": [{"id": "O1-S1", "text": "Antecedentes del caso...", "section": "antecedentes"}],
+        "coverage": {"scope": "official"}
+    }
+    memory.store(user_id, conv_id, query1, "official", "quick", [], data1, intent1)
+
+    # Pregunta sobre salvamento de voto (no está en la caché)
+    query2 = "¿Hubo algún salvamento de voto en la Sentencia T-100/24?"
+    cached = memory.get(user_id, conv_id, query2, "official", "quick", [])
+    assert cached is None, "Debe retornar None para forzar recuperación suplementaria del salvamento de voto"
+
+
+@pytest.mark.asyncio
+async def test_user_selected_fragments_have_highest_priority(monkeypatch):
+    """Los fragmentos seleccionados por el abogado deben tener prioridad 1.0 y preservarse."""
+    from app.services import despacho_corpus_fuentes as official
+    monkeypatch.setattr(official, "corpus_status", AsyncMock(return_value={"published_documents": 1, "indexed_fragments": 41}))
+    monkeypatch.setattr(official, "search_corpus", AsyncMock(return_value={"results": [], "method": "hybrid", "warnings": []}))
+
+    context = {"passages": [], "sources": [], "warnings": [], "coverage": {}}
+    request = {
+        "message": "Redacta alegato con el fragmento seleccionado",
+        "knowledge_scope": "official",
+        "depth": "quick",
+        "selected_fragments": [
+            {
+                "id": "SEL-1",
+                "title": "Sentencia T-100/24",
+                "source_url": "https://corte.gov.co/T-100-24.htm",
+                "section": "ratio_decidendi",
+                "text": "Subregla vinculante de protección constitucional a madres gestantes."
+            }
+        ]
+    }
+
+    result = await rag.retrieve_and_augment_rag("user-sel", "token-sel", request, context)
+    assert len(result["passages"]) == 1
+    assert result["passages"][0]["user_selected"] is True
+    assert result["passages"][0]["rerank_score"] == 1.0
+    assert result["passages"][0]["text"] == "Subregla vinculante de protección constitucional a madres gestantes."
+
+
+@pytest.mark.asyncio
+async def test_off_topic_query_returns_zero_selected_passages(monkeypatch):
+    """Una consulta manifiestamente impertinente no debe forzar la selección de fragmentos."""
+    from app.services import despacho_corpus_fuentes as official
+    monkeypatch.setattr(official, "corpus_status", AsyncMock(return_value={"published_documents": 1, "indexed_fragments": 41}))
+    # Resultados con baja afinidad y sin coincidencia de palabras clave
+    fake_off_topic = [
+        {"title": "Sentencia T-100/24", "excerpt": "Trámite de tutela en materia de salud policial y desacuartelamiento.",
+         "source_url": "https://corte.gov.co/T-100-24.htm", "source_id": "corte_constitucional",
+         "segment": 1, "score": 0.007, "method": "hybrid"}
+    ]
+    monkeypatch.setattr(official, "search_corpus", AsyncMock(return_value={"results": fake_off_topic, "method": "hybrid", "warnings": []}))
+
+    context = {"passages": [], "sources": [], "warnings": [], "coverage": {}}
+    request = {
+        "message": "Explícame el Código Minero Intergaláctico y la extracción en asteroides",
+        "knowledge_scope": "official",
+        "depth": "quick"
+    }
+
+    result = await rag.retrieve_and_augment_rag("user-off", "token-off", request, context)
+    assert len(result["passages"]) == 0
+    assert result["coverage"]["selected_passages"] == 0
+    assert any("No se encontraron fragmentos jurídicamente pertinentes" in w for w in result["warnings"])
+
+
+@pytest.mark.asyncio
+async def test_get_document_fragments_official_mock(monkeypatch):
+    """El servicio get_document_fragments debe paginar y devolver metadatos y fragmentos estructurados."""
+    from app.services import despacho_corpus_fuentes as official
+
+    class MockResponse:
+        def __init__(self, data, status_code=200, headers=None):
+            self._data = data
+            self.status_code = status_code
+            self.headers = headers or {}
+        def json(self):
+            return self._data
+
+    class MockClient:
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            pass
+        async def get(self, url, headers=None):
+            if "despacho_corpus_documentos" in url:
+                return MockResponse([{"id": "doc-uuid-1", "title": "Sentencia T-100/24", "source_url": "https://corte.gov.co/T-100-24.htm", "source_id": "constitucional", "version": 1}])
+            elif "despacho_corpus_fragmentos" in url:
+                frags = [
+                    {"document_id": "doc-uuid-1", "document_version": 1, "ordinal": 0, "segment": 1, "content": "Fragmento 1", "section": "encabezado"},
+                    {"document_id": "doc-uuid-1", "document_version": 1, "ordinal": 1, "segment": 2, "content": "Fragmento 2", "section": "parte_resolutiva"}
+                ]
+                return MockResponse(frags, headers={"content-range": "0-1/41"})
+            return MockResponse([])
+
+    import httpx
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: MockClient())
+    from app.services import despacho_store as store
+    monkeypatch.setattr(store, "connection", lambda token, **kw: ("https://mock.supabase.co", {"apikey": "k", "Authorization": "Bearer t"}))
+
+    res = await official.get_document_fragments("test-token", source_url="https://corte.gov.co/T-100-24.htm", offset=0, limit=2)
+    assert res["total"] == 41
+    assert len(res["fragments"]) == 2
+    assert res["document"]["title"] == "Sentencia T-100/24"
+    assert res["fragments"][0]["section"] == "encabezado"
+    assert res["fragments"][1]["section"] == "parte_resolutiva"
+    assert res["has_more"] is True

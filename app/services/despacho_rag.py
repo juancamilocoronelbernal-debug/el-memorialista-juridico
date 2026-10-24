@@ -50,7 +50,7 @@ _SECTION_PATTERNS = [
     # Salvamento / Aclaración (máxima prioridad)
     (LegalSection.SALVAMENTO_VOTO, re.compile(
         r"(salvamento\s+de\s+voto|salv[oó]\s+el\s+voto|me\s+aparto\s+de\s+la\s+decisi[oó]n|"
-        r"voto\s+disidente|disiento\s+de\s+la\s+posici[oó]n|salvamento\s+parcial)",
+        r"voto\s+disidente|disiento\s+de\s+la\s+posici[oó]n|salvamento\s+parcial|salva\s+el\s+voto)",
         re.IGNORECASE
     )),
     (LegalSection.ACLARACION_VOTO, re.compile(
@@ -60,10 +60,11 @@ _SECTION_PATTERNS = [
     )),
     # Parte resolutiva
     (LegalSection.PARTE_RESOLUTIVA, re.compile(
-        r"(^\s*(iii|iv|v|vi)?\s*\.?\s*decisi[oó]n\b|^\s*resuelve\b|^\s*decide\b|"
+        r"(^\s*(iii|iv|v|vi)?\s*\.?\s*decisi[oó]n\b|^\s*resuelve\s*[\.:\-]|^\s*decide\s*[\.:\-]|"
         r"administrando\s+justicia\s+en\s+nombre\s+del\s+pueblo|^\s*primero\s*[\.:\-]|"
         r"^\s*segundo\s*[\.:\-]|declarar\s+(in)?exequible|conceder\s+el\s+amparo|"
-        r"amparar\s+el\s+derecho|negar\s+el\s+amparo|revocar\s+la\s+sentencia|confirmar\s+la\s+sentencia)",
+        r"amparar\s+el\s+derecho|inaplicar\s+la\s+resoluci[oó]n|notif[ií]quese\s+y\s+c[uú]mplase|"
+        r"negar\s+el\s+amparo|revocar\s+la\s+sentencia|confirmar\s+la\s+sentencia|abstenerse\s+de\s+efectuar\s+el\s+cobro)",
         re.IGNORECASE | re.MULTILINE
     )),
     # Problema jurídico
@@ -87,11 +88,11 @@ _SECTION_PATTERNS = [
         r"intervenciones\s+ciudadanas|concepto\s+del\s+procurador)",
         re.IGNORECASE | re.MULTILINE
     )),
-    # Ratio decidendi
+    # Ratio decidendi (requiere evidencia jurisprudencial explícita)
     (LegalSection.RATIO_DECIDENDI, re.compile(
-        r"(regla\s+jurisprudencial|subregla\s+constitucional|criterio\s+vinculante|"
-        r"constituye\s+ratio\s+decidendi|esta\s+corporaci[oó]n\s+ha\s+sostenido\s+de\s+manera\s+reiterada|"
-        r"la\s+regla\s+aplicable\s+al\s+caso|fundamento\s+determinante|l[ií]nea\s+jurisprudencial\s+consolidada)",
+        r"(regla\s+jurisprudencial|subregla(\s+jurisprudencial|\s+constitucional)?|criterio\s+vinculante|"
+        r"constituye\s+ratio\s+decidendi|la\s+corte\s+fija\s+como\s+regla|esta\s+corporaci[oó]n\s+unifica\s+el\s+criterio|"
+        r"la\s+regla\s+de\s+derecho\s+aplicable\s+al\s+caso|fundamento\s+determinante\s+de\s+la\s+decisi[oó]n)",
         re.IGNORECASE
     )),
     # Fundamentos jurídicos
@@ -107,24 +108,23 @@ _SECTION_PATTERNS = [
         r"an[aá]lisis\s+del\s+caso\s+concreto|el\s+caso\s+concreto|juicio\s+de\s+proporcionalidad)",
         re.IGNORECASE | re.MULTILINE
     )),
-    # Encabezado
+    # Encabezado (estructural, no meras menciones en el texto)
     (LegalSection.ENCABEZADO, re.compile(
-        r"(corte\s+constitucional|consejo\s+de\s+estado|corte\s+suprema\s+de\s+justicia|"
-        r"magistrad[oa]\s+ponente|sala\s+plena|sala\s+de\s+(casaci[oó]n|revisi[oó]n)|"
-        r"rep[uú]blica\s+de\s+colombia\s*-\s*rama\s+judicial|bogot[aá],?\s*d\.?c\.?)",
-        re.IGNORECASE
+        r"(^\s*(rep[uú]blica\s+de\s+colombia\s*-\s*rama\s+judicial|corte\s+constitucional|consejo\s+de\s+estado|corte\s+suprema\s+de\s+justicia)\b|"
+        r"magistrad[oa]\s+ponente\s*[\.:\-]|m\.p\.\s*[\.:\-]|sala\s+(segunda|plena|de\s+casaci[oó]n|de\s+revisi[oó]n)\b|"
+        r"radicaci[oó]n\s*[\.:\-]\s*[0-9]+|^\s*sentencia\s+(t|c|su|a|sl|sc|sp)[- ][0-9]+)",
+        re.IGNORECASE | re.MULTILINE
     )),
     # Identificación
     (LegalSection.IDENTIFICACION, re.compile(
-        r"(expediente\s*[\.:\-]|radicaci[oó]n\s*[\.:\-]|demandante\s*[\.:\-]|accionante\s*[\.:\-]|"
-        r"demandado\s*[\.:\-]|accionado\s*[\.:\-]|asunto\s*[\.:\-])",
-        re.IGNORECASE
+        r"(^\s*(expediente|radicaci[oó]n|demandante|accionante|demandado|accionado|asunto)\s*[\.:\-])",
+        re.IGNORECASE | re.MULTILINE
     )),
     # Referencias normativas
     (LegalSection.REFERENCIAS_NORMATIVAS, re.compile(
-        r"(art[ií]culo\s+\d+(\s+de\s+la\s+ley|\s+del\s+c[oó]digo|\s+de\s+la\s+constituci[oó]n)|"
-        r"ley\s+\d+\s+de\s+\d{4}|decreto\s+\d+\s+de\s+\d{4}|constituci[oó]n\s+pol[ií]tica)",
-        re.IGNORECASE
+        r"(^\s*art[ií]culo\s+\d+(\s+de\s+la\s+ley|\s+del\s+c[oó]digo|\s+de\s+la\s+constituci[oó]n)|"
+        r"^\s*(ley|decreto)\s+\d+\s+de\s+\d{4})",
+        re.IGNORECASE | re.MULTILINE
     )),
 ]
 
@@ -288,7 +288,7 @@ DEPTH_PROFILES = {
         "max_passages": 5,
         "max_context_chars": 12000,
         "estimated_token_budget": 3000,
-        "min_score_threshold": 0.22,
+        "min_score_threshold": 0.35,
         "section_diversity_required": False,
     },
     "balanced": {
@@ -299,7 +299,7 @@ DEPTH_PROFILES = {
         "max_passages": 10,
         "max_context_chars": 24000,
         "estimated_token_budget": 6000,
-        "min_score_threshold": 0.18,
+        "min_score_threshold": 0.30,
         "section_diversity_required": True,
     },
     "deep": {
@@ -310,7 +310,7 @@ DEPTH_PROFILES = {
         "max_passages": 18,
         "max_context_chars": 42000,
         "estimated_token_budget": 10500,
-        "min_score_threshold": 0.12,
+        "min_score_threshold": 0.25,
         "section_diversity_required": True,
     },
 }
@@ -361,14 +361,27 @@ def rerank_candidates(
         section = cand.get("section") or classify_legal_section(text, title)
         cand["section"] = section if isinstance(section, str) else section.value
 
+        # Si el fragmento fue seleccionado manualmente por el abogado, máxima prioridad garantizada
+        if cand.get("user_selected"):
+            cand["rerank_score"] = 1.0
+            cand["ranking_factors"] = {"user_selected": 1.0}
+            scored_candidates.append(cand)
+            continue
+
         factors = {}
         
-        # 1. Puntuación híbrida de partida (vector + fts)
+        # 1. Puntuación híbrida de partida (vector + fts normalizada)
         raw_score = cand.get("score")
+        is_mock_or_unscored = (raw_score is None)
         if isinstance(raw_score, (int, float)):
-            base_score = max(0.0, min(1.0, float(raw_score)))
+            f_score = float(raw_score)
+            # RRF suele producir valores <= 0.05 (1/60 + 1/60 ~ 0.033). Normalizar a escala 0-1
+            if 0.0 < f_score <= 0.05:
+                base_score = min(1.0, f_score / 0.0333)
+            else:
+                base_score = max(0.0, min(1.0, f_score))
         else:
-            base_score = 0.5
+            base_score = 0.85
         factors["base_score"] = round(base_score, 3)
 
         # 2. Coincidencia exacta de número/identificador de sentencia (+0.45)
@@ -398,45 +411,67 @@ def rerank_candidates(
                 court_match = 0.15
         factors["court_match"] = round(court_match, 3)
 
-        # 5. Alineación con sección procesal objetivo (+0.30)
-        section_match = 0.0
-        if target_section and cand["section"] == target_section:
-            section_match = 0.30
-        elif is_exhaustive and cand["section"] in {
-            LegalSection.HECHOS.value,
-            LegalSection.PROBLEMA_JURIDICO.value,
-            LegalSection.RATIO_DECIDENDI.value,
-            LegalSection.PARTE_RESOLUTIVA.value
-        }:
-            section_match = 0.20
-        factors["section_match"] = round(section_match, 3)
-
-        # 6. Solapamiento de términos jurídicos clave
+        # 5. Solapamiento de términos jurídicos clave
         cand_keywords = _extract_keywords(text)
         keyword_overlap = 0.0
         if query_keywords and cand_keywords:
             common = query_keywords.intersection(cand_keywords)
-            keyword_overlap = min(0.25, len(common) * 0.06)
+            keyword_overlap = min(0.30, len(common) * 0.06)
         factors["keyword_overlap"] = round(keyword_overlap, 3)
+
+        # COMPROBACIÓN DE PERTINENCIA TEMÁTICA BÁSICA:
+        # Una sección procesal SOLO bonifica si hay relación temática real con la consulta.
+        # Si la consulta es manifiestamente impertinente (sin coincidencia léxica, de sentencia o radicado, y RRF muy bajo)
+        # se penaliza severamente para que no sea seleccionada.
+        has_subject_relevance = bool(
+            is_mock_or_unscored
+            or ruling_match > 0
+            or rad_match > 0
+            or keyword_overlap >= 0.05
+            or (base_score >= 0.45 and (not query_keywords or keyword_overlap > 0))
+        )
+
+        # 6. Alineación con sección procesal objetivo (+0.30)
+        section_match = 0.0
+        if has_subject_relevance:
+            if target_section and cand["section"] == target_section:
+                section_match = 0.30
+            elif is_exhaustive and cand["section"] in {
+                LegalSection.HECHOS.value,
+                LegalSection.PROBLEMA_JURIDICO.value,
+                LegalSection.RATIO_DECIDENDI.value,
+                LegalSection.PARTE_RESOLUTIVA.value
+            }:
+                section_match = 0.20
+        factors["section_match"] = round(section_match, 3)
 
         # 7. Densidad sustantiva del fragmento
         substance_score = 0.0
         text_len = len(text.strip())
-        if text_len >= 350:
+        if text_len >= 350 and has_subject_relevance:
             substance_score = 0.08
-        elif text_len < 100:
-            substance_score = -0.10  # penalizar fragmentos demasiado breves o encabezados aislados
+        elif text_len < 100 and not is_mock_or_unscored:
+            substance_score = -0.04
         factors["substance_score"] = round(substance_score, 3)
+
+        # Penalización estricta por falta total de afinidad temática
+        no_affinity_penalty = -0.40 if not has_subject_relevance else 0.0
+        factors["no_affinity_penalty"] = round(no_affinity_penalty, 3)
+
+        # Ponderación dinámica: si se busca una providencia concreta, el identificador pesa más;
+        # en consultas temáticas generales o conceptuales, la similitud híbrida/vectorial es el eje central.
+        base_weight = 0.40 if target_ruling else 0.60
 
         # Cálculo de puntuación final compuesta ponderada
         total_score = (
-            base_score * 0.40
+            base_score * base_weight
             + ruling_match
             + rad_match
             + court_match
             + section_match
             + keyword_overlap
             + substance_score
+            + no_affinity_penalty
         )
         normalized_score = max(0.0, min(1.0, total_score))
         cand["rerank_score"] = round(normalized_score, 4)
@@ -480,8 +515,9 @@ def select_intelligent_fragments(
             continue
 
         score = cand.get("rerank_score", 0.0)
-        # Filtro de calidad mínima salvo que sea el único resultado
-        if score < min_threshold and len(selected) >= profile.get("min_passages", 2):
+        # Filtro estricto de calidad y pertinencia jurídica:
+        # Los fragmentos deben superar el umbral mínimo (salvo selección manual del abogado)
+        if not cand.get("user_selected") and score < min_threshold:
             dropped.append(cand)
             continue
 
@@ -559,10 +595,38 @@ class ConversationDocumentMemory:
         prev_intent = entry.get("intent_info", {})
         curr_intent = classify_query_intent(query)
         if prev_intent.get("target_ruling") and prev_intent.get("target_ruling") == curr_intent.get("target_ruling"):
+            # Si la nueva consulta busca una sección específica (ej. salvamento_voto, hechos, ratio, etc.)
+            req_section = curr_intent.get("target_section")
+            if req_section:
+                cached_passages = entry.get("data", {}).get("passages", [])
+                has_target_section = any(
+                    (p.get("section") == req_section or (isinstance(req_section, LegalSection) and p.get("section") == req_section.value))
+                    for p in cached_passages
+                )
+                if not has_target_section:
+                    log.info(
+                        "Memoria RAG: la consulta solicita sección '%s' no presente en fragmentos cacheados para %s. Forzando recuperación suplementaria.",
+                        req_section, curr_intent["target_ruling"]
+                    )
+                    return None
+
             log.info("Memoria RAG: reutilizando contexto documental para sentencia=%s", curr_intent["target_ruling"])
             return entry["data"]
 
         return None
+
+    def get_last_entry(self, user_id: str, conversation_id: Optional[str]) -> Optional[dict]:
+        """Obtiene la entrada más reciente de esta conversación para resolución anafórica."""
+        if not conversation_id:
+            return None
+        matches = [
+            v for v in self._cache.values()
+            if v.get("user_id") == user_id and v.get("conversation_id") == conversation_id
+        ]
+        if not matches:
+            return None
+        matches.sort(key=lambda x: x.get("created_at", 0), reverse=True)
+        return matches[0]
 
     def store(
         self,
@@ -702,15 +766,30 @@ async def retrieve_and_augment_rag(
         return context
 
     # 4. Comprobación de Memoria Documental Temporal
+    custom_selected = request.get("selected_fragments") or []
     doc_ids_req = request.get("document_ids") or []
-    cached = document_memory.get(user_id, conversation_id, query, scope, depth_key, doc_ids_req)
-    if cached:
-        log.info("Memoria RAG: recuperado contexto de memoria para user=%s conv=%s", user_id, conversation_id)
-        if on_progress:
-            await on_progress("retrieval", "Reutilizando fuentes autorizadas de la sesión…")
-        context.update(cached)
-        context["coverage"]["memory_hit"] = True
-        return context
+    if not custom_selected:
+        cached = document_memory.get(user_id, conversation_id, query, scope, depth_key, doc_ids_req)
+        if cached:
+            log.info("Memoria RAG: recuperado contexto de memoria para user=%s conv=%s", user_id, conversation_id)
+            if on_progress:
+                await on_progress("retrieval", "Reutilizando fuentes autorizadas de la sesión…")
+            context.update(cached)
+            context["coverage"]["memory_hit"] = True
+            return context
+
+    # Comprobación de anáfora / seguimiento sobre sentencia previa en memoria
+    if not intent_info.get("target_ruling"):
+        prev_entry = document_memory.get_last_entry(user_id, conversation_id)
+        if prev_entry:
+            prev_ruling = prev_entry.get("intent_info", {}).get("target_ruling")
+            if prev_ruling and re.search(r"\b(esta|este|dicha|dicho)\s+(sentencia|providencia|fallo|decisi[oó]n)\b|salvamento|aclaraci[oó]n|resuelve|ratio|magistrad[oa]|hechos", query, re.I):
+                intent_info["target_ruling"] = prev_ruling
+                log.info("Memoria RAG: asociando consulta anafórica a sentencia previa=%s", prev_ruling)
+
+    search_query = query
+    if intent_info.get("target_ruling") and not re.search(_RULING_REGEX, query):
+        search_query = f"{intent_info['target_ruling']} {query}"
 
     t_retrieval_0 = time.monotonic()
     raw_candidates: list[dict] = []
@@ -718,6 +797,28 @@ async def retrieve_and_augment_rag(
     retrieval_method = "hybrid"
     pub_docs = 0
     idx_frags = 0
+
+    # Si el usuario envió fragmentos seleccionados manualmente, se incorporan con máxima prioridad
+    if custom_selected:
+        for idx_sf, sf in enumerate(custom_selected):
+            cand = {
+                "id": sf.get("id") or f"SEL-{idx_sf+1}",
+                "title": sf.get("title") or "Fragmento seleccionado",
+                "source_id": sf.get("source_id") or "manual",
+                "source_url": sf.get("source_url") or "",
+                "date": sf.get("date"),
+                "version": sf.get("version", sf.get("document_version", 1)),
+                "segment": sf.get("segment") or (idx_sf + 1),
+                "section": sf.get("section") or "fundamentos_juridicos",
+                "excerpt": sf.get("text") or sf.get("excerpt") or sf.get("content") or "",
+                "document_id": sf.get("document_id"),
+                "page": sf.get("page"),
+                "score": 1.0,
+                "method": "user_selected",
+                "user_selected": True
+            }
+            if cand["excerpt"]:
+                raw_candidates.append(cand)
 
     # 5. Ejecución de la búsqueda híbrida según el ámbito autorizado
     if scope == "official":
@@ -734,10 +835,10 @@ async def retrieve_and_augment_rag(
 
         try:
             corpus_res = await asyncio.wait_for(
-                official.search_corpus(token, query[:800], limit=profile["candidate_limit"], semantic=True),
+                official.search_corpus(token, search_query[:800], limit=profile["candidate_limit"], semantic=True),
                 timeout=45
             )
-            raw_candidates = corpus_res.get("results", [])
+            raw_candidates.extend(corpus_res.get("results", []))
             retrieval_method = corpus_res.get("method") or "hybrid"
             warnings.extend(corpus_res.get("warnings", []))
         except (HTTPException, TimeoutError) as exc:
@@ -813,16 +914,17 @@ async def retrieve_and_augment_rag(
 
     if scope == "official":
         for row in selected_passages:
-            url = row["source_url"]
-            if url not in doc_urls:
+            url = row.get("source_url") or row.get("url") or ""
+            if url and url not in doc_urls:
                 doc_urls.append(url)
-            doc_idx = doc_urls.index(url) + 1
+            doc_idx = (doc_urls.index(url) + 1) if url in doc_urls else 1
             seg_idx = row.get("segment") or 1
-            ref = f"O{doc_idx}-S{seg_idx}"
+            ref = row.get("id") if (row.get("user_selected") and row.get("id")) else f"O{doc_idx}-S{seg_idx}"
             location = f"Segmento {seg_idx}"
             if row.get("version"):
                 location += f" (v{row['version']})"
 
+            text_content = row.get("excerpt") or row.get("text") or row.get("content") or ""
             passage = {
                 "id": ref,
                 "title": row.get("title") or "Documento oficial",
@@ -833,9 +935,10 @@ async def retrieve_and_augment_rag(
                 "segment": seg_idx,
                 "section": row.get("section", "seccion_desconocida"),
                 "rerank_score": row.get("rerank_score", 0.0),
-                "text": row["excerpt"],
+                "text": text_content,
                 "method": row.get("method") or retrieval_method,
-                "kind": "official"
+                "kind": "official",
+                "user_selected": bool(row.get("user_selected")),
             }
             passages.append(passage)
             new_sources[ref] = {
@@ -851,9 +954,10 @@ async def retrieve_and_augment_rag(
                 "date": row.get("date"),
                 "score": row.get("rerank_score") or row.get("score"),
                 "method": row.get("method") or retrieval_method,
-                "excerpt": row["excerpt"][:700],
+                "excerpt": text_content[:700],
                 "verified": False,
-                "provenance": f"Corpus Jurídico Oficial · {row.get('section', 'documento')} ({row.get('source_id', 'oficial')}). Revisa el original."
+                "user_selected": bool(row.get("user_selected")),
+                "provenance": "Fragmento seleccionado por el abogado" if row.get("user_selected") else f"Corpus Jurídico Oficial · {row.get('section', 'documento')} ({row.get('source_id', 'oficial')}). Revisa el original."
             }
 
         used_chars = sum(len(p["text"]) for p in passages)
@@ -914,7 +1018,7 @@ async def retrieve_and_augment_rag(
             if pub_docs == 0:
                 warnings.append("El Corpus Jurídico Oficial no tiene documentos publicados actualmente.")
             else:
-                warnings.append(f"No se encontraron fragmentos relevantes en el Corpus Jurídico Oficial para esta consulta ({pub_docs} documento(s) disponible(s)).")
+                warnings.append(f"No se encontraron fragmentos jurídicamente pertinentes en el Corpus Jurídico Oficial para esta consulta ({pub_docs} documento(s) disponible(s)).")
         else:
             warnings.append(f"RAG 2.0 ({profile['name']}): {len(passages)} fragmentos seleccionados de {len(raw_candidates)} candidatos mediante reranking jurídico.")
 
@@ -932,8 +1036,9 @@ async def retrieve_and_augment_rag(
                 doc_ids.append(doc_id)
             number = doc_ids.index(doc_id) + 1
             next_indices[number] = next_indices.get(number, 0) + 1
-            ref = f"D{number}-S{next_indices[number]}"
+            ref = row.get("id") if (row.get("user_selected") and row.get("id")) else f"D{number}-S{next_indices[number]}"
 
+            text_content = row.get("excerpt") or row.get("text") or row.get("content") or ""
             passage = {
                 "id": ref,
                 "document_id": doc_id,
@@ -942,8 +1047,9 @@ async def retrieve_and_augment_rag(
                 "segment": row.get("segment"),
                 "section": row.get("section", "seccion_desconocida"),
                 "rerank_score": row.get("rerank_score", 0.0),
-                "text": row["excerpt"],
-                "document_version": row.get("document_version", 1)
+                "text": text_content,
+                "document_version": row.get("document_version", 1),
+                "user_selected": bool(row.get("user_selected")),
             }
             passages.append(passage)
             location = f"Página {row['page']}" if row.get("page") else f"Segmento {row.get('segment') or 1}"
@@ -958,10 +1064,11 @@ async def retrieve_and_augment_rag(
                 "section": row.get("section", "seccion_desconocida"),
                 "url": safe_source_url(row.get("source_url")),
                 "location": location,
-                "excerpt": row["excerpt"][:700],
+                "excerpt": text_content[:700],
                 "score": row.get("rerank_score"),
                 "verified": False,
-                "provenance": f"Índice privado · {row.get('section', 'documento')} ({row.get('title')}). Revisa el original."
+                "user_selected": bool(row.get("user_selected")),
+                "provenance": "Fragmento seleccionado por el abogado" if row.get("user_selected") else f"Índice privado · {row.get('section', 'documento')} ({row.get('title')}). Revisa el original."
             }
 
         existing_sources = {source["id"]: source for source in context.get("sources") or []}
