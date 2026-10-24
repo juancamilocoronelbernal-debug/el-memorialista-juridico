@@ -33,6 +33,7 @@ class ChatRequest(BaseModel):
     document_ids: list[UUID] = Field(default_factory=list, max_length=20)
     matter_id: UUID | None = None
     playbook_id: UUID | None = None
+    conversation_id: str | None = None
     knowledge_scope: Literal["auto", "off", "documents", "legal", "all", "official"] = "auto"
     depth: Literal["auto", "quick", "balanced", "deep"] = "auto"
 
