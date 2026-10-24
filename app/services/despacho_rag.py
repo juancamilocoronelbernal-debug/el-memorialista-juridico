@@ -323,7 +323,12 @@ DEPTH_PROFILES = {
 _LEGAL_STOPWORDS = {
     "para", "como", "pero", "este", "esta", "estos", "estas", "sobre", "entre", "hacia",
     "desde", "hasta", "segun", "según", "donde", "cuando", "quien", "quién", "cual", "cuál",
-    "sentencia", "corte", "derecho", "articulo", "artículo", "colombia"
+    "sentencia", "corte", "derecho", "articulo", "artículo", "colombia",
+    "codigo", "código", "ley", "leyes", "caso", "parte", "partes", "auto", "decreto",
+    "tutela", "accion", "acción", "demanda", "explicame", "explícame", "dime", "cuentame",
+    "cuéntame", "analiza", "busca", "documento", "documentos", "general", "constitucional",
+    "judicial", "nacional", "republica", "república", "providencia", "primer", "primero",
+    "segundo", "tercero", "sala", "magistrado", "magistrada", "juez", "tribunal"
 }
 
 def _extract_keywords(text: str) -> set[str]:
