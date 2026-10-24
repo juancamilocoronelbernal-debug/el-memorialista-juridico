@@ -8,9 +8,13 @@ from uuid import UUID
 
 import anyio
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi.responses import StreamingResponse
+import json
+import logging
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.services import despacho_ai
+from app.services import despacho_stream
 from app.services.limites import limitador, verificar_acceso
 from app.services.sesiones import token_bearer
 
@@ -87,6 +91,66 @@ async def chat(req: ChatRequest, request: Request):
     user_id, token = await _identity(request)
     limitador.verificar(request, "redactar", user_id=user_id)
     return await _while_connected(request, despacho_ai.chat(user_id, token, req.model_dump(mode="json")))
+
+
+@router.post("/chat/stream")
+async def chat_stream(req: ChatRequest, request: Request):
+    """POST + Bearer, SSE real. Protege sesión y cuota antes de abrir el flujo."""
+    user_id, token = await _identity(request)
+    limitador.verificar(request, "redactar", user_id=user_id)
+
+    def encode(event: dict) -> str:
+        return "event: " + event["event"] + "\ndata: " + json.dumps(
+            event["data"], ensure_ascii=False, separators=(",", ":")) + "\n\n"
+
+    async def body():
+        queue = asyncio.Queue(maxsize=30)
+        async def producer():
+            partial = False
+            try:
+                async for event in despacho_stream.stream_chat(user_id, token, req.model_dump(mode="json")):
+                    partial = partial or event["event"] == "delta"
+                    await queue.put(event)
+            except HTTPException as exc:
+                await queue.put({"event": "error", "data": {
+                    "message": str(exc.detail), "status": exc.status_code, "partial": partial}})
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logging.getLogger("memorialista.despacho.stream").exception("Fallo interno del flujo SSE")
+                await queue.put({"event": "error", "data": {
+                    "message": "No se pudo completar la respuesta; inténtalo de nuevo.",
+                    "status": 500, "partial": partial}})
+            finally:
+                with contextlib.suppress(asyncio.QueueFull):
+                    queue.put_nowait(None)
+
+        task = asyncio.create_task(producer())
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=12)
+                except asyncio.TimeoutError:
+                    if task.done() and queue.empty():
+                        break
+                    yield ": ping\n\n"
+                    continue
+                if event is None:
+                    break
+                yield encode(event)
+        finally:
+            if not task.done():
+                task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+    return StreamingResponse(body(), media_type="text/event-stream", headers={
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+        "Pragma": "no-cache",
+    })
 
 
 @router.post("/tables/analyze")

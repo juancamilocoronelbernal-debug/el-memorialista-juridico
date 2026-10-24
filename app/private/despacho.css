@@ -95,3 +95,14 @@
 /* Corpus oficial: hereda el diseño del despacho, sin tocar Agente ni DMS. */
 .v5-official-panel{max-width:100%;min-width:0}.v5-official-panel .v5-knowledge-form{margin:12px 0 20px}.v5-official-panel .v5-official-status{background:#f4f7ef;padding:12px;border:1px solid #dce5d4;border-radius:9px;margin-bottom:14px}.v5-official-row{gap:12px;flex-wrap:wrap}.v5-official-row .row-main{min-width:180px;flex:1 1 200px}.v5-official-panel hr{border:0;border-top:1px solid #dce5d4;margin:24px 0}
 @media(max-width:520px){.v5-official-panel .actions{flex-wrap:wrap}.v5-official-row .button{width:100%}}
+
+/* Streaming nativo del agente (SSE). Sólo el texto del token, jamás HTML recibido. */
+.message .streaming-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.message .streaming-status {
+  margin-top: .65rem;
+  color: var(--ink-muted, #60705c);
+  font-size: .82rem;
+}

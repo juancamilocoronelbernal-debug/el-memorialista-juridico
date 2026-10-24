@@ -57,6 +57,61 @@ function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=el(
 function filename(title,ext){return (String(title||'documento').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||'documento')+'.'+ext;}
 async function copy(value){try{await navigator.clipboard.writeText(String(value));toast('Copiado al portapapeles.');}catch{const ta=el('textarea',{value:String(value),readOnly:true});showModal('Copiar contenido',el('div',{},el('p',{class:'inline-help'},'Selecciona y copia el contenido.'),ta),[]);ta.select();}}
 async function api(path,{method='GET',body,signal,blob=false,retry=true}={}){const session=await S.client.auth.getSession();const token=session.data?.session?.access_token;if(!token)throw new Error('Tu sesión ha caducado. Inicia sesión de nuevo.');const headers={Authorization:'Bearer '+token};let payload=body;if(body!==undefined&&!(body instanceof FormData)){headers['Content-Type']='application/json';payload=JSON.stringify(body);}const r=await fetch(path.startsWith('/api/')?path:API+path,{method,headers,body:payload,signal,cache:'no-store',credentials:'same-origin'});if(r.status===401&&retry){const refreshed=await S.client.auth.refreshSession();if(refreshed.data?.session)return api(path,{method,body,signal,blob,retry:false});}if(!r.ok){const data=await r.json().catch(()=>({}));const detail=typeof data.detail==='string'?data.detail:typeof data.error==='string'?data.error:'No se pudo completar la operación (HTTP '+r.status+').';const error=new Error(detail);error.status=r.status;throw error;}if(blob)return r.blob();if(r.status===204)return{};return r.json();}
+
+/* Streaming real: SSE POST con Bearer, sin poner la clave del proveedor en el navegador. */
+async function streamChatRequest(request,signal,onEvent,retry=true){
+  const session=await S.client.auth.getSession();
+  const token=session.data?.session?.access_token;
+  if(!token)throw new Error('Tu sesión ha caducado. Inicia sesión de nuevo.');
+  const r=await fetch(API+'/chat/stream',{
+    method:'POST',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',Accept:'text/event-stream'},
+    body:JSON.stringify(request),signal,cache:'no-store',credentials:'same-origin'
+  });
+  if(r.status===401&&retry){
+    const renewed=await S.client.auth.refreshSession();
+    if(renewed.data?.session)return streamChatRequest(request,signal,onEvent,false);
+  }
+  if(!r.ok){
+    const response=await r.json().catch(()=>({}));
+    throw new Error(typeof response.detail==='string'?response.detail:'Error al iniciar la respuesta (HTTP '+r.status+').');
+  }
+  if(!r.headers.get('Content-Type')?.includes('text/event-stream')||!r.body)throw new Error('El servidor no entregó un flujo de texto válido.');
+  const reader=r.body.getReader();
+  const decoder=new TextDecoder();
+  let buffer='',completed=false;
+  async function consume(raw){
+    const lines=raw.split('\n');
+    const event=(lines.find(line=>line.startsWith('event:'))||'event: message').slice(6).trim();
+    const json=lines.filter(line=>line.startsWith('data:')).map(line=>line.slice(5).trimStart()).join('\n');
+    if(!json)return;
+    let data;
+    try{data=JSON.parse(json);}catch{throw new Error('El servidor envió un fragmento de respuesta inválido.');}
+    if(event==='error'){
+      const err=new Error(data?.message||'La respuesta se interrumpió.');
+      err.status=data?.status;
+      throw err;
+    }
+    if(event==='done')completed=true;
+    await onEvent(event,data);
+  }
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      buffer+=(done?decoder.decode():decoder.decode(value,{stream:true}));
+      buffer=buffer.replace(/\r\n/g,'\n');
+      let stop;
+      while((stop=buffer.indexOf('\n\n'))!==-1){
+        const frame=buffer.slice(0,stop);buffer=buffer.slice(stop+2);
+        await consume(frame);
+      }
+      if(done)break;
+    }
+    if(!completed)throw new Error('Se cortó la conexión antes de completar la respuesta. El texto parcial no se guardó.');
+  }finally{
+    reader.releaseLock();
+  }
+}
 function mergeItem(value){const data=value?.item||value;if(!data?.id)return data;const pos=S.items.findIndex(i=>i.id===data.id);if(pos<0)S.items.push(data);else S.items[pos]=data;return data;}
 async function createItem(kind,title,data,matterId=S.matterId){return mergeItem(await api('/items',{method:'POST',body:{kind,title,matter_id:matterId||null,data}}));}
 async function updateItem(record,changes){if(!record?.id)throw new Error('No se encontró el elemento. Actualiza el despacho.');return mergeItem(await api('/items/'+encodeURIComponent(record.id),{method:'POST',body:{...changes,expected_version:record.version}}));}
@@ -77,17 +132,119 @@ function showNotice(){const n=$('#workspace-notice');const msg=S.loadError||(S.c
 function render(){renderNav();showNotice();if(S.loading)return;const main=$('#main');const renders={chat:renderChat,investigacion:renderChat,asuntos:renderMatters,biblioteca:renderLibrary,tablas:renderTables,documentos:renderEditor,monitores:renderMonitors,firmas:renderSigningV5,ajustes:renderSettings,encargos:renderJobsV5,tareas:renderSchedulesV5,conexiones:renderConnectionsV5,salas:renderRoomsV5};main.replaceChildren(v5EnhancePage((renders[S.page]||renderChat)()));}
 function closeSidebar(){$('#sidebar').classList.remove('open');$('#sidebar-scrim').hidden=true;$('#mobile-menu').setAttribute('aria-expanded','false');document.body.classList.remove('menu-open');}
 function openSidebar(){$('#sidebar').classList.add('open');$('#sidebar-scrim').hidden=false;$('#mobile-menu').setAttribute('aria-expanded','true');document.body.classList.add('menu-open');}
-function cancelChat(){if(S.chatTask){S.chatTask.controller.abort();S.chatTask=null;S.chatCounter++;toast('Encargo detenido. Los mensajes guardados se conservan.');render();}}
+function cancelChat(){
+  const task=S.chatTask;
+  if(!task)return;
+  task.controller.abort();
+  if(task.draft){
+    if(task.draft.content){
+      task.draft.incomplete=true;
+      task.draft.streaming=false;
+      task.draft.warnings=['Respuesta interrumpida: no es una respuesta completa y no se guardó.'];
+    }else S.messages=S.messages.filter(m=>m!==task.draft);
+  }
+  S.chatTask=null;
+  S.chatCounter++;
+  toast('Respuesta detenida. El texto parcial no se guarda como documento final.');
+  render();
+}
 async function newChat(){if(S.chatTask){await confirmDialog('Detener el encargo actual','Se detendrá la respuesta en curso antes de abrir un nuevo encargo.',async()=>cancelChat(),'Detener y continuar');if(S.chatTask)return;}S.conversationId=null;S.conversationVersion=null;S.messages=[];S.chatDraft='';S.chatUnsaved=false;S.selectedDocs.clear();S.mode='general';S.knowledgeScope='auto';setPage('chat');$('#chat-input')?.focus();}
 function openConversation(id){if(S.chatTask){toast('Detén el encargo actual antes de abrir otra conversación.');return;}const c=item(id);if(!c)return;S.conversationId=id;S.conversationVersion=c.version;S.messages=Array.isArray(c.data?.messages)?c.data.messages.slice():[];S.matterId=c.matter_id||'';S.mode=c.data?.mode||'general';S.knowledgeScope=['auto','off','documents','legal','all','official'].includes(c.data?.knowledge_scope)?c.data.knowledge_scope:'auto';S.chatDraft='';S.chatUnsaved=false;S.selectedDocs=new Set((c.data?.document_ids||[]).filter(id=>item(id)));setPage(S.mode==='research'?'investigacion':'chat');}
 function plainRich(content){const holder=el('div',{class:'message-content'});let inCode=false,code=[];for(const line of String(content||'').split('\n')){if(line.startsWith('```')){if(inCode){holder.append(el('pre',{},code.join('\n')));code=[];}inCode=!inCode;continue;}if(inCode){code.push(line);continue;}const heading=line.match(/^#{1,4}\s+(.+)/);const n=el(heading?'h3':'div');const value=heading?heading[1]:line;const pieces=value.split(/(\*\*[^*]+\*\*)/g);for(const piece of pieces)n.append(piece.startsWith('**')&&piece.endsWith('**')?el('strong',{},piece.slice(2,-2)):document.createTextNode(piece||'\u200b'));holder.append(n);}if(code.length)holder.append(el('pre',{},code.join('\n')));return holder;}
 function sourceCard(source){const label=source.title||source.id||'Fuente';const location=source.page?'Página '+source.page:source.location||(source.segment?'Segmento '+source.segment:'');const node=el('div',{class:'source-card'},el('strong',{},label),el('span',{class:'source-meta'},[source.id,location,source.kind==='web'?'Fuente de búsqueda':source.kind==='official'?'Corpus Jurídico Oficial':'Documento aportado'].filter(Boolean).join(' · ')));if(source.excerpt)node.append(el('p',{},source.excerpt));if(source.url&&safeUrl(source.url))node.append(link('Abrir fuente original ↗',source.url));else if(source.document_id&&item(source.document_id))node.append(button('Abrir documento',()=>previewDocument(item(source.document_id)),{class:''}));node.append(el('div',{class:'source-meta'},source.verified?'Fragmento contrastado con el documento; revisa su aplicación.':source.provenance||'Revisa el contenido y su aplicación jurídica.'));return node;}
-function renderMessage(m,index){if(m.role==='user')return el('article',{class:'message user','aria-label':'Tu encargo'},plainRich(m.content));const n=el('article',{class:'message assistant','aria-label':'Respuesta de El Memorialista'},el('div',{class:'message-header'},el('span',{class:'avatar'},'M'),el('span',{},'El Memorialista')),plainRich(m.content));if(Array.isArray(m.sources)&&m.sources.length)n.append(el('div',{class:'sources-list'},m.sources.map(sourceCard)));if(m.search_suggestions_html){const frame=el('iframe',{class:'search-attribution',title:'Sugerencias de búsqueda de Google',sandbox:'allow-popups allow-popups-to-escape-sandbox',referrerPolicy:'no-referrer'});frame.srcdoc='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src https: data:; base-uri \'none\'; form-action \'none\'">'+m.search_suggestions_html;n.append(frame);}if(Array.isArray(m.warnings))for(const w of m.warnings)n.append(el('div',{class:'message-note'},typeof w==='string'?w:text(w)));if(m.coverage){const c=m.coverage;const covText=c.scope==='official'?('Corpus Jurídico Oficial: '+(c.official_documents||0)+' documento(s) consultado(s) · '+(c.selected_passages??'—')+' fragmento(s) utilizados de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.')):('Contexto utilizado: '+(c.selected_passages??'—')+' fragmentos de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.'));n.append(el('div',{class:'coverage'},covText));}if(m.coverage?.indexed_retrieval)n.append(v5RetrievalCoverage(m.coverage.indexed_retrieval));if(Array.isArray(m.plan)&&m.plan.length)n.append(el('details',{class:'work-plan'},el('summary',{},'Trabajo realizado'),el('ul',{},m.plan.map(step=>el('li',{},typeof step==='string'?step:(step.label||'Paso')+' · '+({completed:'Completado',pending:'Pendiente de revisión',unverified:'Sin confirmar'}[step.status]||step.status||''))))));n.append(el('div',{class:'message-tools'},button('Copiar',()=>copy(m.content),{icon:'copy',class:''}),button('Guardar escrito',()=>saveAnswerDocument(m),{icon:'file',class:''}),button('Word',()=>exportDocument(m.content,conversationTitle(),'docx'),{icon:'download',class:''}),button('PDF',()=>exportDocument(m.content,conversationTitle(),'pdf'),{icon:'download',class:''})));return n;}
+function renderMessage(m,index){if(m.role==='user')return el('article',{class:'message user','aria-label':'Tu encargo'},plainRich(m.content));const n=el('article',{class:'message assistant','aria-label':'Respuesta de El Memorialista'},el('div',{class:'message-header'},el('span',{class:'avatar'},'M'),el('span',{},'El Memorialista')),plainRich(m.content));
+  if(m.streaming){
+    const content=n.querySelector('.message-content');
+    content.classList.add('streaming-text');
+    content.textContent=m.content||'';
+    n.append(el('div',{class:'streaming-status',role:'status'},m.streamStatus||'Preparando respuesta…'));
+    return n;
+  }
+  if(m.incomplete){
+    n.append(el('div',{class:'message-note'},'Respuesta incompleta. No se ha guardado ni se puede exportar como documento final.'));
+    return n;
+  }
+  if(Array.isArray(m.sources)&&m.sources.length)n.append(el('div',{class:'sources-list'},m.sources.map(sourceCard)));if(m.search_suggestions_html){const frame=el('iframe',{class:'search-attribution',title:'Sugerencias de búsqueda de Google',sandbox:'allow-popups allow-popups-to-escape-sandbox',referrerPolicy:'no-referrer'});frame.srcdoc='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src https: data:; base-uri \'none\'; form-action \'none\'">'+m.search_suggestions_html;n.append(frame);}if(Array.isArray(m.warnings))for(const w of m.warnings)n.append(el('div',{class:'message-note'},typeof w==='string'?w:text(w)));if(m.coverage){const c=m.coverage;const covText=c.scope==='official'?('Corpus Jurídico Oficial: '+(c.official_documents||0)+' documento(s) consultado(s) · '+(c.selected_passages??'—')+' fragmento(s) utilizados de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.')):('Contexto utilizado: '+(c.selected_passages??'—')+' fragmentos de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.'));n.append(el('div',{class:'coverage'},covText));}if(m.coverage?.indexed_retrieval)n.append(v5RetrievalCoverage(m.coverage.indexed_retrieval));if(Array.isArray(m.plan)&&m.plan.length)n.append(el('details',{class:'work-plan'},el('summary',{},'Trabajo realizado'),el('ul',{},m.plan.map(step=>el('li',{},typeof step==='string'?step:(step.label||'Paso')+' · '+({completed:'Completado',pending:'Pendiente de revisión',unverified:'Sin confirmar'}[step.status]||step.status||''))))));n.append(el('div',{class:'message-tools'},button('Copiar',()=>copy(m.content),{icon:'copy',class:''}),button('Guardar escrito',()=>saveAnswerDocument(m),{icon:'file',class:''}),button('Word',()=>exportDocument(m.content,conversationTitle(),'docx'),{icon:'download',class:''}),button('PDF',()=>exportDocument(m.content,conversationTitle(),'pdf'),{icon:'download',class:''})));return n;}
 function conversationTitle(){return item(S.conversationId)?.title||'Respuesta de El Memorialista';}
 function renderChat(){const research=S.page==='investigacion';const outer=el('section',{class:'chat-layout'});const matterSelect=el('select',{class:'context-select','aria-label':'Asunto del encargo',disabled:!!S.chatTask});for(const o of matterOptions())matterSelect.append(el('option',{value:o.value,selected:S.matterId===o.value},o.label));matterSelect.addEventListener('change',()=>{S.matterId=matterSelect.value;S.selectedDocs.clear();if(S.conversationId){S.conversationId=null;S.messages=[];}render();});const knowledge=el('select',{class:'context-select v5-knowledge-select','aria-label':'Biblioteca para el agente',disabled:!!S.chatTask});for(const[value,label]of[['auto','Biblioteca: automática'],['official','Corpus Jurídico Oficial'],['off','Biblioteca: sin recuperación'],['documents','Biblioteca: documentos DMS'],['legal','Biblioteca: fuentes jurídicas'],['all','Biblioteca: documentos y fuentes']])knowledge.append(el('option',{value,selected:S.knowledgeScope===value},label));knowledge.addEventListener('change',()=>S.knowledgeScope=knowledge.value);knowledge.title='Automática: fuentes jurídicas al investigar; documentos DMS en otros encargos. Corpus Oficial: providencias y normas publicadas del corpus compartido.';const context=el('div',{class:'context-actions'},knowledge,matterSelect);if(S.conversationId)context.append(button('⋯',showConversationMenu,{class:'icon-button',title:'Opciones de conversación'}));outer.append(el('div',{class:'chat-context'},el('span',{class:'workspace-label'},icon('lock'),research?'INVESTIGACIÓN JURÍDICA':'TU ESPACIO DE TRABAJO'),context));if(!S.messages.length){outer.append(el('div',{class:'chat-welcome'},el('div',{class:'welcome-emblem'},icon(research?'book':'spark')),el('div',{class:'eyebrow'},research?'FUENTES, CONTEXTO Y CRITERIO':'EL MEMORIALISTA · AGENTE JURÍDICO'),el('h1',{},research?'Investiga con fuentes.': 'Cada asunto, ',research?el('em',{},' Decide con criterio.'):el('em',{},'con claridad.')),el('p',{},research?'Plantea el problema jurídico y revisa las fuentes que respaldan el análisis.':'Un espacio para investigar, analizar tus documentos y preparar el siguiente escrito. Tú diriges el trabajo.')));}else outer.append(el('div',{class:'chat-messages',id:'chat-messages'},S.messages.map(renderMessage)));if(S.chatTask)outer.append(el('div',{class:'thinking',role:'status'},el('span',{class:'dots'},el('i'),el('i'),el('i')),'Procesando el encargo y sus documentos…'));if(S.chatUnsaved)outer.append(el('div',{class:'callout warning'},'La respuesta está en esta pantalla y aún no se ha guardado. ',button('Reintentar guardado',persistConversation,{class:'text-button'})));const form=el('form',{class:'composer',id:'chat-form'});const input=el('textarea',{id:'chat-input',value:S.chatDraft,placeholder:research?'¿Qué problema jurídico necesitas investigar? Incluye jurisdicción, fechas y contexto…':'Describe tu encargo o adjunta un documento para empezar…','aria-label':'Describe tu encargo',maxLength:12000,disabled:!!S.chatTask});input.addEventListener('input',()=>S.chatDraft=input.value);input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();if(!S.chatTask)form.requestSubmit();}});form.append(input);if(S.selectedDocs.size)form.append(el('div',{class:'attachment-chips'},[...S.selectedDocs].filter(id=>item(id)).map(id=>el('span',{class:'attachment-chip'},icon('file'),el('span',{},item(id).title),button('×',()=>{S.selectedDocs.delete(id);render();},{class:'',title:'Quitar '+item(id).title})))));const mode=el('select',{class:'mode-select','aria-label':'Tipo de encargo',disabled:!!S.chatTask});for(const[value,label]of[['general','General'],['analyze','Analizar'],['draft','Redactar'],['timeline','Cronología'],['research','Investigar']])mode.append(el('option',{value,selected:S.mode===value},label));mode.addEventListener('change',()=>{S.mode=mode.value;});const send=S.chatTask?button('Detener',cancelChat,{icon:'close',class:'send-button cancel'}):el('button',{type:'submit',class:'send-button'},'Enviar encargo',icon('up'));form.append(el('div',{class:'composer-toolbar'},el('div',{class:'composer-tools'},button('Adjuntar',chooseChatDocuments,{icon:'attach',class:'tool-button',disabled:!!S.chatTask}),button('Instrucciones',choosePlaybook,{icon:'book',class:'tool-button',disabled:!!S.chatTask}),mode),send));form.addEventListener('submit',act(async e=>{e.preventDefault();await sendChat();}));outer.append(form,el('div',{class:'composer-note'},icon('lock'),el('span',{},'Espacio privado. Verifica los hechos, las fuentes y el escrito antes de utilizarlo.')));if(!S.messages.length){const cards=research?[['book','Comparar criterios','Contrasta decisiones y abre sus fuentes.','Investiga los criterios jurídicos aplicables a este problema en Colombia. Explica los puntos de acuerdo y las diferencias, y cita únicamente fuentes recuperadas: '],['search','Comprobar una referencia','Revisa el contenido y el contexto de una cita.','Ayúdame a investigar esta referencia. Identifica el documento original y distingue lo confirmado de lo pendiente de verificar: '],['clock','Investigar cambios','Delimita el periodo y el problema jurídico.','Investiga novedades jurídicas sobre el siguiente tema en Colombia. Indica fecha, fuente y alcance de cada hallazgo: ']]:[['file','Analizar un expediente','Hechos, pruebas y puntos por revisar.','Analiza los documentos adjuntos. Organiza los hechos, identifica las pruebas que los respaldan y señala vacíos o contradicciones. '],['book','Investigar jurisprudencia','Fuentes para fundamentar tu argumento.','Investiga jurisprudencia colombiana sobre el siguiente problema. Cita las fuentes recuperadas y explica su pertinencia: '],['sign','Preparar un escrito','Del contexto a un borrador para revisar.','Prepara un borrador jurídico a partir de este contexto. Conserva los hechos aportados y marca los datos que faltan: ']];outer.append(el('div',{class:'prompt-grid'},cards.map(([ic,title,desc,prompt])=>button('',()=>{S.chatDraft=prompt;S.mode=ic==='book'?'research':ic==='sign'?'draft':'analyze';render();$('#chat-input')?.focus();},{class:'prompt-card'}))));outer.querySelectorAll('.prompt-card').forEach((card,i)=>card.append(icon(cards[i][0]),el('strong',{},cards[i][1]),el('small',{},cards[i][2])));outer.append(el('div',{class:'section-heading'},el('h2',{},'Tus asuntos recientes'),button('Ver asuntos →',()=>setPage('asuntos'),{class:'text-button'})));const matters=byKind('matter').slice(0,2);outer.append(matters.length?el('div',{class:'recent-matters'},matters.map(matterMini)):el('div',{class:'welcome-empty'},el('span',{},'Dale un lugar a los documentos y el contexto de cada cliente.'),button('Crear asunto +',()=>matterForm(),{class:'text-button'})));}return outer;}
 function matterMini(m){const b=button('',()=>matterDetail(m),{class:'matter-mini'});b.append(icon('folder'),el('span',{},el('strong',{},m.title),el('small',{},m.data?.client||'Asunto privado')),badge(m.data?.status==='closed'?'Cerrado':'En curso',m.data?.status==='closed'?'neutral':''));return b;}
-async function persistConversation(){if(!S.conversationId)return;const c=item(S.conversationId);try{const saved=await updateItem({...c,version:S.conversationVersion||c.version},{data:{...c.data,messages:S.messages,mode:S.mode,knowledge_scope:S.knowledgeScope,document_ids:[...S.selectedDocs]},matter_id:S.matterId||null});S.conversationVersion=saved.version;S.chatUnsaved=false;render();return saved;}catch(error){S.chatUnsaved=true;throw error;}}
-async function sendChat(){if(S.chatTask)return;const message=($('#chat-input')?.value||S.chatDraft).trim();if(!message)return;let totalHistory=0;const previous=[];for(const m of S.messages.slice().reverse()){if(previous.length>=24||totalHistory+String(m.content||'').length>230000)break;previous.unshift({role:m.role,content:m.content});totalHistory+=String(m.content||'').length;}const historyLimited=previous.length<S.messages.length;const request={message,history:previous,mode:S.mode,knowledge_scope:S.knowledgeScope,document_ids:[...S.selectedDocs],matter_id:S.matterId||null,playbook_id:S.playbookId||null};S.messages.push({role:'user',content:message,created_at:new Date().toISOString()});S.chatDraft='';const controller=new AbortController();const runId=++S.chatCounter;S.chatTask={id:runId,controller};render();try{if(!S.conversationId){const c=await createItem('conversation',message.slice(0,85),{messages:S.messages.slice(),mode:request.mode,knowledge_scope:request.knowledge_scope,document_ids:request.document_ids},request.matter_id);if(S.chatTask?.id!==runId)return;S.conversationId=c.id;S.conversationVersion=c.version;}else await persistConversation();if(S.chatTask?.id!==runId)return;const result=await api('/chat',{method:'POST',body:request,signal:controller.signal});if(S.chatTask?.id!==runId)return;if(!result.answer)throw new Error('El proveedor no devolvió una respuesta utilizable.');S.messages.push({role:'assistant',content:result.answer,sources:result.sources||[],warnings:[...(result.warnings||[]),...(historyLimited?['Se utilizó el historial reciente que cabe en esta consulta. El historial completo se conserva en la conversación.']:[])],coverage:result.coverage,plan:result.plan,search_suggestions_html:result.search_suggestions_html,provider:result.provider,model:result.model,created_at:new Date().toISOString()});S.chatUnsaved=true;try{await persistConversation();}catch(error){toast('La respuesta se recibió, pero no se pudo guardar: '+error.message,'error');}}catch(error){if(error.name!=='AbortError'&&S.chatTask?.id===runId){toast(error.message,'error');if(!S.conversationId){S.messages.pop();S.chatDraft=message;}}}finally{if(S.chatTask?.id===runId){S.chatTask=null;render();$('#chat-input')?.focus();}}}
+async function persistConversation(){if(!S.conversationId)return;const c=item(S.conversationId);try{const saved=await updateItem({...c,version:S.conversationVersion||c.version},{data:{...c.data,messages:S.messages.filter(m=>!m.streaming&&!m.incomplete),mode:S.mode,knowledge_scope:S.knowledgeScope,document_ids:[...S.selectedDocs]},matter_id:S.matterId||null});S.conversationVersion=saved.version;S.chatUnsaved=false;render();return saved;}catch(error){S.chatUnsaved=true;throw error;}}
+async function sendChat(){
+  if(S.chatTask)return;
+  const message=($('#chat-input')?.value||S.chatDraft).trim();
+  if(!message)return;
+  let totalHistory=0;
+  const previous=[];
+  for(const m of S.messages.filter(m=>!m.incomplete&&!m.streaming).slice().reverse()){
+    if(previous.length>=24||totalHistory+String(m.content||'').length>230000)break;
+    previous.unshift({role:m.role,content:m.content});
+    totalHistory+=String(m.content||'').length;
+  }
+  const historyLimited=previous.length<S.messages.filter(m=>!m.incomplete&&!m.streaming).length;
+  const request={message,history:previous,mode:S.mode,knowledge_scope:S.knowledgeScope,
+    document_ids:[...S.selectedDocs],matter_id:S.matterId||null,playbook_id:S.playbookId||null};
+  S.messages.push({role:'user',content:message,created_at:new Date().toISOString()});
+  S.chatDraft='';
+  const controller=new AbortController();
+  const runId=++S.chatCounter;
+  S.chatTask={id:runId,controller,stage:'Preparando consulta…',draft:null};
+  render();
+  let draft=null;
+  let completed=false;
+  try{
+    if(!S.conversationId){
+      const c=await createItem('conversation',message.slice(0,85),{
+        messages:S.messages.filter(m=>!m.incomplete&&!m.streaming),mode:request.mode,
+        knowledge_scope:request.knowledge_scope,document_ids:request.document_ids},request.matter_id);
+      if(S.chatTask?.id!==runId)return;
+      S.conversationId=c.id;S.conversationVersion=c.version;
+    }else await persistConversation();
+    if(S.chatTask?.id!==runId)return;
+    draft={role:'assistant',content:'',streaming:true,streamStatus:'Preparando respuesta…',created_at:new Date().toISOString()};
+    S.chatTask.draft=draft;
+    S.messages.push(draft);
+    render();
+    await streamChatRequest(request,controller.signal,async(event,data)=>{
+      if(S.chatTask?.id!==runId)return;
+      if(event==='status'){
+        draft.streamStatus=data?.message||'Procesando consulta…';
+        const status=$('#chat-messages .message.assistant:last-child .streaming-status');
+        if(status)status.textContent=draft.streamStatus;
+      }
+      if(event==='delta'&&typeof data?.text==='string'){
+        draft.content+=data.text;
+        const textNode=$('#chat-messages .message.assistant:last-child .streaming-text');
+        const box=$('#chat-messages');
+        const follow=box&&box.scrollHeight-box.scrollTop-box.clientHeight<180;
+        if(textNode)textNode.append(document.createTextNode(data.text));
+        if(follow&&box)box.scrollTop=box.scrollHeight;
+        const thinking=$('.thinking');if(thinking)thinking.hidden=true;
+      }
+      if(event==='done'){
+        if(!data?.answer||data.answer!==draft.content)throw new Error('El resultado final no coincide con los fragmentos recibidos. No se guardó la respuesta.');
+        Object.assign(draft,{content:data.answer,sources:data.sources||[],
+          warnings:[...(data.warnings||[]),...(historyLimited?['Se utilizó el historial reciente disponible para esta consulta.']:[])],
+          coverage:data.coverage,plan:data.plan,search_suggestions_html:data.search_suggestions_html,
+          provider:data.provider,model:data.model,streaming:false,streamStatus:undefined});
+        completed=true;
+      }
+    });
+    if(S.chatTask?.id!==runId||!completed)throw new Error('La respuesta no terminó correctamente.');
+    S.chatUnsaved=true;
+    try{await persistConversation();}catch(error){toast('La respuesta se recibió, pero no se pudo guardar: '+error.message,'error');}
+  }catch(error){
+    if(error.name!=='AbortError'&&S.chatTask?.id===runId){
+      if(draft){
+        if(draft.content){draft.streaming=false;draft.incomplete=true;draft.warnings=['Respuesta incompleta: no se guardó como final.'];}
+        else S.messages=S.messages.filter(m=>m!==draft);
+      }
+      if(!S.conversationId){S.messages.pop();S.chatDraft=message;}
+      toast(error.message,'error');
+    }
+  }finally{
+    if(S.chatTask?.id===runId){S.chatTask=null;render();$('#chat-input')?.focus();}
+  }
+}
 function chooseChatDocuments(){const docs=byKind('document').filter(d=>!S.matterId||d.matter_id===S.matterId);const selected=new Set(S.selectedDocs);const list=el('div',{class:'checklist'});if(!docs.length)list.append(el('p',{class:'inline-help'},'Carga un documento para aportar contexto a este encargo.'));for(const d of docs){const check=el('input',{type:'checkbox',checked:selected.has(d.id)});check.addEventListener('change',()=>check.checked?selected.add(d.id):selected.delete(d.id));list.append(el('label',{class:'check-row'},check,el('span',{},d.title,el('small',{},matterTitle(d.matter_id)))));}showModal('Documentos para este encargo',el('div',{},el('p',{class:'inline-help'},'Selecciona documentos de tu biblioteca. El análisis indicará qué fragmentos utilizó.'),list),[button('Cargar archivos',()=>{S.uploadUse='chat';$('#upload-input').click();},{icon:'upload'}),button('Usar selección',()=>{if(selected.size>20)throw new Error('Selecciona como máximo 20 documentos para un encargo.');S.selectedDocs=selected;closeModal();render();},{class:'button primary'})]);}
 function choosePlaybook(){const saved=byKind('playbook');const select=field('Instrucciones para este encargo',{value:S.playbookId,options:[{value:'',label:'Sin instrucciones adicionales'},...saved.map(p=>({value:p.id,label:p.title}))]});const preview=el('div',{class:'document-preview'});const update=()=>preview.textContent=item(select.input.value)?.data?.instructions||'Utiliza las instrucciones generales del agente.';select.input.addEventListener('change',update);update();showModal('Instrucciones reutilizables',el('div',{},select.wrap,preview),[button('Crear instrucciones',()=>playbookForm()),button('Aplicar',()=>{S.playbookId=select.input.value;closeModal();toast('Instrucciones seleccionadas.');},{class:'button primary'})]);}
 function showConversationMenu(){const c=item(S.conversationId);if(!c)return;showModal('Opciones del encargo',el('div',{class:'stack'},button('Cambiar nombre',()=>renameItem(c),{icon:'edit'}),button('Descargar conversación',()=>downloadBlob(new Blob([S.messages.map(m=>(m.role==='user'?'TÚ':'EL MEMORIALISTA')+'\n'+m.content).join('\n\n---\n\n')],{type:'text/plain;charset=utf-8'}),filename(c.title,'txt')),{icon:'download'}),button('Eliminar conversación',()=>confirmDialog('Eliminar conversación','Se eliminará este historial de tu cuenta. Sus documentos permanecerán en la biblioteca.',()=>removeItem(c)),{icon:'trash',class:'button danger'})),[button('Cerrar',closeModal)]);}
