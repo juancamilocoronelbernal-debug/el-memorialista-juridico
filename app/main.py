@@ -172,6 +172,13 @@ async def lifespan(app: FastAPI):
             log.info("Trabajador del agente iniciado (sondeo cada %d s).", settings.DESPACHO_AGENT_POLL_SECONDS)
         else:
             log.warning("DESPACHO_AGENT_WORKER_ENABLED=True pero falta SUPABASE_SERVICE_ROLE_KEY en el servidor.")
+    if getattr(settings, "CONECTOR_CORTE_WORKER_ENABLED", False):
+        if settings.SUPABASE_SERVICE_ROLE_KEY:
+            from app.services.conector_corte_worker import conector_corte_worker
+            tareas.append(asyncio.create_task(conector_corte_worker()))
+            log.info("Trabajador automático del Conector de la Corte Constitucional registrado en segundo plano.")
+        else:
+            log.warning("CONECTOR_CORTE_WORKER_ENABLED=True pero falta SUPABASE_SERVICE_ROLE_KEY en el servidor.")
     try:
         yield
     finally:

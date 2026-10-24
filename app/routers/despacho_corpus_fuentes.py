@@ -91,6 +91,33 @@ class ConnectorPilotRequest(BaseModel):
     semantic: bool = True
 
 
+class ConnectorScheduleRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    enabled: bool
+    interval_minutes: int = Field(360, ge=15, le=1440)
+    run_now: bool = False
+
+
+class ConnectorDiscoverRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    limit: int = Field(20, ge=1, le=50)
+    offset: Optional[int] = Field(None, ge=0, le=100000)
+
+
+class ConnectorSyncRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    limit: int = Field(20, ge=1, le=50)
+    auto_publish: bool = False
+    semantic: bool = True
+
+
+class ConnectorTriageReviewRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    document_id: str = Field(min_length=4, max_length=80)
+    decision: Literal['approve', 'reject', 'withdraw']
+    reason: Optional[str] = Field(None, max_length=500)
+
+
 @router.get('/connector/status')
 async def get_connector_status_endpoint(request: Request):
     """Devuelve métricas y estado operativo del conector de la Corte Constitucional."""
@@ -98,6 +125,63 @@ async def get_connector_status_endpoint(request: Request):
     limitador.verificar(request, 'citas', user_id=uid)
     from app.services import conector_corte_constitucional as conector
     return await conector.get_connector_status()
+
+
+@router.post('/connector/schedule')
+async def configure_schedule_endpoint(payload: ConnectorScheduleRequest, request: Request):
+    """Configura la frecuencia y activación del trabajador automático en segundo plano."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services.conector_corte_worker import configure_schedule
+    return await configure_schedule(
+        enabled=payload.enabled,
+        interval_minutes=payload.interval_minutes,
+        run_now=payload.run_now,
+    )
+
+
+@router.post('/connector/discover')
+async def discover_candidates_endpoint(payload: ConnectorDiscoverRequest, request: Request):
+    """Descubre incrementalmente providencias candidatas desde el catálogo SODA oficial sin ingestar."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    candidates = await conector.discover_incremental_soda_rulings(
+        limit=payload.limit,
+        offset=payload.offset,
+    )
+    return {
+        "discovered_count": len(candidates),
+        "limit": payload.limit,
+        "offset": payload.offset,
+        "candidates": candidates,
+    }
+
+
+@router.get('/connector/triage')
+async def list_triage_endpoint(
+    request: Request,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """Consulta la bandeja administrativa de revisión previa (triage) para validar/aprobar sentencias."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    return await conector.list_triage_inbox(limit=limit, offset=offset)
+
+
+@router.post('/connector/triage/review')
+async def review_triage_endpoint(payload: ConnectorTriageReviewRequest, request: Request):
+    """Resuelve la revisión humana de un documento en triage (aprobar, rechazar o retirar)."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    return await conector.review_triage_document(
+        document_id=payload.document_id,
+        decision=payload.decision,
+        reason=payload.reason,
+    )
 
 
 @router.post('/connector/pilot')
@@ -110,12 +194,18 @@ async def run_connector_pilot_endpoint(payload: ConnectorPilotRequest, request: 
 
 
 @router.post('/connector/sync')
-async def sync_connector_endpoint(payload: ConnectorPilotRequest, request: Request):
-    """Sincronización incremental de sentencias oficiales no indexadas."""
+async def sync_connector_endpoint(payload: ConnectorSyncRequest, request: Request):
+    """Sincronización incremental de sentencias oficiales con bloqueo concurrente y validación previa obligatoria."""
     uid, _ = await identity(request)
     limitador.verificar(request, 'citas', user_id=uid)
     from app.services import conector_corte_constitucional as conector
-    return await conector.run_controlled_pilot(max_rulings=payload.max_rulings, semantic=payload.semantic)
+    owner_id = f"admin_{str(uid)[:8]}"
+    return await conector.run_incremental_sync(
+        limit=payload.limit,
+        auto_publish=payload.auto_publish,
+        semantic=payload.semantic,
+        owner=owner_id,
+    )
 
 
 class DocumentWorkflowRequest(BaseModel):

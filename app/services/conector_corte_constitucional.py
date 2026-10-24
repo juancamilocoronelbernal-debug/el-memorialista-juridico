@@ -29,6 +29,7 @@ from app.config import get_settings
 from app.services import despacho_store as store
 from app.services.despacho_knowledge import embed_texts, embedding_status
 from app.services.despacho_rag import classify_legal_section, LegalSection
+from app.services.validador_documental_corpus import validate_ruling_candidate, DocumentValidationResult
 
 log = logging.getLogger("memorialista.despacho.conector")
 
@@ -37,6 +38,7 @@ SODA_ENDPOINT = "https://www.datos.gov.co/resource/v2k4-2t8s.json"
 DATASET_PORTAL_URL = "https://www.datos.gov.co/Justicia-y-Derecho/Sentencias-proferidas-por-la-Corte-Constitucional/v2k4-2t8s"
 SOURCE_ID = "constitucional"
 SOURCE_NAME = "Corte Constitucional de Colombia (v2k4-2t8s)"
+USER_AGENT = "ElMemorialista/2.2 (Corpus Oficial; Colombia)"
 MAX_CHUNKS_PER_DOC = None  # Sin recorte por defecto: indexación 100% íntegra por lotes incrementales
 INGEST_BATCH_SIZE = 50
 CHUNK_SIZE = 2400
@@ -752,7 +754,7 @@ async def fetch_official_soda_metadata(
         variantes.update({f"{t}-{num}/{yr}", f"{t}-{num}-{yr}", f"{t}{num}-{yr}", f"{t}{num}/{yr}"})
 
     where_list = ", ".join(f"'{v}'" for v in sorted(variantes))
-    params = {"$where": f"upper(providencia) in({where_list})", "$limit": 5}
+    params = {"$where": f"upper(sentencia) in({where_list}) or upper(providencia) in({where_list})", "$limit": 5}
 
     close_client = False
     if client is None:
@@ -765,14 +767,15 @@ async def fetch_official_soda_metadata(
             row = res.json()[0]
             raw_fecha = str(row.get("fecha_sentencia") or "")[:10]
             return {
-                "providencia_soda": row.get("providencia"),
-                "tipo_soda": row.get("tipo"),
-                "anio_soda": row.get("ano"),
+                "providencia_soda": row.get("sentencia") or row.get("providencia"),
+                "tipo_soda": row.get("sentencia_tipo") or row.get("tipo"),
+                "anio_soda": row.get("ano") or (int(raw_fecha[:4]) if len(raw_fecha) >= 4 and raw_fecha[:4].isdigit() else None),
                 "fecha_soda": raw_fecha if len(raw_fecha) == 10 else None,
                 "tema_soda": row.get("tema"),
                 "magistrado_soda": row.get("magistrado_a"),
-                "expediente_soda": row.get("expediente"),
+                "expediente_soda": f"{row.get('expediente_tipo', '')}-{row.get('expediente_numero', '')}".strip("-") if row.get("expediente_numero") else row.get("expediente"),
                 "proceso_soda": row.get("proceso"),
+                "sala_soda": row.get("sala"),
             }
     except Exception as e:
         log.debug("Aviso consultando metadatos SODA para %s: %s", sentencia, e)
@@ -1288,10 +1291,21 @@ async def get_connector_status() -> dict:
         "status": "idle",
         "automation_mode": "manual_on_demand",
         "scheduled_worker_active": False,
+        "schedule_enabled": False,
+        "schedule_interval_minutes": 360,
+        "next_run_at": None,
+        "last_run_started_at": None,
+        "last_run_completed_at": None,
+        "lock_owner": None,
+        "sync_lock_until": None,
+        "sync_cursor": {"offset": 0, "last_providencia": None, "last_fecha": None, "discovered_total": 0},
+        "validation_stats": {},
         "discovered_count": 29500,  # Total aprox del dataset oficial
         "retrieved_count": 0,
         "technically_validated_count": 0,
+        "validation_failed_count": 0,
         "pending_review_count": 0,
+        "triage_pending_count": 0,
         "approved_count": 0,
         "published_count": 0,
         "withdrawn_count": 0,
@@ -1332,6 +1346,20 @@ async def get_connector_status() -> dict:
             result["last_sync_at"] = st.get("last_sync_at")
             result["errors"] = st.get("errors") or []
             result["estimated_cost_usd"] = float(st.get("estimated_cost_usd") or 0.0)
+            result["schedule_enabled"] = bool(st.get("schedule_enabled", False))
+            result["schedule_interval_minutes"] = int(st.get("schedule_interval_minutes") or 360)
+            result["next_run_at"] = st.get("next_run_at")
+            result["last_run_started_at"] = st.get("last_run_started_at")
+            result["last_run_completed_at"] = st.get("last_run_completed_at")
+            result["lock_owner"] = st.get("lock_owner")
+            result["sync_lock_until"] = st.get("sync_lock_until")
+            if st.get("sync_cursor"):
+                result["sync_cursor"] = st.get("sync_cursor")
+            if st.get("validation_stats"):
+                result["validation_stats"] = st.get("validation_stats")
+            if result["schedule_enabled"]:
+                result["automation_mode"] = "scheduled_background_worker"
+                result["scheduled_worker_active"] = True
             if st.get("fragments_count"):
                 result["fragments_count"] = int(st.get("fragments_count") or 0)
             if st.get("embeddings_count"):
@@ -1340,7 +1368,7 @@ async def get_connector_status() -> dict:
         # 2. Consultar métricas en tiempo real de las tablas del corpus oficial
         doc_rows = await store.db_request(
             "GET",
-            f"despacho_corpus_documentos?source_id=eq.{SOURCE_ID}&select=published,workflow_status,integrity_status",
+            f"despacho_corpus_documentos?source_id=eq.{SOURCE_ID}&select=published,workflow_status,integrity_status,validation_status",
             key,
             service=is_service,
         )
@@ -1355,7 +1383,15 @@ async def get_connector_status() -> dict:
             )
             result["technically_validated_count"] = sum(
                 1 for d in doc_rows
-                if d.get("workflow_status") in ("technically_validated", "approved", "published")
+                if d.get("validation_status") in ("technically_validated", "approved", "published")
+            )
+            result["validation_failed_count"] = sum(
+                1 for d in doc_rows
+                if d.get("validation_status") == "validation_failed"
+            )
+            result["triage_pending_count"] = sum(
+                1 for d in doc_rows
+                if d.get("validation_status") in ("validation_failed", "pending_legal_review", "technically_validated") and not d.get("published")
             )
             result["approved_count"] = sum(
                 1 for d in doc_rows
@@ -1382,12 +1418,709 @@ async def get_connector_status() -> dict:
             service=is_service,
             json={},
         )
-        if isinstance(corpus_state, dict) and corpus_state.get("fragments") is not None:
-            exact_frags = int(corpus_state.get("fragments") or 0)
-            result["fragments_count"] = exact_frags
-            result["embeddings_count"] = exact_frags
+        if isinstance(corpus_state, dict):
+            frags = corpus_state.get("indexed_fragments") or corpus_state.get("fragments")
+            if frags is not None:
+                exact_frags = int(frags)
+                result["fragments_count"] = exact_frags
+                result["embeddings_count"] = exact_frags
 
     except Exception as e:
         log.warning("Error leyendo estado consolidado del conector: %s", e)
 
     return result
+
+
+async def acquire_sync_lock(owner: str = "worker", ttl_seconds: int = 300) -> bool:
+    """Adquiere el bloqueo distribuido concurrente en Supabase para evitar ejecuciones superpuestas."""
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip()
+    if not key:
+        return True
+    try:
+        res = await store.db_request(
+            "POST",
+            "rpc/despacho_adquirir_bloqueo_conector",
+            key,
+            service=True,
+            json={"p_owner": owner, "p_ttl_seconds": ttl_seconds},
+        )
+        return bool(res)
+    except Exception as e:
+        log.warning("Error adquiriendo bloqueo del conector: %s", e)
+        return False
+
+
+async def release_sync_lock(owner: str = "worker") -> bool:
+    """Libera el bloqueo distribuido concurrente al finalizar la tarea de sincronización."""
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip()
+    if not key:
+        return True
+    try:
+        res = await store.db_request(
+            "POST",
+            "rpc/despacho_liberar_bloqueo_conector",
+            key,
+            service=True,
+            json={"p_owner": owner},
+        )
+        return bool(res)
+    except Exception as e:
+        log.warning("Error liberando bloqueo del conector: %s", e)
+        return False
+
+
+async def update_schedule_metadata(
+    schedule_enabled: bool,
+    interval_minutes: int = 360,
+    next_run_at: Optional[str] = None,
+) -> dict:
+    """Actualiza la configuración del programador del conector en la base de datos."""
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip()
+    payload = {
+        "schedule_enabled": bool(schedule_enabled),
+        "schedule_interval_minutes": max(15, int(interval_minutes)),
+        "next_run_at": next_run_at,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if key:
+        try:
+            await store.db_request(
+                "PATCH",
+                "despacho_conector_corte_estado?id=eq.corte_constitucional",
+                key,
+                service=True,
+                json=payload,
+            )
+        except Exception as e:
+            log.warning("Error actualizando programación del conector: %s", e)
+    return payload
+
+
+async def get_sync_cursor() -> dict:
+    """Obtiene el cursor incremental actual desde Supabase."""
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip() or settings.SUPABASE_ANON_KEY.strip()
+    default_cursor = {"offset": 0, "last_providencia": None, "last_fecha": None, "discovered_total": 0}
+    if not key:
+        return default_cursor
+    try:
+        rows = await store.db_request(
+            "GET",
+            "despacho_conector_corte_estado?id=eq.corte_constitucional&select=sync_cursor,validation_stats",
+            key,
+            service=bool(settings.SUPABASE_SERVICE_ROLE_KEY),
+        )
+        if isinstance(rows, list) and rows:
+            cursor = rows[0].get("sync_cursor")
+            if isinstance(cursor, dict):
+                return {**default_cursor, **cursor}
+    except Exception as e:
+        log.warning("Error leyendo cursor del conector: %s", e)
+    return default_cursor
+
+
+async def update_sync_cursor(cursor: dict, stats: Optional[dict] = None) -> dict:
+    """Actualiza el cursor incremental y estadísticas de validación en Supabase."""
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip()
+    if not key:
+        return cursor
+    try:
+        res = await store.db_request(
+            "POST",
+            "rpc/despacho_actualizar_cursor_conector",
+            key,
+            service=True,
+            json={"p_cursor": cursor, "p_stats": stats or {}},
+        )
+        if isinstance(res, dict):
+            return res.get("sync_cursor") or cursor
+    except Exception as e:
+        log.warning("Error actualizando cursor del conector: %s", e)
+    return cursor
+
+
+async def discover_incremental_soda_rulings(
+    limit: int = 20,
+    offset: Optional[int] = None,
+    client: Optional[httpx.AsyncClient] = None,
+) -> list[dict]:
+    """Consulta incrementalmente el conjunto oficial SODA v2k4-2t8s ordenado descendentemente."""
+    if offset is None:
+        cursor = await get_sync_cursor()
+        offset = cursor.get("offset", 0)
+
+    url = f"{SODA_ENDPOINT}?$order=fecha_sentencia%20DESC&$limit={min(max(limit, 1), 50)}&$offset={max(0, offset)}"
+    close_client = False
+    if client is None:
+        client = httpx.AsyncClient(headers={"User-Agent": USER_AGENT}, timeout=20.0)
+        close_client = True
+
+    try:
+        res = await client.get(url)
+        if res.status_code == 200:
+            rows = res.json()
+            candidates = []
+            for row in rows:
+                raw_fecha = str(row.get("fecha_sentencia") or "")[:10]
+                sentencia = (row.get("sentencia") or row.get("providencia") or "").strip().upper()
+                if not sentencia:
+                    continue
+                tipo = (row.get("sentencia_tipo") or row.get("tipo") or (sentencia.split("-")[0] if "-" in sentencia else "T")).strip().upper()
+                exp_tipo = row.get("expediente_tipo") or ""
+                exp_num = row.get("expediente_numero") or ""
+                exp_full = f"{exp_tipo}-{exp_num}".strip("-") if (exp_tipo or exp_num) else (row.get("expediente") or "")
+
+                candidates.append({
+                    "sentencia": sentencia,
+                    "fecha": raw_fecha if len(raw_fecha) == 10 else None,
+                    "anio": int(raw_fecha[:4]) if len(raw_fecha) >= 4 and raw_fecha[:4].isdigit() else None,
+                    "tipo": tipo,
+                    "magistrado": (row.get("magistrado_a") or row.get("magistrado") or "").strip(),
+                    "sala": (row.get("sala") or ("Sala Plena" if tipo in ("C", "SU") else "Sala de Revisión")).strip(),
+                    "expediente": exp_full,
+                    "proceso": row.get("proceso") or ("Acción pública de inconstitucionalidad" if tipo == "C" else "Acción de tutela"),
+                    "tema": row.get("tema") or "",
+                    "source_dataset": SODA_DATASET_ID,
+                })
+            return candidates
+    except Exception as e:
+        log.warning("Error consultando SODA incrementalmente: %s", e)
+    finally:
+        if close_client:
+            await client.aclose()
+    return []
+
+
+async def validate_and_stage_ruling(
+    ruling_meta: dict,
+    *,
+    auto_publish: bool = False,
+    semantic: bool = True,
+    ack_reviews: bool = True,
+    existing_documents: Optional[list[dict]] = None,
+) -> dict:
+    """Ejecuta el protocolo de validación documental obligatoria de 10 puntos (Fase 2.2).
+
+    Si supera las 10 comprobaciones:
+      - Si auto_publish=True: publica íntegro en el corpus con workflow_status='published'.
+      - Si auto_publish=False: registra en triage con validation_status='technically_validated',
+        workflow_status='pending_legal_review', published=False.
+    Si falla cualquier comprobación:
+      - Registra en triage con validation_status='validation_failed', workflow_status='pending_legal_review',
+        published=False y detalles de auditoría para subsanación.
+    """
+    sentencia = (ruling_meta.get("sentencia") or ruling_meta.get("title") or "Providencia Oficial").strip().upper()
+    curated = _PILOT_BY_SENTENCIA.get(sentencia, {})
+    fecha = ruling_meta.get("fecha") or ruling_meta.get("date") or curated.get("fecha")
+    url = ruling_meta.get("url") or curated.get("url")
+
+    # 1. Resolver URL oficial si no fue provista
+    if not url:
+        resolved_url = await check_and_resolve_valid_url(sentencia, fecha)
+        if not resolved_url:
+            return {
+                "sentencia": sentencia,
+                "status": "validation_failed",
+                "validation_status": "validation_failed",
+                "passed": False,
+                "reasons": [f"[authentic_source] No fue posible resolver URL oficial en Relatoría para {sentencia}"],
+                "tokens_consumed": 0,
+                "estimated_cost_usd": 0.0,
+            }
+        url = resolved_url
+
+    # 2. Descargar texto oficial y verificar extracción
+    try:
+        extracted = await retrieve_and_validate_ruling(url)
+    except Exception as ex:
+        return {
+            "sentencia": sentencia,
+            "source_url": url,
+            "status": "validation_failed",
+            "validation_status": "validation_failed",
+            "passed": False,
+            "reasons": [f"[text_integrity] Falló la recuperación desde Relatoría: {ex}"],
+            "tokens_consumed": 0,
+            "estimated_cost_usd": 0.0,
+        }
+
+    sha256 = extracted["sha256"]
+
+    # 3. Idempotencia estricta: comprobar si ya existe publicada sin cambios
+    existing = await check_existing_document(url, sha256)
+    if existing and existing.get("unchanged"):
+        return {
+            "id": existing["id"],
+            "version": existing["version"],
+            "unchanged": True,
+            "sentencia": sentencia,
+            "title": f"Sentencia {sentencia} - Corte Constitucional",
+            "source_url": url,
+            "sha256": sha256,
+            "segments": 0,
+            "tokens_consumed": 0,
+            "estimated_cost_usd": 0.0,
+            "status": "already_indexed",
+            "validation_status": "published",
+            "workflow_status": "published",
+            "published": True,
+            "note": "Documento 100% idéntico ya publicado; proceso idempotente con coste $0.",
+        }
+
+    # 4. Segmentación estructural 100% íntegra (sin límite de 60 fragmentos)
+    chunks = prepare_ruling_chunks(extracted["text"], max_chunks=None)
+    total_chunks = len(chunks)
+
+    # 5. Ejecutar las 10 comprobaciones deterministas
+    meta_for_val = {
+        **ruling_meta,
+        "sentencia": sentencia,
+        "fecha": fecha or extracted.get("decision_date") or "",
+        "anio": ruling_meta.get("anio") or (int(fecha[:4]) if fecha and fecha[:4].isdigit() else None),
+        "magistrado": ruling_meta.get("magistrado") or curated.get("magistrado") or "",
+    }
+    val_result = validate_ruling_candidate(
+        meta_for_val,
+        extracted["text"],
+        chunks,
+        url,
+        sha256,
+        existing_documents=existing_documents,
+    )
+
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip()
+
+    # Si falla la validación técnica, JAMÁS publicar: enviar a triage
+    if not val_result.is_technically_sound:
+        log.warning("Providencia %s no superó validación técnica: %s", sentencia, val_result.rejection_reasons)
+        doc_id = None
+        if key:
+            try:
+                # Registrar candidato con fallo en triage para auditoría humana
+                staged = await store.db_request(
+                    "POST",
+                    "rpc/despacho_publicar_documento_corpus",
+                    key,
+                    service=True,
+                    json={
+                        "p_source_id": SOURCE_ID,
+                        "p_source_url": url,
+                        "p_title": f"Sentencia {sentencia} - Corte Constitucional",
+                        "p_hash": sha256,
+                        "p_chunks": chunks[:min(10, len(chunks))],
+                        "p_metadata": {
+                            **meta_for_val,
+                            "validation_details": val_result.to_dict(),
+                            "validation_status": "validation_failed",
+                        },
+                        "p_finalize": False,
+                    },
+                )
+                if isinstance(staged, dict):
+                    doc_id = staged.get("id")
+                    if doc_id:
+                        await store.db_request(
+                            "POST",
+                            "rpc/despacho_actualizar_validacion_documento",
+                            key,
+                            service=True,
+                            json={
+                                "p_document_id": doc_id,
+                                "p_validation_status": "validation_failed",
+                                "p_validation_details": val_result.to_dict(),
+                                "p_workflow_status": "pending_legal_review",
+                                "p_published": False,
+                            },
+                        )
+            except Exception as e:
+                log.warning("Aviso guardando fallo en triage Supabase: %s", e)
+
+        return {
+            "id": doc_id,
+            "sentencia": sentencia,
+            "source_url": url,
+            "sha256": sha256,
+            "status": "validation_failed",
+            "validation_status": "validation_failed",
+            "workflow_status": "pending_legal_review",
+            "published": False,
+            "passed": False,
+            "reasons": val_result.rejection_reasons,
+            "warnings": val_result.warnings,
+            "tokens_consumed": 0,
+            "estimated_cost_usd": 0.0,
+            "note": "Documento con objeciones técnicas colocado en bandeja de triage para subsanación.",
+        }
+
+    # 6. Candidato técnicamente verificado: calcular embeddings (si semantic=True)
+    tokens_consumed = 0
+    estimated_cost_usd = 0.0
+    estimated_cost_batch_usd = 0.0
+    embedding_model = None
+
+    if semantic:
+        status = embedding_status()
+        if status["configured"]:
+            embedding_model = settings.DESPACHO_EMBEDDING_MODEL or "gemini-embedding-001"
+            texts_to_embed = [c["content"] for c in chunks]
+            total_chars = sum(len(t) for t in texts_to_embed)
+            tokens_consumed = max(1, total_chars // 4)
+            estimated_cost_usd = round(tokens_consumed * STANDARD_EMBEDDING_COST_PER_TOKEN, 6)
+            estimated_cost_batch_usd = round(tokens_consumed * BATCH_EMBEDDING_COST_PER_TOKEN, 6)
+
+            for i in range(0, len(texts_to_embed), 24):
+                batch_texts = texts_to_embed[i : i + 24]
+                vectors = await embed_texts(batch_texts)
+                for j, vec in enumerate(vectors):
+                    chunks[i + j]["embedding"] = vec
+                    chunks[i + j]["embedding_model"] = embedding_model
+
+    # 7. Consolidar metadatos definitivos
+    header_meta = extract_official_header_metadata(extracted["text"], sentencia)
+    final_fecha = curated.get("fecha") or fecha or meta_for_val.get("fecha") or ""
+    final_anio = curated.get("anio") or meta_for_val.get("anio") or (int(final_fecha[:4]) if final_fecha and final_fecha[:4].isdigit() else None)
+    final_tipo = curated.get("tipo") or meta_for_val.get("tipo") or (sentencia.split("-")[0] if "-" in sentencia else "T")
+    final_magistrado = curated.get("magistrado") or meta_for_val.get("magistrado") or header_meta.get("magistrado_html") or ""
+    final_sala = curated.get("sala") or meta_for_val.get("sala") or header_meta.get("sala_html") or (
+        "Sala Plena" if final_tipo in ("C", "SU") else "Sala de Revisión"
+    )
+    final_expediente = curated.get("expediente") or meta_for_val.get("expediente") or header_meta.get("expediente_html") or ""
+
+    title = f"Sentencia {sentencia} - Corte Constitucional"
+    metadata = {
+        "sentencia": sentencia,
+        "anio": final_anio,
+        "fecha": final_fecha,
+        "decision_date": final_fecha,
+        "tipo": final_tipo,
+        "corporacion": "Corte Constitucional",
+        "sala": final_sala,
+        "magistrado": final_magistrado,
+        "expediente": final_expediente,
+        "proceso": curated.get("proceso") or meta_for_val.get("proceso") or ("Acción pública de inconstitucionalidad" if final_tipo == "C" else "Acción de tutela"),
+        "materia": curated.get("materia") or meta_for_val.get("tema") or "",
+        "dataset_soda_id": SODA_DATASET_ID,
+        "dataset_portal": DATASET_PORTAL_URL,
+        "source_name": SOURCE_NAME,
+        "legal_reuse_basis": extracted["legal_basis"],
+        "retrieved_at": extracted["retrieved_at"],
+        "char_count": extracted["char_length"],
+        "expected_segments": total_chunks,
+        "indexed_segments": total_chunks,
+        "omitted_segments": 0,
+        "coverage_pct": 100.0,
+        "tokens_consumed": tokens_consumed,
+        "estimated_cost_usd": estimated_cost_usd,
+        "estimated_cost_batch_usd": estimated_cost_batch_usd,
+        "has_operative_decision": extracted["has_operative_decision"],
+        "validation_status": "published" if (auto_publish and ack_reviews) else "technically_validated",
+        "validation_details": val_result.to_dict(),
+    }
+
+    should_finalize = bool(auto_publish and ack_reviews)
+    first_batch = chunks[:INGEST_BATCH_SIZE]
+    is_single_batch = len(chunks) <= INGEST_BATCH_SIZE
+
+    result = await store.db_request(
+        "POST",
+        "rpc/despacho_publicar_documento_corpus",
+        key,
+        service=True,
+        json={
+            "p_source_id": SOURCE_ID,
+            "p_source_url": url,
+            "p_title": title[:240],
+            "p_hash": sha256,
+            "p_chunks": first_batch,
+            "p_metadata": metadata,
+            **({"p_finalize": False} if (not is_single_batch or not should_finalize) else {"p_finalize": True}),
+        },
+    )
+
+    if not isinstance(result, dict):
+        raise RuntimeError(f"Error indexando providencia {sentencia} en Supabase")
+
+    doc_id = result.get("id")
+    doc_version = result.get("version", 1)
+
+    # Anexar lotes adicionales si la providencia supera 250 fragmentos
+    if not is_single_batch and doc_id and not result.get("unchanged"):
+        for start_idx in range(INGEST_BATCH_SIZE, len(chunks), INGEST_BATCH_SIZE):
+            batch_slice = chunks[start_idx : start_idx + INGEST_BATCH_SIZE]
+            is_last = (start_idx + INGEST_BATCH_SIZE) >= len(chunks)
+            finalize_this = bool(is_last and should_finalize)
+            await store.db_request(
+                "POST",
+                "rpc/despacho_anexar_fragmentos_corpus",
+                key,
+                service=True,
+                json={
+                    "p_document_id": doc_id,
+                    "p_version": doc_version,
+                    "p_chunks": batch_slice,
+                    "p_finalize": finalize_this,
+                },
+            )
+
+    # Actualizar estado explícito de validación técnica
+    new_vstatus = "published" if should_finalize else "technically_validated"
+    new_wstatus = "published" if should_finalize else "pending_legal_review"
+    await store.db_request(
+        "POST",
+        "rpc/despacho_actualizar_validacion_documento",
+        key,
+        service=True,
+        json={
+            "p_document_id": doc_id,
+            "p_validation_status": new_vstatus,
+            "p_validation_details": val_result.to_dict(),
+            "p_workflow_status": new_wstatus,
+            "p_published": should_finalize,
+        },
+    )
+
+    return {
+        "id": doc_id,
+        "version": doc_version,
+        "unchanged": False,
+        "sentencia": sentencia,
+        "title": title,
+        "source_url": url,
+        "sha256": sha256,
+        "segments": total_chunks,
+        "tokens_consumed": tokens_consumed,
+        "estimated_cost_usd": estimated_cost_usd,
+        "status": "published" if should_finalize else "staged_in_triage",
+        "validation_status": new_vstatus,
+        "workflow_status": new_wstatus,
+        "published": should_finalize,
+        "passed": True,
+        "warnings": val_result.warnings,
+        "note": "Providencia validada técnicamente y publicada." if should_finalize else "Providencia validada técnicamente y retenida en bandeja de triage a la espera de autorización previa.",
+    }
+
+
+async def run_incremental_sync(
+    limit: int = 20,
+    *,
+    auto_publish: bool = False,
+    semantic: bool = True,
+    owner: str = "worker",
+) -> dict:
+    """Ciclo de sincronización incremental del conector con bloqueo concurrente y validación obligatoria."""
+    t_start = time.monotonic()
+
+    # Adquirir bloqueo concurrente distribuido
+    locked = await acquire_sync_lock(owner=owner, ttl_seconds=600)
+    if not locked:
+        return {
+            "status": "busy",
+            "message": "Otro proceso de sincronización está en ejecución actualmente. Operación rechazada por bloqueo distribuido.",
+            "discovered_count": 0,
+            "processed_count": 0,
+        }
+
+    try:
+        cursor = await get_sync_cursor()
+        current_offset = cursor.get("offset", 0)
+
+        # Descubrir candidatos oficiales desde SODA
+        candidates = await discover_incremental_soda_rulings(limit=limit, offset=current_offset)
+        discovered_count = len(candidates)
+
+        validated_count = 0
+        triage_count = 0
+        published_count = 0
+        unchanged_count = 0
+        rejected_count = 0
+        total_segments = 0
+        total_embeddings = 0
+        total_tokens = 0
+        total_cost_usd = 0.0
+        items_report = []
+        errors = []
+
+        await update_connector_status(
+            status="syncing",
+            details={"message": f"Sincronizando {discovered_count} providencias oficiales..."},
+        )
+
+        for c in candidates:
+            sent = c.get("sentencia", "Doc")
+            try:
+                res = await validate_and_stage_ruling(
+                    c,
+                    auto_publish=auto_publish,
+                    semantic=semantic,
+                    ack_reviews=True,
+                )
+                if res.get("unchanged"):
+                    unchanged_count += 1
+                elif res.get("status") == "published":
+                    published_count += 1
+                    validated_count += 1
+                    total_segments += res.get("segments", 0)
+                    total_embeddings += res.get("segments", 0)
+                    total_tokens += res.get("tokens_consumed", 0)
+                    total_cost_usd += res.get("estimated_cost_usd", 0.0)
+                elif res.get("status") == "staged_in_triage":
+                    triage_count += 1
+                    validated_count += 1
+                    total_segments += res.get("segments", 0)
+                    total_embeddings += res.get("segments", 0)
+                    total_tokens += res.get("tokens_consumed", 0)
+                    total_cost_usd += res.get("estimated_cost_usd", 0.0)
+                else:
+                    rejected_count += 1
+
+                items_report.append(res)
+                # Cortesía de red hacia Relatoría
+                await asyncio.sleep(0.3)
+            except Exception as ex:
+                rejected_count += 1
+                err_msg = f"{type(ex).__name__}: {str(ex)[:200]}"
+                log.warning("Fallo en procesamiento de %s: %s", sent, err_msg)
+                errors.append({"sentencia": sent, "error": err_msg})
+                items_report.append({"sentencia": sent, "status": "error", "error": err_msg})
+
+        # Avanzar cursor
+        new_offset = current_offset + discovered_count
+        last_item = candidates[-1] if candidates else None
+        new_cursor = {
+            "offset": new_offset,
+            "last_providencia": last_item.get("sentencia") if last_item else cursor.get("last_providencia"),
+            "last_fecha": last_item.get("fecha") if last_item else cursor.get("last_fecha"),
+            "discovered_total": cursor.get("discovered_total", 0) + discovered_count,
+        }
+
+        v_stats = {
+            "technically_validated": validated_count,
+            "validation_failed": rejected_count,
+            "triage_pending": triage_count,
+            "published": published_count,
+            "unchanged": unchanged_count,
+        }
+        await update_sync_cursor(new_cursor, stats=v_stats)
+
+        duration = round(time.monotonic() - t_start, 2)
+        report = {
+            "status": "completed",
+            "batch_limit": limit,
+            "cursor_offset_start": current_offset,
+            "cursor_offset_end": new_offset,
+            "discovered_count": discovered_count,
+            "validated_count": validated_count,
+            "triage_count": triage_count,
+            "published_count": published_count,
+            "unchanged_count": unchanged_count,
+            "rejected_count": rejected_count,
+            "fragments_count": total_segments,
+            "embeddings_count": total_embeddings,
+            "total_tokens_consumed": total_tokens,
+            "estimated_cost_usd": round(total_cost_usd, 6),
+            "duration_seconds": duration,
+            "errors": errors,
+            "items": items_report,
+        }
+
+        await update_connector_status(
+            status="idle",
+            discovered_count=new_cursor["discovered_total"],
+            published_count=published_count,
+            rejected_count=rejected_count,
+            fragments_count=total_segments,
+            embeddings_count=total_embeddings,
+            estimated_cost_usd=round(total_cost_usd, 6),
+            errors=errors,
+            details={"last_sync_report": report},
+        )
+        return report
+
+    finally:
+        # Siempre liberar bloqueo al terminar
+        await release_sync_lock(owner=owner)
+
+
+async def list_triage_inbox(limit: int = 50, offset: int = 0) -> dict:
+    """Consulta la bandeja administrativa de revisión previa (triage) en Supabase."""
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip() or settings.SUPABASE_ANON_KEY.strip()
+    if not key:
+        return {"total": 0, "limit": limit, "offset": offset, "items": []}
+    try:
+        res = await store.db_request(
+            "POST",
+            "rpc/despacho_listar_bandeja_triage_corpus",
+            key,
+            service=bool(settings.SUPABASE_SERVICE_ROLE_KEY),
+            json={"p_limit": limit, "p_offset": offset},
+        )
+        if isinstance(res, dict):
+            return res
+    except Exception as e:
+        log.warning("Error consultando bandeja de triage: %s", e)
+    return {"total": 0, "limit": limit, "offset": offset, "items": []}
+
+
+async def review_triage_document(
+    document_id: str,
+    decision: str,
+    reason: Optional[str] = None,
+) -> dict:
+    """Resuelve la revisión humana de un documento en la bandeja de triage.
+
+    Decisiones permitidas:
+    - 'approve': aprueba el candidato validado y lo publica oficialmente en el corpus.
+    - 'reject': rechaza el candidato y lo mantiene bloqueado con status 'validation_failed'.
+    - 'withdraw': retira reversiblemente una providencia del corpus público.
+    """
+    decision = decision.lower().strip()
+    if decision not in ("approve", "reject", "withdraw"):
+        raise ValueError(f"Decisión inválida '{decision}'. Opciones: approve, reject, withdraw")
+
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip()
+    if not key:
+        raise ValueError("Se requiere SUPABASE_SERVICE_ROLE_KEY para resolver triage")
+
+    if decision == "approve":
+        return await store.db_request(
+            "POST",
+            "rpc/despacho_actualizar_validacion_documento",
+            key,
+            service=True,
+            json={
+                "p_document_id": document_id,
+                "p_validation_status": "approved",
+                "p_validation_details": {"decision": "approved", "reason": reason, "decided_at": datetime.now(timezone.utc).isoformat()},
+                "p_workflow_status": "published",
+                "p_published": True,
+            },
+        )
+    elif decision == "reject":
+        return await store.db_request(
+            "POST",
+            "rpc/despacho_actualizar_validacion_documento",
+            key,
+            service=True,
+            json={
+                "p_document_id": document_id,
+                "p_validation_status": "validation_failed",
+                "p_validation_details": {"decision": "rejected", "reason": reason, "decided_at": datetime.now(timezone.utc).isoformat()},
+                "p_workflow_status": "pending_legal_review",
+                "p_published": False,
+            },
+        )
+    else:  # withdraw
+        return await change_document_workflow_status(
+            document_id=document_id,
+            workflow_status="withdrawn",
+            published=False,
+            reason=reason,
+        )
+

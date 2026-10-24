@@ -88,6 +88,12 @@ class Settings(BaseSettings):
     DESPACHO_OCR_PAGE_TIMEOUT_SECONDS: int = Field(25, ge=5, le=90)
     DESPACHO_MONITOR_AI_ENABLED: bool = True
 
+    # Conector y Trabajador Automático de la Corte Constitucional (Fase 2.2)
+    CONECTOR_CORTE_WORKER_ENABLED: bool = True
+    CONECTOR_CORTE_POLL_INTERVAL_MINUTES: int = Field(360, ge=5, le=43200)
+    CONECTOR_CORTE_AUTO_PUBLISH_DEFAULT: bool = False
+    CONECTOR_CORTE_PILOT_MAX_BATCH: int = Field(20, ge=1, le=50)
+
     # Motor RAG Jurídico Inteligente 2.0 (Agente y Jurisprudencia)
     DESPACHO_RAG_V2_ENABLED: bool = True
     DESPACHO_RAG_DEFAULT_DEPTH: str = "auto"
