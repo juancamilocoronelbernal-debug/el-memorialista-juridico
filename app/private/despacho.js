@@ -789,7 +789,16 @@ async function sendChat(){
   const request={message,history:previous,mode:S.mode,knowledge_scope:S.knowledgeScope,depth:S.analysisDepth||'auto',
     document_ids:[...S.selectedDocs],matter_id:S.matterId||null,playbook_id:S.playbookId||null};
   if(Array.isArray(S.customSelectedFragments)&&S.customSelectedFragments.length){
-    request.selected_fragments=S.customSelectedFragments;
+    request.selected_fragments=S.customSelectedFragments.map(f=>({
+      id:f.id,
+      document_id:f.document_id,
+      segment:f.segment,
+      ordinal:f.ordinal,
+      section:f.section,
+      kind:f.kind||(f.source_url?'official':'document'),
+      source_url:f.source_url||'',
+      title:f.title||''
+    }));
   }
   S.messages.push({role:'user',content:message,created_at:new Date().toISOString()});
   S.chatDraft='';
@@ -1326,6 +1335,57 @@ function v5OfficialPanel() {
        el('p',{class:'inline-help'},r.note||''));}
     catch(e){status.replaceChildren(el('div',{class:'callout warning'},'La colección compartida aún no está lista: '+e.message));}
   };
+
+  const connectorBox=el('div',{class:'v5-connector-admin'});
+  const loadConnectorStatus=async()=>{
+    connectorBox.replaceChildren(v5Loading('Consultando estado del conector oficial…'));
+    try{
+      const c=await v5api('/official/connector/status');
+      const grid=el('div',{class:'v5-connector-grid'},
+        el('div',{class:'v5-metric-box'},el('div',{class:'v5-metric-num'},String(c.discovered_count||'~29.500')),el('div',{class:'v5-metric-label'},'Descubiertas')),
+        el('div',{class:'v5-metric-box'},el('div',{class:'v5-metric-num'},String(c.retrieved_count||0)),el('div',{class:'v5-metric-label'},'Recuperadas')),
+        el('div',{class:'v5-metric-box'},el('div',{class:'v5-metric-num'},String(c.published_count||0)),el('div',{class:'v5-metric-label'},'Publicadas')),
+        el('div',{class:'v5-metric-box'},el('div',{class:'v5-metric-num'},String(c.pending_review_count||0)),el('div',{class:'v5-metric-label'},'Pendientes')),
+        el('div',{class:'v5-metric-box'},el('div',{class:'v5-metric-num'},String(c.rejected_count||0)),el('div',{class:'v5-metric-label'},'Rechazadas')),
+        el('div',{class:'v5-metric-box'},el('div',{class:'v5-metric-num'},String(c.fragments_count||0)),el('div',{class:'v5-metric-label'},'Fragmentos')),
+        el('div',{class:'v5-metric-box'},el('div',{class:'v5-metric-num'},String(c.embeddings_count||0)),el('div',{class:'v5-metric-label'},'Embeddings 768d')),
+        el('div',{class:'v5-metric-box'},el('div',{class:'v5-metric-num'},'$'+(c.estimated_cost_usd||0)),el('div',{class:'v5-metric-label'},'Coste est. USD'))
+      );
+      const header=el('div',{class:'v5-connector-header'},
+        el('div',{},
+          el('strong',{},'⚙️ Conector Oficial · Corte Constitucional (v2k4-2t8s) — Actualización Incremental'),
+          el('p',{class:'inline-help'},`Estado: ${(c.status||'idle').toUpperCase()} · Fuente: datos.gov.co + Relatoría · Última sinc: ${c.last_sync_at?new Date(c.last_sync_at).toLocaleString():'Pendiente'}`)
+        )
+      );
+      const pilotBtn=button('Iniciar Piloto (20 Sentencias)',async()=>{
+        await busy(pilotBtn,async()=>{
+          toast('Iniciando piloto de incorporación de sentencias oficiales...');
+          try{
+            const res=await v5api('/official/connector/pilot',{method:'POST',body:{max_rulings:20,semantic:true}});
+            toast(`✓ Piloto completado: ${res.published_count} publicadas, ${res.unchanged_count} sin cambios`);
+            await loadConnectorStatus();
+            await loadStatus();
+          }catch(err){toast('Error ejecutando piloto: '+err.message);}
+        });
+      },{class:'button small primary'});
+      const syncBtn=button('Sincronización incremental',async()=>{
+        await busy(syncBtn,async()=>{
+          toast('Verificando actualizaciones incrementales...');
+          try{
+            const res=await v5api('/official/connector/sync',{method:'POST',body:{max_rulings:20,semantic:true}});
+            toast(`✓ Sincronización completada: ${res.published_count} nuevas, ${res.unchanged_count} idénticas`);
+            await loadConnectorStatus();
+            await loadStatus();
+          }catch(err){toast('Error en sincronización: '+err.message);}
+        });
+      },{class:'button small'});
+      const actions=el('div',{class:'v5-connector-actions'},pilotBtn,syncBtn);
+      connectorBox.replaceChildren(header,grid,actions);
+    }catch(err){
+      connectorBox.replaceChildren(el('div',{class:'callout warning'},'Panel de conector no disponible: '+err.message));
+    }
+  };
+  loadConnectorStatus();
   const showCatalog=async()=>{
     const body=el('div',{},v5Loading('Consultando el directorio de colecciones…'));
     showModal('Directorio de fuentes jurídicas',body,[button('Cerrar',closeModal)],true);
@@ -1341,7 +1401,7 @@ function v5OfficialPanel() {
   wrap.append(el('div',{class:'section-heading'},el('h2',{},'Corpus jurídico oficial'),
     el('p',{class:'inline-help'},'Colección compartida propia, separada del DMS de cada usuario. Sólo contiene originales publicados tras revisión; no incluye bases de datos privadas de terceros.')),
     el('div',{class:'actions'},button('Actualizar cobertura',loadStatus,{class:'button small'}),button('Ver fuentes catalogadas',showCatalog,{class:'button small'})),
-    status,form,results,el('hr'),el('h3',{},'Consultar registros de la Corte Constitucional'),
+    status,connectorBox,form,results,el('hr'),el('h3',{},'Consultar registros de la Corte Constitucional'),
     el('p',{class:'inline-help'},'Esta búsqueda consulta directamente metadatos publicados en Datos Abiertos Colombia. No incluye hechos, asuntos, razones ni texto completo del fallo.'),
     metaForm,metaResult);
   return wrap;

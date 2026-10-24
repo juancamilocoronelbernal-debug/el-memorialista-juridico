@@ -474,3 +474,49 @@
   padding-top: 12px;
   margin-top: 6px;
 }
+
+/* Conector Oficial Corte Constitucional Fase 2 */
+.v5-connector-admin {
+  background: #fbfdfa;
+  border: 1px solid #d4e2cc;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+.v5-connector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.v5-connector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.v5-metric-box {
+  background: #ffffff;
+  border: 1px solid #e1ebda;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.v5-metric-num {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a4228;
+}
+.v5-metric-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: #55725e;
+  letter-spacing: 0.03em;
+}
+.v5-connector-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 14px;
+}
+

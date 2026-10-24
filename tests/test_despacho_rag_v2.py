@@ -197,10 +197,33 @@ def test_document_memory_supplementary_retrieval_on_new_section():
 
 @pytest.mark.asyncio
 async def test_user_selected_fragments_have_highest_priority(monkeypatch):
-    """Los fragmentos seleccionados por el abogado deben tener prioridad 1.0 y preservarse."""
+    """Los fragmentos seleccionados por el abogado deben verificarse en BD y tener máxima prioridad."""
     from app.services import despacho_corpus_fuentes as official
     monkeypatch.setattr(official, "corpus_status", AsyncMock(return_value={"published_documents": 1, "indexed_fragments": 41}))
     monkeypatch.setattr(official, "search_corpus", AsyncMock(return_value={"results": [], "method": "hybrid", "warnings": []}))
+
+    # Mock de verificación segura en BD que devuelve el fragmento auténtico
+    verified_mock = [
+        {
+            "id": "SEL-1",
+            "title": "Sentencia T-100/24",
+            "source_id": "constitucional",
+            "source_url": "https://corte.gov.co/T-100-24.htm",
+            "date": "2024-03-21",
+            "version": 1,
+            "segment": 24,
+            "section": "ratio_decidendi",
+            "excerpt": "Subregla vinculante de protección constitucional a madres gestantes recuperada de la BD.",
+            "document_id": "doc-uuid-1",
+            "page": None,
+            "score": 1.0,
+            "method": "user_selected_verified",
+            "user_selected": True,
+            "verified": True,
+            "kind": "official"
+        }
+    ]
+    monkeypatch.setattr(rag, "verify_and_resolve_selected_fragments", AsyncMock(return_value=verified_mock))
 
     context = {"passages": [], "sources": [], "warnings": [], "coverage": {}}
     request = {
@@ -210,10 +233,12 @@ async def test_user_selected_fragments_have_highest_priority(monkeypatch):
         "selected_fragments": [
             {
                 "id": "SEL-1",
-                "title": "Sentencia T-100/24",
+                "document_id": "doc-uuid-1",
+                "segment": 24,
+                "kind": "official",
                 "source_url": "https://corte.gov.co/T-100-24.htm",
-                "section": "ratio_decidendi",
-                "text": "Subregla vinculante de protección constitucional a madres gestantes."
+                # Texto inyectado maliciosamente por cliente que el servidor DEBE ignorar
+                "text": "TEXTO FALSO INYECTADO POR CLIENTE QUE DEBE SER DESCARTADO"
             }
         ]
     }
@@ -222,7 +247,83 @@ async def test_user_selected_fragments_have_highest_priority(monkeypatch):
     assert len(result["passages"]) == 1
     assert result["passages"][0]["user_selected"] is True
     assert result["passages"][0]["rerank_score"] == 1.0
-    assert result["passages"][0]["text"] == "Subregla vinculante de protección constitucional a madres gestantes."
+    # Comprobar que se usó el texto auténtico de la BD y NO el texto falso inyectado por el cliente
+    assert result["passages"][0]["text"] == "Subregla vinculante de protección constitucional a madres gestantes recuperada de la BD."
+
+
+@pytest.mark.asyncio
+async def test_security_verify_and_resolve_rejects_client_tampered_text(monkeypatch):
+    """El servidor debe rechazar texto no verificado y extraer el texto auténtico desde Supabase."""
+    class MockResponse:
+        def __init__(self, data, status_code=200):
+            self._data = data
+            self.status_code = status_code
+        def json(self):
+            return self._data
+
+    class MockClient:
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, *args):
+            pass
+        async def get(self, url, headers=None):
+            if "despacho_corpus_documentos" in url:
+                if "published=eq.true" in url and "id=eq.doc-valid" in url:
+                    return MockResponse([{"id": "doc-valid", "title": "Sentencia C-055/22", "source_url": "https://corte.gov.co/C-055-22.htm", "source_id": "constitucional", "version": 1}])
+                return MockResponse([])
+            elif "despacho_corpus_fragmentos" in url:
+                if "document_id=eq.doc-valid" in url and "segment=eq.5" in url:
+                    return MockResponse([{"segment": 5, "content": "Contenido auténtico y verificado de la providencia.", "section": "ratio_decidendi"}])
+                return MockResponse([])
+            return MockResponse([])
+
+    import httpx
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: MockClient())
+
+    # Petición manipulada: el cliente envía texto falso
+    raw_tampered = [
+        {
+            "id": "HACK-1",
+            "document_id": "doc-valid",
+            "segment": 5,
+            "kind": "official",
+            "text": "TEXTO FALSO QUE AFIRMA QUE LA CORTE AUTORIZÓ UN PAGO MILLONARIO"
+        }
+    ]
+
+    verified = await rag.verify_and_resolve_selected_fragments("user-1", "token-1", raw_tampered)
+    assert len(verified) == 1
+    # Verifica que el servidor devolvió el contenido auténtico de la BD
+    assert verified[0]["excerpt"] == "Contenido auténtico y verificado de la providencia."
+    assert "MILLONARIO" not in verified[0]["excerpt"]
+
+
+@pytest.mark.asyncio
+async def test_security_verify_and_resolve_rejects_cross_account_private_documents(monkeypatch):
+    """Un usuario NO puede acceder a fragmentos privados de otro usuario enviando su document_id."""
+    from app.services import despacho_store as store
+
+    async def mock_fetch_item(user_id, token, item_id, kind=None):
+        if user_id != "user-legitimate-owner":
+            from fastapi import HTTPException
+            raise HTTPException(404, "El elemento no existe en tu cuenta.")
+        return {"id": item_id, "title": "Documento Legítimo", "version": 1}
+
+    monkeypatch.setattr(store, "fetch_item", mock_fetch_item)
+
+    # El atacante "user-attacker" intenta acceder al doc-privado-123 de "user-legitimate-owner"
+    raw_attack = [
+        {
+            "id": "STEAL-1",
+            "document_id": "doc-privado-123",
+            "segment": 1,
+            "kind": "document"
+        }
+    ]
+
+    verified = await rag.verify_and_resolve_selected_fragments("user-attacker", "token-attacker", raw_attack)
+    # Debe ser totalmente rechazado
+    assert len(verified) == 0
 
 
 @pytest.mark.asyncio

@@ -18,9 +18,11 @@ import time
 from typing import Any, Awaitable, Callable, Optional
 from urllib.parse import urlsplit
 
+import httpx
 from fastapi import HTTPException
 
 from app.config import get_settings
+from app.services import despacho_store as store
 
 log = logging.getLogger("memorialista.despacho.rag")
 
@@ -706,7 +708,164 @@ def estimate_tokens_and_cost(
 
 
 # ============================================================================
-# 8. CONTROLADOR CENTRAL: RECUPERACIÓN Y AUMENTO UNIFICADO (RAG 2.0)
+# 8. VALIDACIÓN ESTRICTA DE FRAGMENTOS SELECCIONADOS POR EL USUARIO
+# ============================================================================
+
+async def verify_and_resolve_selected_fragments(
+    user_id: str,
+    token: str,
+    raw_fragments: list[dict],
+) -> list[dict]:
+    """Valida y recupera los fragmentos seleccionados directamente desde la base de datos oficial o DMS.
+    
+    MEDIDA DE SEGURIDAD ESTRICTA:
+    - El navegador solo envía identificadores documentales (document_id, segment, kind, source_url).
+    - El servidor NUNCA confía en el texto o extracto enviado por el cliente.
+    - Se verifica que el documento oficial esté efectivamente publicado (published=true).
+    - Para documentos del DMS privado, se verifica que pertenezcan estrictamente al usuario autenticado (RLS/owner_id).
+    - Todo intento de acceso a documentos privados ajenos o fragmentos inexistentes es rechazado y registrado.
+    """
+    if not raw_fragments:
+        return []
+
+    settings = get_settings()
+    base = (settings.SUPABASE_URL or "").rstrip("/")
+    if not base:
+        return []
+
+    verified_candidates: list[dict] = []
+    to_process = raw_fragments[:20]
+
+    for idx, sf in enumerate(to_process):
+        if not isinstance(sf, dict):
+            continue
+
+        doc_id = sf.get("document_id")
+        source_url = sf.get("source_url") or ""
+        segment = sf.get("segment")
+        ordinal = sf.get("ordinal")
+        kind = sf.get("kind")
+        citation_id = sf.get("id") or f"SEL-{idx+1}"
+
+        is_official = (
+            kind == "official"
+            or "corteconstitucional.gov.co" in source_url.lower()
+            or (not doc_id and source_url)
+        )
+
+        try:
+            if is_official or not doc_id:
+                # 1. Corpus Jurídico Oficial (despacho_corpus_documentos + despacho_corpus_fragmentos)
+                doc_query = "published=eq.true&limit=1"
+                if doc_id:
+                    doc_query += f"&id=eq.{doc_id}"
+                elif source_url:
+                    doc_query += f"&source_url=eq.{source_url}"
+                else:
+                    log.warning("Fragmento seleccionado ignorado: sin document_id ni source_url válido")
+                    continue
+
+                headers = {
+                    "apikey": settings.SUPABASE_ANON_KEY or "",
+                    "Authorization": f"Bearer {token or settings.SUPABASE_ANON_KEY}",
+                }
+                async with httpx.AsyncClient(timeout=15) as client:
+                    d_res = await client.get(f"{base}/rest/v1/despacho_corpus_documentos?{doc_query}", headers=headers)
+                    if d_res.status_code >= 400 or not d_res.json():
+                        log.warning("Seguridad RAG: documento oficial no encontrado o no publicado (doc_id=%s, url=%s)", doc_id, source_url)
+                        continue
+                    doc_data = d_res.json()[0]
+                    actual_doc_id = doc_data["id"]
+
+                    f_query = f"document_id=eq.{actual_doc_id}"
+                    if segment is not None:
+                        f_query += f"&segment=eq.{segment}"
+                    elif ordinal is not None:
+                        f_query += f"&ordinal=eq.{ordinal}"
+                    else:
+                        f_query += "&order=ordinal.asc&limit=1"
+
+                    fr_res = await client.get(f"{base}/rest/v1/despacho_corpus_fragmentos?{f_query}&limit=1", headers=headers)
+                    if fr_res.status_code >= 400 or not fr_res.json():
+                        log.warning("Seguridad RAG: fragmento oficial no encontrado en BD (doc_id=%s, seg=%s)", actual_doc_id, segment)
+                        continue
+                    frag_data = fr_res.json()[0]
+
+                    verified_candidates.append({
+                        "id": citation_id,
+                        "title": doc_data.get("title") or "Providencia Judicial Oficial",
+                        "source_id": doc_data.get("source_id") or "oficial",
+                        "source_url": doc_data.get("source_url") or "",
+                        "date": doc_data.get("date"),
+                        "version": doc_data.get("version", 1),
+                        "segment": frag_data.get("segment") or (idx + 1),
+                        "section": frag_data.get("section") or "fundamentos_juridicos",
+                        "excerpt": frag_data.get("content", ""),  # TEXTO AUTÉNTICO RECUPERADO DE LA BD
+                        "document_id": actual_doc_id,
+                        "page": frag_data.get("page"),
+                        "score": 1.0,
+                        "method": "user_selected_verified",
+                        "user_selected": True,
+                        "verified": True,
+                        "kind": "official",
+                    })
+
+            else:
+                # 2. Documento Privado del Usuario (DMS)
+                # Validar posesión estricta mediante fetch_item (garantiza owner_id = user_id)
+                try:
+                    user_doc = await store.fetch_item(user_id, token, str(doc_id), kind="document")
+                except Exception as e:
+                    log.warning("ALERTA SEGURIDAD RAG: Intento no autorizado o documento ajeno (doc_id=%s, user_id=%s): %s", doc_id, user_id, e)
+                    continue
+
+                headers = {
+                    "apikey": settings.SUPABASE_ANON_KEY or "",
+                    "Authorization": f"Bearer {token}",
+                }
+                f_query = f"document_id=eq.{doc_id}&owner_id=eq.{user_id}"
+                if segment is not None:
+                    f_query += f"&segment=eq.{segment}"
+                elif ordinal is not None:
+                    f_query += f"&ordinal=eq.{ordinal}"
+                else:
+                    f_query += "&order=ordinal.asc&limit=1"
+
+                async with httpx.AsyncClient(timeout=15) as client:
+                    fr_res = await client.get(f"{base}/rest/v1/despacho_indice?{f_query}&limit=1", headers=headers)
+                    if fr_res.status_code >= 400 or not fr_res.json():
+                        log.warning("Seguridad RAG: fragmento DMS no encontrado en despacho_indice (doc_id=%s, seg=%s)", doc_id, segment)
+                        continue
+                    frag_data = fr_res.json()[0]
+
+                    verified_candidates.append({
+                        "id": citation_id,
+                        "title": user_doc.get("title") or "Documento Privado",
+                        "source_id": str(doc_id),
+                        "source_url": "",
+                        "date": user_doc.get("created_at"),
+                        "version": user_doc.get("version", 1),
+                        "segment": frag_data.get("segment") or (idx + 1),
+                        "section": "documento_privado",
+                        "excerpt": frag_data.get("content", ""),  # TEXTO AUTÉNTICO RECUPERADO DE LA BD
+                        "document_id": str(doc_id),
+                        "page": frag_data.get("page"),
+                        "score": 1.0,
+                        "method": "user_selected_verified",
+                        "user_selected": True,
+                        "verified": True,
+                        "kind": "document",
+                    })
+
+        except Exception as ex:
+            log.warning("Error validando fragmento seleccionado sf=%s: %s", sf, ex)
+            continue
+
+    return verified_candidates
+
+
+# ============================================================================
+# 9. CONTROLADOR CENTRAL: RECUPERACIÓN Y AUMENTO UNIFICADO (RAG 2.0)
 # ============================================================================
 
 async def retrieve_and_augment_rag(
@@ -803,26 +962,12 @@ async def retrieve_and_augment_rag(
     pub_docs = 0
     idx_frags = 0
 
-    # Si el usuario envió fragmentos seleccionados manualmente, se incorporan con máxima prioridad
+    # Si el usuario envió fragmentos seleccionados manualmente, se verifican rigurosamente en BD
+    # El servidor rechaza texto inyectado por el cliente y recupera la evidencia auténtica desde Supabase
     if custom_selected:
-        for idx_sf, sf in enumerate(custom_selected):
-            cand = {
-                "id": sf.get("id") or f"SEL-{idx_sf+1}",
-                "title": sf.get("title") or "Fragmento seleccionado",
-                "source_id": sf.get("source_id") or "manual",
-                "source_url": sf.get("source_url") or "",
-                "date": sf.get("date"),
-                "version": sf.get("version", sf.get("document_version", 1)),
-                "segment": sf.get("segment") or (idx_sf + 1),
-                "section": sf.get("section") or "fundamentos_juridicos",
-                "excerpt": sf.get("text") or sf.get("excerpt") or sf.get("content") or "",
-                "document_id": sf.get("document_id"),
-                "page": sf.get("page"),
-                "score": 1.0,
-                "method": "user_selected",
-                "user_selected": True
-            }
-            if cand["excerpt"]:
+        verified_custom = await verify_and_resolve_selected_fragments(user_id, token, custom_selected)
+        for cand in verified_custom:
+            if cand.get("excerpt"):
                 raw_candidates.append(cand)
 
     # 5. Ejecución de la búsqueda híbrida según el ámbito autorizado

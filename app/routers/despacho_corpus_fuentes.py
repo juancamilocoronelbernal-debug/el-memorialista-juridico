@@ -83,3 +83,37 @@ async def document_fragments(
         limit=limit,
         q=q,
     )
+
+
+class ConnectorPilotRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    max_rulings: int = Field(20, ge=1, le=20)
+    semantic: bool = True
+
+
+@router.get('/connector/status')
+async def get_connector_status_endpoint(request: Request):
+    """Devuelve métricas y estado operativo del conector de la Corte Constitucional."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    return await conector.get_connector_status()
+
+
+@router.post('/connector/pilot')
+async def run_connector_pilot_endpoint(payload: ConnectorPilotRequest, request: Request):
+    """Inicia el piloto controlado de incorporación oficial (máximo 20 sentencias)."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    return await conector.run_controlled_pilot(max_rulings=payload.max_rulings, semantic=payload.semantic)
+
+
+@router.post('/connector/sync')
+async def sync_connector_endpoint(payload: ConnectorPilotRequest, request: Request):
+    """Sincronización incremental de sentencias oficiales no indexadas."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    return await conector.run_controlled_pilot(max_rulings=payload.max_rulings, semantic=payload.semantic)
+
