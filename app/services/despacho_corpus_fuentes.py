@@ -145,6 +145,84 @@ async def constitutional_metadata(query: str, *, year: int | None = None, limit:
             "notice": "Un registro demuestra metadatos de la sentencia, no su ratio decidendi ni la vigencia de la regla jurídica."}
 
 
+async def _fetch_target_ruling_structural_rows(
+    token: str,
+    target_ruling: str,
+    target_section: str | None = None,
+) -> list[dict]:
+    """Recupera los fragmentos estructurales clave (encabezado con ponente, problema jurídico y parte resolutiva)
+    cuando la consulta identifica explícitamente una sentencia del Corpus Oficial.
+    """
+    try:
+        base, headers = store.connection(token)
+        if not base:
+            return []
+        async with httpx.AsyncClient(timeout=12) as client:
+            d_res = await client.get(
+                f"{base}/rest/v1/despacho_corpus_documentos?published=eq.true&title=ilike.*{target_ruling}*&limit=1",
+                headers=headers,
+            )
+            if d_res.status_code >= 400 or not isinstance(d_res.json(), list) or not d_res.json():
+                return []
+            doc = d_res.json()[0]
+            if doc.get("integrity_status") == "partial" or doc.get("workflow_status") == "withdrawn":
+                return []
+            doc_id = doc["id"]
+            doc_url = str(doc.get("source_url") or "")
+            if urlsplit(doc_url).scheme != "https":
+                return []
+            meta = doc.get("metadata") or {}
+            decision_date = meta.get("decision_date") or meta.get("fecha")
+            ficha_parts = []
+            if meta.get("sentencia"):
+                ficha_parts.append(f"Providencia: Sentencia {meta['sentencia']}")
+            if meta.get("magistrado"):
+                ficha_parts.append(f"Magistrado(a) Ponente: {meta['magistrado']}")
+            if meta.get("sala"):
+                ficha_parts.append(f"Sala: {meta['sala']}")
+            if meta.get("expediente"):
+                ficha_parts.append(f"Expediente: {meta['expediente']}")
+            if decision_date:
+                ficha_parts.append(f"Fecha: {decision_date}")
+            if meta.get("materia"):
+                ficha_parts.append(f"Materia oficial verificada: {meta['materia']}")
+            ficha_prefix = ("[" + " | ".join(ficha_parts) + "]\n\n") if ficha_parts else ""
+
+            sections_wanted = ["encabezado", "problema_juridico", "parte_resolutiva"]
+            if target_section and target_section not in sections_wanted:
+                sections_wanted.append(target_section)
+            sec_in = ",".join(sections_wanted)
+
+            f_res = await client.get(
+                f"{base}/rest/v1/despacho_corpus_fragmentos?document_id=eq.{doc_id}"
+                f"&section=in.({sec_in})&order=ordinal.asc&select=segment,content,section,document_version&limit=8",
+                headers=headers,
+            )
+            if f_res.status_code >= 400 or not isinstance(f_res.json(), list):
+                return []
+
+            extra_rows = []
+            for idx, fr in enumerate(f_res.json()):
+                raw_txt = str(fr.get("content") or "")
+                excerpt = (ficha_prefix + raw_txt)[:4000] if idx == 0 else raw_txt[:4000]
+                extra_rows.append({
+                    "title": doc.get("title"),
+                    "excerpt": excerpt,
+                    "source_url": doc_url,
+                    "source_id": doc.get("source_id"),
+                    "date": decision_date,
+                    "version": fr.get("document_version") or doc.get("version", 1),
+                    "segment": fr.get("segment") or 1,
+                    "section": fr.get("section") or "encabezado",
+                    "score": 0.032,
+                    "method": "hybrid",
+                    "provenance": "Documento publicado en corpus revisado. Comprobar vigencia y pertinencia.",
+                })
+            return extra_rows
+    except Exception:
+        return []
+
+
 async def search_corpus(token: str, query: str, *, limit: int = 12, semantic: bool = True, depth: str = "auto") -> dict:
     """Busca únicamente un corpus global expresamente aprobado; no lee DMS privado."""
     query = query.strip()
@@ -177,16 +255,40 @@ async def search_corpus(token: str, query: str, *, limit: int = 12, semantic: bo
                      "segment": item.get('segment'), "score": item.get('score'), "method": item.get('method'),
                      "provenance": "Documento publicado en corpus revisado. Comprobar vigencia y pertinencia."})
 
-    # RAG 2.0: Clasificación de secciones y reranking jurídico opcional
-    if getattr(get_settings(), "DESPACHO_RAG_V2_ENABLED", True) and rows:
+    # RAG 2.0: Clasificación de secciones, reranking jurídico y filtrado de umbral mínimo
+    if getattr(get_settings(), "DESPACHO_RAG_V2_ENABLED", True):
         try:
             from app.services import despacho_rag
-            for row in rows:
-                row["section"] = despacho_rag.classify_legal_section(row["excerpt"], row.get("title") or "").value
             intent_info = despacho_rag.classify_query_intent(query)
-            d_key = depth if depth in despacho_rag.DEPTH_PROFILES else intent_info["suggested_depth"]
-            profile = despacho_rag.DEPTH_PROFILES[d_key]
-            rows = despacho_rag.rerank_candidates(rows, query, intent_info, profile)
+            if intent_info.get("target_ruling") and semantic:
+                structural_rows = await _fetch_target_ruling_structural_rows(
+                    token,
+                    intent_info["target_ruling"],
+                    intent_info.get("target_section"),
+                )
+                seen_seg = {(r.get("source_url"), r.get("segment")) for r in rows}
+                for sr in structural_rows:
+                    key_seg = (sr.get("source_url"), sr.get("segment"))
+                    if key_seg not in seen_seg:
+                        rows.append(sr)
+                        seen_seg.add(key_seg)
+                    elif sr.get("segment") == 1:
+                        for existing_r in rows:
+                            if (existing_r.get("source_url"), existing_r.get("segment")) == key_seg:
+                                existing_r["excerpt"] = sr["excerpt"]
+
+            if rows:
+                for row in rows:
+                    if not row.get("section") or row.get("section") == "seccion_desconocida":
+                        row["section"] = despacho_rag.classify_legal_section(row["excerpt"], row.get("title") or "").value
+                d_key = depth if depth in despacho_rag.DEPTH_PROFILES else intent_info["suggested_depth"]
+                profile = despacho_rag.DEPTH_PROFILES[d_key]
+                rows = despacho_rag.rerank_candidates(rows, query, intent_info, profile)
+                min_thresh = profile.get("min_score_threshold", 0.30)
+                rows = [
+                    r for r in rows
+                    if r.get("score") is None or r.get("rerank_score", 0.0) >= min_thresh
+                ]
         except Exception as e:
             warnings.append(f"Reranking no aplicado: {e}")
 
@@ -245,6 +347,11 @@ async def get_document_fragments(
                 raise HTTPException(404, "Documento oficial no encontrado en el corpus compartido.")
 
             doc_data = doc_res.json()[0]
+            if doc_data.get("integrity_status") == "partial" or doc_data.get("workflow_status") == "withdrawn":
+                raise HTTPException(
+                    404,
+                    "Documento oficial retirado o con indexación parcial en curso; no disponible como providencia íntegra."
+                )
             actual_doc_id = doc_data["id"]
 
             frag_query = f"document_id=eq.{actual_doc_id}&order=ordinal.asc&select=document_id,document_version,ordinal,segment,content,section"
@@ -275,6 +382,7 @@ async def get_document_fragments(
                     "document_version": it.get("document_version", 1),
                 })
 
+            doc_meta = doc_data.get("metadata") or {}
             return {
                 "document": {
                     "id": actual_doc_id,
@@ -282,6 +390,11 @@ async def get_document_fragments(
                     "source_url": doc_data.get("source_url"),
                     "source_id": doc_data.get("source_id"),
                     "version": doc_data.get("version", 1),
+                    "workflow_status": doc_data.get("workflow_status", "published"),
+                    "integrity_status": doc_data.get("integrity_status", "complete"),
+                    "coverage_pct": doc_meta.get("coverage_pct", 100.0),
+                    "classification_method": doc_meta.get("classification_method", "automatic_structural_heuristic"),
+                    "metadata": doc_meta,
                     "kind": "official"
                 },
                 "fragments": items,

@@ -48,24 +48,44 @@ class LegalSection(str, Enum):
     SECCION_DESCONOCIDA = "seccion_desconocida"
 
 
+_NEGATIVE_VOTE_NOTE_RE = re.compile(
+    r"(no\s+presentar\s+(la\s+)?(aclaraci[oó]n|salvamento)\s+de\s+voto|"
+    r"reservar\s+(la\s+)?posibilidad\s+de\s+presentar\s+(aclaraci[oó]n|salvamento)|"
+    r"\[\s*nota\s+de\s+relator[ií]a\s*:[^\]]*(aclaraci[oó]n|salvamento)\s+de\s+voto[^\]]*\]|"
+    r"con\s+(salvamento|aclaraci[oó]n)\s+(parcial\s+)?de\s+voto\s*$)",
+    re.IGNORECASE | re.MULTILINE
+)
+
+_OPERATIVE_HEADER_RE = re.compile(
+    r"(^\s*(iii|iv|v|vi|vii|viii|ix|x)?\s*\.?\s*decisi[oó]n\b|"
+    r"\br\s+e\s+s\s+u\s+e\s+l\s+v\s+e\b|^\s*resuelve\s*[\.:\-\n]|"
+    r"notif[ií]quese\s*,?\s*comun[ií]quese\s+y\s+c[uú]mplase)",
+    re.IGNORECASE | re.MULTILINE
+)
+
 _SECTION_PATTERNS = [
-    # Salvamento / Aclaración (máxima prioridad)
+    # Salvamento / Aclaración (máxima prioridad cuando es el cuerpo del voto particular)
     (LegalSection.SALVAMENTO_VOTO, re.compile(
-        r"(salvamento\s+de\s+voto|salv[oó]\s+el\s+voto|me\s+aparto\s+de\s+la\s+decisi[oó]n|"
-        r"voto\s+disidente|disiento\s+de\s+la\s+posici[oó]n|salvamento\s+parcial|salva\s+el\s+voto)",
-        re.IGNORECASE
+        r"(^\s*salvamento\s+(parcial\s+|conjunto\s+)?de\s+voto\b|"
+        r"salvamento\s+(parcial\s+)?de\s+voto\s+(de\s+la\s+|del\s+|a\s+la\s+sentencia)|"
+        r"salv[oó]\s+el\s+voto|me\s+aparto\s+de\s+la\s+decisi[oó]n|"
+        r"voto\s+disidente|disiento\s+de\s+la\s+posici[oó]n|salva\s+el\s+voto)",
+        re.IGNORECASE | re.MULTILINE
     )),
     (LegalSection.ACLARACION_VOTO, re.compile(
-        r"(aclaraci[oó]n\s+de\s+voto|aclaro\s+mi\s+voto|comparto\s+la\s+decisi[oó]n\s+pero|"
-        r"concurro\s+con\s+la\s+decisi[oó]n|aclaraci[oó]n\s+parcial)",
-        re.IGNORECASE
+        r"(^\s*aclaraci[oó]n\s+(parcial\s+|conjunta\s+)?de\s+voto\b|"
+        r"aclaraci[oó]n\s+de\s+voto\s+(de\s+la\s+|del\s+|a\s+la\s+sentencia)|"
+        r"aclaro\s+mi\s+voto|comparto\s+la\s+decisi[oó]n\s+pero|"
+        r"concurro\s+con\s+la\s+decisi[oó]n)",
+        re.IGNORECASE | re.MULTILINE
     )),
     # Parte resolutiva
     (LegalSection.PARTE_RESOLUTIVA, re.compile(
-        r"(^\s*(iii|iv|v|vi)?\s*\.?\s*decisi[oó]n\b|^\s*resuelve\s*[\.:\-]|^\s*decide\s*[\.:\-]|"
+        r"(^\s*(iii|iv|v|vi|vii|viii|ix|x)?\s*\.?\s*decisi[oó]n\b|"
+        r"\br\s+e\s+s\s+u\s+e\s+l\s+v\s+e\b|^\s*resuelve\s*[\.:\-\n]|^\s*decide\s*[\.:\-\n]|"
         r"administrando\s+justicia\s+en\s+nombre\s+del\s+pueblo|^\s*primero\s*[\.:\-]|"
         r"^\s*segundo\s*[\.:\-]|declarar\s+(in)?exequible|conceder\s+el\s+amparo|"
-        r"amparar\s+el\s+derecho|inaplicar\s+la\s+resoluci[oó]n|notif[ií]quese\s+y\s+c[uú]mplase|"
+        r"amparar\s+el\s+derecho|inaplicar\s+la\s+resoluci[oó]n|notif[ií]quese\s*,?\s*(comun[ií]quese\s+y\s+)?c[uú]mplase|"
         r"negar\s+el\s+amparo|revocar\s+la\s+sentencia|confirmar\s+la\s+sentencia|abstenerse\s+de\s+efectuar\s+el\s+cobro)",
         re.IGNORECASE | re.MULTILINE
     )),
@@ -132,15 +152,31 @@ _SECTION_PATTERNS = [
 
 
 def classify_legal_section(text: str, title: str = "") -> LegalSection:
-    """Clasifica un fragmento judicial en una de las 14 secciones procesales normalizadas."""
+    """Clasifica un fragmento judicial en una de las 14 secciones procesales normalizadas.
+
+    Nota de auditoría: Clasificación automática heurística; nunca sustituye revisión jurídica humana.
+    Cuando no existe certeza estructural suficiente, devuelve SECCION_DESCONOCIDA.
+    """
     if not text or not isinstance(text, str):
         return LegalSection.SECCION_DESCONOCIDA
-    
-    probe = text[:1500]
+
+    probe = text[:1800]
+    cleaned_probe = _NEGATIVE_VOTE_NOTE_RE.sub("", probe)
+
+    # Si contiene encabezado explícito de RESUELVE / DECISIÓN y no inicia como salvamento/aclaración,
+    # priorizar PARTE_RESOLUTIVA sobre notas de firma ("Con salvamento de voto") al pie del fallo.
+    if _OPERATIVE_HEADER_RE.search(cleaned_probe) and not re.match(
+        r"^\s*(salvamento|aclaraci[oó]n)\s+(parcial\s+|conjunt[oa]\s+)?de\s+voto\b",
+        cleaned_probe,
+        re.IGNORECASE,
+    ):
+        return LegalSection.PARTE_RESOLUTIVA
+
     for section_type, pattern in _SECTION_PATTERNS:
-        if pattern.search(probe):
+        target_text = cleaned_probe if section_type in (LegalSection.SALVAMENTO_VOTO, LegalSection.ACLARACION_VOTO) else probe
+        if pattern.search(target_text):
             return section_type
-    
+
     return LegalSection.SECCION_DESCONOCIDA
 
 
@@ -365,8 +401,13 @@ def rerank_candidates(
         text = str(cand.get("excerpt") or cand.get("content") or cand.get("text") or "")
         title = str(cand.get("title") or "")
         source_id = str(cand.get("source_id") or "")
-        section = cand.get("section") or classify_legal_section(text, title)
-        cand["section"] = section if isinstance(section, str) else section.value
+        existing_section = cand.get("section")
+        if existing_section and existing_section != LegalSection.SECCION_DESCONOCIDA.value:
+            section = existing_section
+        else:
+            section = classify_legal_section(text, title)
+        cand["section"] = section.value if isinstance(section, LegalSection) else str(section)
+        cand.setdefault("section_classification_origin", "automatic_structural_heuristic")
 
         # Si el fragmento fue seleccionado manualmente por el abogado, máxima prioridad garantizada
         if cand.get("user_selected"):
@@ -430,12 +471,17 @@ def rerank_candidates(
         # Una sección procesal SOLO bonifica si hay relación temática real con la consulta.
         # Si la consulta es manifiestamente impertinente (sin coincidencia léxica, de sentencia o radicado, y RRF muy bajo)
         # se penaliza severamente para que no sea seleccionada.
+        # Cuando la recuperación fue únicamente vectorial (method == 'semantic', sin FTS) en una consulta
+        # temática multi-término (>= 3 palabras clave), se exige al menos 2 coincidencias léxicas (>= 0.12)
+        # para evitar falsos positivos por palabras genéricas aisladas (ej. "libertad", "pública").
+        is_pure_semantic_fallback = (str(cand.get("method") or "") == "semantic")
+        min_kw_overlap = 0.12 if (is_pure_semantic_fallback and len(query_keywords) >= 3) else 0.05
         has_subject_relevance = bool(
             is_mock_or_unscored
             or ruling_match > 0
             or rad_match > 0
-            or keyword_overlap >= 0.05
-            or (base_score >= 0.45 and (not query_keywords or keyword_overlap > 0))
+            or keyword_overlap >= min_kw_overlap
+            or (base_score >= 0.45 and (not query_keywords or keyword_overlap >= min_kw_overlap))
         )
 
         # 6. Alineación con sección procesal objetivo (+0.30)

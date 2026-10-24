@@ -117,3 +117,34 @@ async def sync_connector_endpoint(payload: ConnectorPilotRequest, request: Reque
     from app.services import conector_corte_constitucional as conector
     return await conector.run_controlled_pilot(max_rulings=payload.max_rulings, semantic=payload.semantic)
 
+
+class DocumentWorkflowRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    document_id: str = Field(min_length=4, max_length=80)
+    workflow_status: Literal[
+        'discovered',
+        'retrieved',
+        'technically_validated',
+        'pending_legal_review',
+        'approved',
+        'published',
+        'withdrawn',
+    ]
+    published: Optional[bool] = None
+    reason: Optional[str] = Field(None, max_length=500)
+
+
+@router.post('/connector/document/status')
+async def update_connector_document_status_endpoint(payload: DocumentWorkflowRequest, request: Request):
+    """Permite cambiar el estado de ciclo de vida documental o retirar reversiblemente una providencia."""
+    uid, _ = await identity(request)
+    limitador.verificar(request, 'citas', user_id=uid)
+    from app.services import conector_corte_constitucional as conector
+    return await conector.change_document_workflow_status(
+        payload.document_id,
+        payload.workflow_status,
+        published=payload.published,
+        reason=payload.reason,
+    )
+
+
