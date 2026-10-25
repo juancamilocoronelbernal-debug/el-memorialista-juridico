@@ -55,7 +55,8 @@ async def test_discovery_new_ruling_recent_date():
         # Verificar inserción en despacho_conector_descubrimientos
         post_calls = [call for call in mock_store.call_args_list if call[0][0] == "POST"]
         assert len(post_calls) >= 1
-        inserted = post_calls[0][1]["json"]
+        payload = post_calls[0][1]["json"]
+        inserted = payload.get("p_data", payload)
         assert inserted["sentencia"] == "T-325/26"
         assert inserted["source_status"] == "discovered"
 

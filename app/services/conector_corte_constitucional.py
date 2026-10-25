@@ -1288,6 +1288,28 @@ async def update_connector_status(
         log.warning("No se pudo actualizar estado del conector en Supabase: %s", e)
 
 
+def canonicalize_sentencia(sentencia: str, source_id: str = "constitucional") -> str:
+    """Normaliza un identificador de providencia judicial a su forma canónica estable.
+
+    Ejemplo:
+    'T-100/24', 'T-100-24', 'T 100/2024' -> 'constitucional:T-100-2024'
+    """
+    source = (source_id or "constitucional").lower().strip() or "constitucional"
+    s = (sentencia or "").strip().upper()
+    m = re.search(r'(T|C|SU|A)[-\s]?([0-9]{1,5})[\s\/\-]([0-9]{2,4})', s)
+    if m:
+        tipo = m.group(1)
+        num = str(int(m.group(2)))
+        yr_str = m.group(3)
+        if len(yr_str) == 2:
+            yr = 1900 + int(yr_str) if int(yr_str) >= 90 else 2000 + int(yr_str)
+        else:
+            yr = int(yr_str)
+        return f"{source}:{tipo}-{num}-{yr}"
+    clean = re.sub(r'\s+', '_', s)
+    return f"{source}:{clean}"
+
+
 async def get_connector_status() -> dict:
     """Devuelve las métricas consolidadas del conector combinando estado y base de datos."""
     settings = get_settings()
@@ -1801,26 +1823,28 @@ async def discover_incremental_soda_rulings(
                 is_already_known = c_dict["is_already_known"]
                 candidates.append(c_dict)
 
-                # 1. Si es nueva, registrar en despacho_conector_descubrimientos
+                # 1. Registrar o sincronizar atómicamente en despacho_conector_descubrimientos (UPSERT atómico PostgreSQL)
                 if not is_already_known and key:
                     try:
                         await store.db_request(
                             "POST",
-                            "despacho_conector_descubrimientos",
+                            "rpc/despacho_upsert_descubrimiento",
                             key,
                             service=True,
                             json={
-                                "sentencia": sentencia,
-                                "tipo": c_dict["tipo"],
-                                "anio": c_dict["anio"],
-                                "fecha": c_dict["fecha"],
-                                "magistrado": c_dict["magistrado"],
-                                "sala": c_dict["sala"],
-                                "expediente": c_dict["expediente"],
-                                "proceso": c_dict["proceso"],
-                                "tema": c_dict["tema"],
-                                "source_dataset": SODA_DATASET_ID,
-                                "source_status": "discovered",
+                                "p_data": {
+                                    "sentencia": sentencia,
+                                    "tipo": c_dict["tipo"],
+                                    "anio": c_dict["anio"],
+                                    "fecha": c_dict["fecha"],
+                                    "magistrado": c_dict["magistrado"],
+                                    "sala": c_dict["sala"],
+                                    "expediente": c_dict["expediente"],
+                                    "proceso": c_dict["proceso"],
+                                    "tema": c_dict["tema"],
+                                    "source_dataset": SODA_DATASET_ID,
+                                    "source_status": "discovered",
+                                }
                             },
                         )
                         known_records[sentencia] = c_dict
@@ -2022,18 +2046,20 @@ async def discover_retrospective_soda_rulings(
 
                 if sentencia not in known_sentencias and key:
                     try:
-                        await store.db_request("POST", "despacho_conector_descubrimientos", key, service=True, json={
-                            "sentencia": sentencia,
-                            "tipo": tipo,
-                            "anio": cand["anio"],
-                            "fecha": cand["fecha"],
-                            "magistrado": cand["magistrado"],
-                            "sala": cand["sala"],
-                            "expediente": cand["expediente"],
-                            "proceso": cand["proceso"],
-                            "tema": cand["tema"],
-                            "source_dataset": SODA_DATASET_ID,
-                            "source_status": "discovered",
+                        await store.db_request("POST", "rpc/despacho_upsert_descubrimiento", key, service=True, json={
+                            "p_data": {
+                                "sentencia": sentencia,
+                                "tipo": tipo,
+                                "anio": cand["anio"],
+                                "fecha": cand["fecha"],
+                                "magistrado": cand["magistrado"],
+                                "sala": cand["sala"],
+                                "expediente": cand["expediente"],
+                                "proceso": cand["proceso"],
+                                "tema": cand["tema"],
+                                "source_dataset": SODA_DATASET_ID,
+                                "source_status": "discovered",
+                            }
                         })
                         known_sentencias.add(sentencia)
                     except Exception as e_reg:
@@ -2102,14 +2128,17 @@ async def validate_and_stage_ruling(
             if key:
                 try:
                     await store.db_request(
-                        "PATCH",
-                        f"despacho_conector_descubrimientos?sentencia=eq.{sentencia}",
+                        "POST",
+                        "rpc/despacho_upsert_descubrimiento",
                         key,
                         service=True,
                         json={
-                            "source_status": "pending_source",
-                            "last_error": f"[authentic_source] No fue posible resolver URL oficial en Relatoría para {sentencia}",
-                            "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                            "p_data": {
+                                "sentencia": sentencia,
+                                "source_status": "pending_source",
+                                "last_error": f"[authentic_source] No fue posible resolver URL oficial en Relatoría para {sentencia}",
+                                "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                            }
                         },
                     )
                 except Exception as e_desc:
@@ -2139,15 +2168,18 @@ async def validate_and_stage_ruling(
         if key:
             try:
                 await store.db_request(
-                    "PATCH",
-                    f"despacho_conector_descubrimientos?sentencia=eq.{sentencia}",
+                    "POST",
+                    "rpc/despacho_upsert_descubrimiento",
                     key,
                     service=True,
                     json={
-                        "source_url": url,
-                        "source_status": new_source_status,
-                        "last_error": f"[text_integrity] Falló la recuperación desde Relatoría: {err_msg[:200]}",
-                        "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                        "p_data": {
+                            "sentencia": sentencia,
+                            "source_url": url,
+                            "source_status": new_source_status,
+                            "last_error": f"[text_integrity] Falló la recuperación desde Relatoría: {err_msg[:200]}",
+                            "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                        }
                     },
                 )
             except Exception as e_up:
@@ -2174,15 +2206,18 @@ async def validate_and_stage_ruling(
         if key:
             try:
                 await store.db_request(
-                    "PATCH",
-                    f"despacho_conector_descubrimientos?sentencia=eq.{sentencia}",
+                    "POST",
+                    "rpc/despacho_upsert_descubrimiento",
                     key,
                     service=True,
                     json={
-                        "source_url": url,
-                        "source_status": "published",
-                        "document_id": existing["id"],
-                        "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                        "p_data": {
+                            "sentencia": sentencia,
+                            "source_url": url,
+                            "source_status": "published",
+                            "document_id": existing["id"],
+                            "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                        }
                     },
                 )
             except Exception as e_sync:
@@ -2393,19 +2428,27 @@ async def validate_and_stage_ruling(
     first_batch = chunks[:INGEST_BATCH_SIZE]
     is_single_batch = len(chunks) <= INGEST_BATCH_SIZE
 
+    new_vstatus = "published" if should_finalize else "technically_validated"
+    new_wstatus = "published" if should_finalize else "pending_legal_review"
+
+    # Ingesta, validación y sincronización transaccional atómica en PostgreSQL
     result = await store.db_request(
         "POST",
-        "rpc/despacho_publicar_documento_corpus",
+        "rpc/despacho_upsert_providencia_corpus_atomico",
         key,
         service=True,
         json={
             "p_source_id": SOURCE_ID,
             "p_source_url": url,
             "p_title": title[:240],
+            "p_sentencia": sentencia,
             "p_hash": sha256,
             "p_chunks": first_batch,
             "p_metadata": metadata,
-            **({"p_finalize": False} if (not is_single_batch or not should_finalize) else {"p_finalize": True}),
+            "p_workflow_status": new_wstatus,
+            "p_published": should_finalize,
+            "p_finalize": bool(is_single_batch and should_finalize),
+            "p_fencing_token": None,
         },
     )
 
@@ -2434,78 +2477,10 @@ async def validate_and_stage_ruling(
                 },
             )
 
-    # Actualizar estado explícito de validación técnica
-    new_vstatus = "published" if should_finalize else "technically_validated"
-    new_wstatus = "published" if should_finalize else "pending_legal_review"
-    await store.db_request(
-        "POST",
-        "rpc/despacho_actualizar_validacion_documento",
-        key,
-        service=True,
-        json={
-            "p_document_id": doc_id,
-            "p_validation_status": new_vstatus,
-            "p_validation_details": val_result.to_dict(),
-            "p_workflow_status": new_wstatus,
-            "p_published": should_finalize,
-        },
-    )
-
-    # Registrar o sincronizar en tabla de descubrimientos
-    if key:
-        try:
-            target_status = "published" if should_finalize else "technically_validated"
-            existing_desc = await store.db_request(
-                "GET",
-                f"despacho_conector_descubrimientos?sentencia=eq.{sentencia}&select=id",
-                key,
-                service=True,
-            ) or []
-            if existing_desc:
-                await store.db_request(
-                    "PATCH",
-                    f"despacho_conector_descubrimientos?sentencia=eq.{sentencia}",
-                    key,
-                    service=True,
-                    json={
-                        "source_url": url,
-                        "source_status": target_status,
-                        "document_id": doc_id,
-                        "last_checked_at": datetime.now(timezone.utc).isoformat(),
-                    },
-                )
-            else:
-                tipo_ruling = "T" if sentencia.startswith("T-") else ("C" if sentencia.startswith("C-") else ("SU" if sentencia.startswith("SU-") else "A"))
-                await store.db_request(
-                    "POST",
-                    "despacho_conector_descubrimientos",
-                    key,
-                    service=True,
-                    json={
-                        "sentencia": sentencia,
-                        "tipo": tipo_ruling,
-                        "anio": ruling_meta.get("anio") or (int(fecha[:4]) if (fecha and len(fecha) >= 4 and fecha[:4].isdigit()) else None),
-                        "fecha": fecha,
-                        "magistrado": header_meta.get("magistrado") or ruling_meta.get("magistrado"),
-                        "sala": header_meta.get("sala") or ruling_meta.get("sala"),
-                        "expediente": header_meta.get("radicado") or ruling_meta.get("expediente"),
-                        "proceso": ruling_meta.get("proceso") or "Control de constitucionalidad / Tutela",
-                        "tema": ruling_meta.get("tema"),
-                        "source_dataset": "relatoria_oficial",
-                        "source_url": url,
-                        "source_status": target_status,
-                        "document_id": doc_id,
-                        "last_checked_at": datetime.now(timezone.utc).isoformat(),
-                        "first_discovered_at": datetime.now(timezone.utc).isoformat(),
-                    },
-                )
-        except Exception as e_desc_up:
-            log.warning("Aviso actualizando o registrando estado en descubrimientos para %s: %s", sentencia, e_desc_up)
-
     return {
         "id": doc_id,
         "version": doc_version,
-        "unchanged": False,
+        "unchanged": bool(result.get("unchanged")),
         "sentencia": sentencia,
         "title": title,
         "source_url": url,

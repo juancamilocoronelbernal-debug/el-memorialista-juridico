@@ -79,8 +79,8 @@ async def main():
             "last_checked_at": c.get("first_seen_at"),
         }
 
-        log.info("Insertando en despacho_conector_descubrimientos: %s (doc_id=%s, status=%s)", s, doc_id, target_status)
-        await store.db_request("POST", "despacho_conector_descubrimientos", key, service=True, json=payload)
+        log.info("Sincronizando atómicamente en despacho_conector_descubrimientos: %s (doc_id=%s, status=%s)", s, doc_id, target_status)
+        await store.db_request("POST", "rpc/despacho_upsert_descubrimiento", key, service=True, json={"p_data": payload})
 
     # Verificación posterior
     desc_after = await store.db_request("GET", "despacho_conector_descubrimientos?select=id,sentencia,source_status,document_id", key, service=True) or []
