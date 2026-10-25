@@ -259,6 +259,22 @@ async def stream_chat(user_id: str, token: str, request: dict) -> AsyncIterator[
         cited_refs = set(re.findall(r"\[((?:D\d+-S\d+)|(?:W\d+)|(?:O\d+-S\d+))\]", complete["answer"]))
         if cited_refs - valid_refs:
             warnings.append("La respuesta contiene referencias no presentes en el contexto: " + ", ".join(sorted(cited_refs - valid_refs)))
+        # Fase 2.3: Control de Calidad Determinista de Respuestas del Agente
+        try:
+            from app.services.control_calidad_agente import verify_agent_response_quality
+            quality_audit = await verify_agent_response_quality(
+                query=message,
+                answer=complete["answer"],
+                sources=complete["sources"],
+                coverage=context.get("coverage"),
+                service_key=token,
+            )
+            complete["quality_audit"] = quality_audit
+            if quality_audit.get("flags"):
+                warnings.extend(quality_audit["flags"])
+        except Exception as q_exc:
+            log.warning("Auditoría de calidad del agente falló silenciosamente: %s", q_exc)
+        
         complete["warnings"] = list(dict.fromkeys(warnings + complete["warnings"]))
         complete["coverage"] = context["coverage"]
         from app.services import despacho_rag

@@ -1057,6 +1057,16 @@ async def ingest_ruling(
                 },
             )
 
+    # Fase 2.3: Auditoría de calidad inmediata y extracción de relaciones al incorporar
+    if doc_id and not (isinstance(result, dict) and result.get("unchanged")):
+        try:
+            from app.services.control_calidad_corpus import audit_document_quality
+            from app.services.seguimiento_jurisprudencial import extract_jurisprudential_relations
+            asyncio.create_task(audit_document_quality(doc_id, service_key=key))
+            asyncio.create_task(extract_jurisprudential_relations(sentencia, extracted["text"], document_id=doc_id, service_key=key))
+        except Exception as e_post:
+            log.warning("Conector CC: Aviso en auditoría/relaciones post-incorporación: %s", e_post)
+
     return {
         "id": doc_id,
         "version": doc_version,
@@ -1867,6 +1877,12 @@ async def discover_incremental_soda_rulings(
                                         "p_previous_pub": True,
                                         "p_new_pub": True,
                                     })
+                                    # Fase 2.3: Re-auditar calidad tras actualizar metadatos
+                                    try:
+                                        from app.services.control_calidad_corpus import audit_document_quality
+                                        asyncio.create_task(audit_document_quality(doc_id, service_key=key))
+                                    except Exception:
+                                        pass
                         except Exception as e_chg:
                             log.warning("Aviso actualizando cambio de metadatos en %s: %s", sentencia, e_chg)
 

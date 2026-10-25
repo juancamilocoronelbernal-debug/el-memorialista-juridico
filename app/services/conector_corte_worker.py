@@ -122,6 +122,22 @@ async def conector_corte_worker():
                 except Exception as ex:
                     log.error("Conector Corte: Error en sincronización programada: %s", ex, exc_info=True)
 
+                # 3. Fase 2.3: Auditoría periódica incremental de calidad del corpus
+                try:
+                    from app.services.control_calidad_corpus import audit_corpus_sample
+                    sample_audit_res = await audit_corpus_sample(sample_size=5)
+                    log.info("Centro de Calidad: Muestra incremental de %d providencias auditada.", sample_audit_res.get("audited_count", 0))
+                except Exception as ex_audit:
+                    log.warning("Centro de Calidad: Aviso en auditoría periódica de muestra: %s", ex_audit)
+
+                # 4. Fase 2.3: Descubrimiento incremental de evolución jurisprudencial
+                try:
+                    from app.services.seguimiento_jurisprudencial import scan_corpus_for_jurisprudential_evolution
+                    evo_res = await scan_corpus_for_jurisprudential_evolution(batch_limit=5)
+                    log.info("Centro de Calidad: Escaneo de evolución jurisprudencial completado: %d relaciones descubiertas.", evo_res.get("relations_found", 0))
+                except Exception as ex_evo:
+                    log.warning("Centro de Calidad: Aviso en escaneo de evolución: %s", ex_evo)
+
         except asyncio.CancelledError:
             log.info("Conector Corte: Trabajador cancelado limpiamente por apagado del servidor.")
             break

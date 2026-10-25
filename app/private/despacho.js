@@ -127,9 +127,9 @@ function formModal(title,fields,onSave,{label='Guardar',extra,wide=false}={}){co
 function confirmDialog(title,message,onYes,label='Eliminar'){return new Promise(resolve=>{const yes=button(label,async()=>{await busy(yes,async()=>{await onYes();closeModal();resolve(true);});},{class:'button danger'});const no=button('Cancelar',()=>{closeModal();resolve(false);});showModal(title,el('p',{class:'inline-help'},message),[no,yes]);});}
 function captureDrafts(){const t=$('#chat-input');if(t)S.chatDraft=t.value;if(S.editor){const a=$('#editor-text'),b=$('#editor-title');if(a)S.editor.text=a.value;if(b)S.editor.title=b.value;}}
 function setPage(page){captureDrafts();v5StopRequests();S.search='';S.filter='';S.page=page;if(page==='investigacion')S.mode='research';else if(page==='chat'&&S.mode==='research'&&!S.conversationId)S.mode='general';history.replaceState(null,'','#'+page);closeSidebar();render();if(page==='firmas'&&(!S.caps?.signatures_v5||V5.signatureView==='legacy'))loadSignatures();v5PageLoad(page);}
-function renderNav(){const primary=[['chat','Agente','spark'],['investigacion','Jurisprudencia','book'],['monitores','Monitor','monitor'],['biblioteca','DMS','folder'],['firmas','Firma electrónica','sign']];const secondary=[['encargos','Encargos por etapas','spark'],['tareas','Tareas programadas','calendar'],['conexiones','Conexiones','link'],['salas','Salas de documentos','lock'],['asuntos','Asuntos','case'],['tablas','Revisión en tabla','table'],['documentos','Editor y versiones','file'],['ajustes','Ajustes','settings']];const nav=$('#main-nav');nav.replaceChildren(el('div',{class:'nav-label'},'PRODUCTOS'),el('div',{class:'nav-group'},primary.map(([p,t,ic])=>button(t,()=>setPage(p),{icon:ic,class:'nav-item '+(S.page===p?'active':'')}))),el('div',{class:'nav-label'},'MI TRABAJO'),el('div',{class:'nav-group'},secondary.map(([p,t,ic])=>button(t,()=>setPage(p),{icon:ic,class:'nav-item '+(S.page===p?'active':'')}))));nav.querySelectorAll('.active').forEach(n=>n.setAttribute('aria-current','page'));$('#page-name').textContent=[...primary,...secondary].find(v=>v[0]===S.page)?.[1]||'Agente';const recent=byKind('conversation').slice(0,5);$('#recent-chats').replaceChildren(...(recent.length?recent.map(c=>button(c.title,()=>openConversation(c.id),{class:'recent-chat '+(c.id===S.conversationId?'active':''),title:c.title})):[el('p',{class:'sidebar-empty'},'Tus encargos guardados aparecerán aquí.')]));}
+function renderNav(){const primary=[['chat','Agente','spark'],['investigacion','Jurisprudencia','book'],['monitores','Monitor','monitor'],['biblioteca','DMS','folder'],['firmas','Firma electrónica','sign']];const secondary=[['calidad','Centro de Calidad','shield'],['encargos','Encargos por etapas','spark'],['tareas','Tareas programadas','calendar'],['conexiones','Conexiones','link'],['salas','Salas de documentos','lock'],['asuntos','Asuntos','case'],['tablas','Revisión en tabla','table'],['documentos','Editor y versiones','file'],['ajustes','Ajustes','settings']];const nav=$('#main-nav');nav.replaceChildren(el('div',{class:'nav-label'},'PRODUCTOS'),el('div',{class:'nav-group'},primary.map(([p,t,ic])=>button(t,()=>setPage(p),{icon:ic,class:'nav-item '+(S.page===p?'active':'')}))),el('div',{class:'nav-label'},'MI TRABAJO'),el('div',{class:'nav-group'},secondary.map(([p,t,ic])=>button(t,()=>setPage(p),{icon:ic,class:'nav-item '+(S.page===p?'active':'')}))));nav.querySelectorAll('.active').forEach(n=>n.setAttribute('aria-current','page'));$('#page-name').textContent=[...primary,...secondary].find(v=>v[0]===S.page)?.[1]||'Agente';const recent=byKind('conversation').slice(0,5);$('#recent-chats').replaceChildren(...(recent.length?recent.map(c=>button(c.title,()=>openConversation(c.id),{class:'recent-chat '+(c.id===S.conversationId?'active':''),title:c.title})):[el('p',{class:'sidebar-empty'},'Tus encargos guardados aparecerán aquí.')]));}
 function showNotice(){const n=$('#workspace-notice');const msg=S.loadError||(S.caps?.storage?.ready===false?S.caps.storage.message||'El almacenamiento del despacho necesita configuración.':'');n.hidden=!msg;if(msg)n.replaceChildren(el('span',{},msg),button('Reintentar',()=>refresh({silent:true}),{class:''}));}
-function render(){renderNav();showNotice();if(S.loading)return;const main=$('#main');const renders={chat:renderChat,investigacion:renderChat,asuntos:renderMatters,biblioteca:renderLibrary,tablas:renderTables,documentos:renderEditor,monitores:renderMonitors,firmas:renderSigningV5,ajustes:renderSettings,encargos:renderJobsV5,tareas:renderSchedulesV5,conexiones:renderConnectionsV5,salas:renderRoomsV5};main.replaceChildren(v5EnhancePage((renders[S.page]||renderChat)()));}
+function render(){renderNav();showNotice();if(S.loading)return;const main=$('#main');const renders={chat:renderChat,investigacion:renderChat,asuntos:renderMatters,biblioteca:renderLibrary,tablas:renderTables,documentos:renderEditor,monitores:renderMonitors,firmas:renderSigningV5,ajustes:renderSettings,encargos:renderJobsV5,tareas:renderSchedulesV5,conexiones:renderConnectionsV5,salas:renderRoomsV5,calidad:renderCalidadJuridica};main.replaceChildren(v5EnhancePage((renders[S.page]||renderChat)()));}
 function closeSidebar(){$('#sidebar').classList.remove('open');$('#sidebar-scrim').hidden=true;$('#mobile-menu').setAttribute('aria-expanded','false');document.body.classList.remove('menu-open');}
 function openSidebar(){$('#sidebar').classList.add('open');$('#sidebar-scrim').hidden=false;$('#mobile-menu').setAttribute('aria-expanded','true');document.body.classList.add('menu-open');}
 function cancelChat(){
@@ -449,6 +449,13 @@ function renderGroupedDocumentCard(docGroup, m, options={}){
     actions.append(button('Abrir documento',()=>previewDocument(item(docGroup.document_id)),{class:'button small text-button'}));
   }
 
+  // Botón Reportar Error en providencia
+  actions.append(button('Reportar error',()=>openErrorReportModal({
+    target_type:'jurisprudencia_tarjeta',
+    document_id:docGroup.document_id||null,
+    sentencia:docGroup.title||null
+  }),{icon:'flag',class:'button small text-button report-error-btn',title:'Reportar inconsistencia o error en esta providencia'}));
+
   // Acordeón para Jurisprudencia
   if(options.allowAccordion&&docGroup.fragments.length){
     let accordionOpen=false;
@@ -759,7 +766,16 @@ function renderMessage(m,index){if(m.role==='user')return el('article',{class:'m
     const groupedDocs=groupSourcesByDocument(m.sources,m.content,m.coverage);
     n.append(el('div',{class:'sources-list'},groupedDocs.map(g=>renderGroupedDocumentCard(g,m,{allowAccordion:false}))));
   }
-  if(m.search_suggestions_html){const frame=el('iframe',{class:'search-attribution',title:'Sugerencias de búsqueda de Google',sandbox:'allow-popups allow-popups-to-escape-sandbox',referrerPolicy:'no-referrer'});frame.srcdoc='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src https: data:; base-uri \'none\'; form-action \'none\'">'+m.search_suggestions_html;n.append(frame);}if(Array.isArray(m.warnings))for(const w of m.warnings)n.append(el('div',{class:'message-note'},typeof w==='string'?w:text(w)));if(m.coverage){const c=m.coverage;const covText=c.scope==='official'?('Corpus Jurídico Oficial: '+(c.official_documents||0)+' documento(s) consultado(s) · '+(c.selected_passages??'—')+' fragmento(s) utilizados de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.')):('Contexto utilizado: '+(c.selected_passages??'—')+' fragmentos de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.'));n.append(el('div',{class:'coverage'},covText));if(c.depth||c.candidates_retrieved!==undefined||m.cost_metrics){const depthLabel=c.depth_name||({quick:'Rápido',balanced:'Equilibrado',deep:'Profundo',auto:'Automático'}[c.depth]||c.depth||'Automático');const items=[];if(c.depth)items.push(el('li',{},'Profundidad: '+depthLabel));if(c.detected_intent)items.push(el('li',{},'Tipo de consulta detectada: '+c.detected_intent));if(c.candidates_retrieved!==undefined)items.push(el('li',{},'Candidatos evaluados: '+c.candidates_retrieved+' · Seleccionados: '+(c.selected_passages||0)));if(c.chars_sent!==undefined)items.push(el('li',{},'Contexto documental: '+c.chars_sent+' caracteres (~'+Math.round(c.chars_sent/4)+' tokens)'));if(c.sections_represented&&c.sections_represented.length)items.push(el('li',{},'Secciones jurídicas analizadas: '+c.sections_represented.join(', ')));if(m.model)items.push(el('li',{},'Modelo de IA: '+m.model+(m.provider?' ('+m.provider+')':'')));if(m.usage?.input_tokens)items.push(el('li',{},'Tokens consumidos: '+m.usage.input_tokens+' entrada / '+(m.usage.output_tokens||0)+' salida'));if(m.cost_metrics?.estimated_cost_usd!==undefined)items.push(el('li',{},'Coste estimado: $'+m.cost_metrics.estimated_cost_usd+' USD (estimación comercial)'));if(c.retrieval_time_seconds)items.push(el('li',{},'Tiempo de recuperación: '+c.retrieval_time_seconds+'s · Reranking: '+(c.rerank_time_seconds||0)+'s'));if(c.memory_hit)items.push(el('li',{},'Memoria documental: Contexto reutilizado de la sesión previa'));n.append(el('details',{class:'v5-rag-details'},el('summary',{},'Detalles del análisis · '+depthLabel+' ('+(c.selected_passages||0)+' fragmentos seleccionados)'),el('ul',{},items)));}}if(m.coverage?.indexed_retrieval)n.append(v5RetrievalCoverage(m.coverage.indexed_retrieval));if(Array.isArray(m.plan)&&m.plan.length)n.append(el('details',{class:'work-plan'},el('summary',{},'Trabajo realizado'),el('ul',{},m.plan.map(step=>el('li',{},typeof step==='string'?step:(step.label||'Paso')+' · '+({completed:'Completado',pending:'Pendiente de revisión',unverified:'Sin confirmar'}[step.status]||step.status||''))))));n.append(el('div',{class:'message-tools'},button('Copiar',()=>copy(m.content),{icon:'copy',class:''}),button('Guardar escrito',()=>saveAnswerDocument(m),{icon:'file',class:''}),button('Word',()=>exportDocument(m.content,conversationTitle(),'docx'),{icon:'download',class:''}),button('PDF',()=>exportDocument(m.content,conversationTitle(),'pdf'),{icon:'download',class:''})));return n;}
+  if(m.search_suggestions_html){const frame=el('iframe',{class:'search-attribution',title:'Sugerencias de búsqueda de Google',sandbox:'allow-popups allow-popups-to-escape-sandbox',referrerPolicy:'no-referrer'});frame.srcdoc='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src https: data:; base-uri \'none\'; form-action \'none\'">'+m.search_suggestions_html;n.append(frame);}if(Array.isArray(m.warnings))for(const w of m.warnings)n.append(el('div',{class:'message-note'},typeof w==='string'?w:text(w)));if(m.coverage){const c=m.coverage;const covText=c.scope==='official'?('Corpus Jurídico Oficial: '+(c.official_documents||0)+' documento(s) consultado(s) · '+(c.selected_passages??'—')+' fragmento(s) utilizados de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.')):('Contexto utilizado: '+(c.selected_passages??'—')+' fragmentos de '+(c.available_passages??'—')+' disponibles'+(c.truncated?' · Selección parcial del contenido.':'.'));n.append(el('div',{class:'coverage'},covText));if(c.depth||c.candidates_retrieved!==undefined||m.cost_metrics){const depthLabel=c.depth_name||({quick:'Rápido',balanced:'Equilibrado',deep:'Profundo',auto:'Automático'}[c.depth]||c.depth||'Automático');const items=[];if(c.depth)items.push(el('li',{},'Profundidad: '+depthLabel));if(c.detected_intent)items.push(el('li',{},'Tipo de consulta detectada: '+c.detected_intent));if(c.candidates_retrieved!==undefined)items.push(el('li',{},'Candidatos evaluados: '+c.candidates_retrieved+' · Seleccionados: '+(c.selected_passages||0)));if(c.chars_sent!==undefined)items.push(el('li',{},'Contexto documental: '+c.chars_sent+' caracteres (~'+Math.round(c.chars_sent/4)+' tokens)'));if(c.sections_represented&&c.sections_represented.length)items.push(el('li',{},'Secciones jurídicas analizadas: '+c.sections_represented.join(', ')));if(m.model)items.push(el('li',{},'Modelo de IA: '+m.model+(m.provider?' ('+m.provider+')':'')));if(m.usage?.input_tokens)items.push(el('li',{},'Tokens consumidos: '+m.usage.input_tokens+' entrada / '+(m.usage.output_tokens||0)+' salida'));if(m.cost_metrics?.estimated_cost_usd!==undefined)items.push(el('li',{},'Coste estimado: $'+m.cost_metrics.estimated_cost_usd+' USD (estimación comercial)'));if(c.retrieval_time_seconds)items.push(el('li',{},'Tiempo de recuperación: '+c.retrieval_time_seconds+'s · Reranking: '+(c.rerank_time_seconds||0)+'s'));if(c.memory_hit)items.push(el('li',{},'Memoria documental: Contexto reutilizado de la sesión previa'));n.append(el('details',{class:'v5-rag-details'},el('summary',{},'Detalles del análisis · '+depthLabel+' ('+(c.selected_passages||0)+' fragmentos seleccionados)'),el('ul',{},items)));}}if(m.coverage?.indexed_retrieval)n.append(v5RetrievalCoverage(m.coverage.indexed_retrieval));if(Array.isArray(m.plan)&&m.plan.length)n.append(el('details',{class:'work-plan'},el('summary',{},'Trabajo realizado'),el('ul',{},m.plan.map(step=>el('li',{},typeof step==='string'?step:(step.label||'Paso')+' · '+({completed:'Completado',pending:'Pendiente de revisión',unverified:'Sin confirmar'}[step.status]||step.status||''))))));if(m.quality_audit){
+  const qa=m.quality_audit;
+  const isOk=qa.technical_verification==='verificado_tecnicamente';
+  n.append(el('div',{class:'v5-quality-badge '+(isOk?'ok':'warn')},
+    el('span',{},isOk?'✓ ':'⚠ '),
+    el('span',{},qa.badge_label||(isOk?'Verificación técnica aprobada':'Advertencias en citas o cobertura')),
+    button('Reportar error',()=>openErrorReportModal({target_type:'agente_respuesta',query_summary:m.content?.slice(0,120)}),{class:'button small text-button report-error-btn'})
+  ));
+}
+n.append(el('div',{class:'message-tools'},button('Copiar',()=>copy(m.content),{icon:'copy',class:''}),button('Guardar escrito',()=>saveAnswerDocument(m),{icon:'file',class:''}),button('Word',()=>exportDocument(m.content,conversationTitle(),'docx'),{icon:'download',class:''}),button('PDF',()=>exportDocument(m.content,conversationTitle(),'pdf'),{icon:'download',class:''}),button('Reportar error',()=>openErrorReportModal({target_type:'agente_respuesta',query_summary:m.content?.slice(0,120)}),{icon:'flag',class:'report-error-btn',title:'Reportar error o inconsistencia'})));return n;}
 function conversationTitle(){return item(S.conversationId)?.title||'Respuesta de El Memorialista';}
 function renderChat(){const research=S.page==='investigacion';const outer=el('section',{class:'chat-layout'});const matterSelect=el('select',{class:'context-select','aria-label':'Asunto del encargo',disabled:!!S.chatTask});for(const o of matterOptions())matterSelect.append(el('option',{value:o.value,selected:S.matterId===o.value},o.label));matterSelect.addEventListener('change',()=>{S.matterId=matterSelect.value;S.selectedDocs.clear();if(S.conversationId){S.conversationId=null;S.messages=[];}render();});const knowledge=el('select',{class:'context-select v5-knowledge-select','aria-label':'Biblioteca para el agente',disabled:!!S.chatTask});for(const[value,label]of[['auto','Biblioteca: automática'],['official','Corpus Jurídico Oficial'],['off','Biblioteca: sin recuperación'],['documents','Biblioteca: documentos DMS'],['legal','Biblioteca: fuentes jurídicas'],['all','Biblioteca: documentos y fuentes']])knowledge.append(el('option',{value,selected:S.knowledgeScope===value},label));knowledge.addEventListener('change',()=>S.knowledgeScope=knowledge.value);knowledge.title='Automática: fuentes jurídicas al investigar; documentos DMS en otros encargos. Corpus Oficial: providencias y normas publicadas del corpus compartido.';const context=el('div',{class:'context-actions'},knowledge,matterSelect);if(S.conversationId)context.append(button('⋯',showConversationMenu,{class:'icon-button',title:'Opciones de conversación'}));outer.append(el('div',{class:'chat-context'},el('span',{class:'workspace-label'},icon('lock'),research?'INVESTIGACIÓN JURÍDICA':'TU ESPACIO DE TRABAJO'),context));if(!S.messages.length){outer.append(el('div',{class:'chat-welcome'},el('div',{class:'welcome-emblem'},icon(research?'book':'spark')),el('div',{class:'eyebrow'},research?'FUENTES, CONTEXTO Y CRITERIO':'EL MEMORIALISTA · AGENTE JURÍDICO'),el('h1',{},research?'Investiga con fuentes.': 'Cada asunto, ',research?el('em',{},' Decide con criterio.'):el('em',{},'con claridad.')),el('p',{},research?'Plantea el problema jurídico y revisa las fuentes que respaldan el análisis.':'Un espacio para investigar, analizar tus documentos y preparar el siguiente escrito. Tú diriges el trabajo.')));}else outer.append(el('div',{class:'chat-messages',id:'chat-messages'},S.messages.map(renderMessage)));if(S.chatTask)outer.append(el('div',{class:'thinking',role:'status'},el('span',{class:'dots'},el('i'),el('i'),el('i')),'Procesando el encargo y sus documentos…'));if(S.chatUnsaved)outer.append(el('div',{class:'callout warning'},'La respuesta está en esta pantalla y aún no se ha guardado. ',button('Reintentar guardado',persistConversation,{class:'text-button'})));const form=el('form',{class:'composer',id:'chat-form'});
 if(Array.isArray(S.customSelectedFragments)&&S.customSelectedFragments.length){
@@ -1719,6 +1735,438 @@ function monitorFindings(record){
   if(m.data?.extraction_coverage&&Object.keys(m.data.extraction_coverage).length)body.prepend(v5Coverage(m.data.extraction_coverage,'Extracción del original'));
   body.prepend(v5MonitorIssues(m.data||{},true));
   showModal('Hallazgos · '+m.title,body,[button('Cerrar',closeModal)],true);
+}
+
+/* =========================================================================
+   CENTRO DE CALIDAD JURÍDICA CONTINUA (FASE 2.3)
+   ========================================================================= */
+
+const calidadState = {
+  activeTab: 'corpus', // 'corpus' | 'agente' | 'evolucion'
+  metrics: null,
+  docs: [],
+  incidencias: [],
+  evolucion: [],
+  loading: false,
+};
+
+async function loadCalidadData(){
+  try {
+    const [metricsRes, docsRes, incsRes, evoRes] = await Promise.all([
+      api('/despacho/calidad/metricas').catch(()=>({})),
+      api('/despacho/calidad/corpus/documentos?limit=50').catch(()=>({documentos:[]})),
+      api('/despacho/calidad/incidencias?limit=50').catch(()=>({incidencias:[]})),
+      api('/despacho/calidad/evolucion?limit=50').catch(()=>({relaciones:[]})),
+    ]);
+    calidadState.metrics = metricsRes;
+    calidadState.docs = docsRes.documentos || [];
+    calidadState.incidencias = incsRes.incidencias || [];
+    calidadState.evolucion = evoRes.relaciones || [];
+  } catch (err) {
+    console.error('Error cargando datos de calidad:', err);
+  }
+}
+
+function openErrorReportModal(targetInfo={}){
+  const body = el('div', {class: 'error-report-modal'});
+  body.append(el('p', {class: 'inline-help'},
+    'Tu reporte permite auditar y perfeccionar la fundamentación jurídica de El Memorialista. La información técnica se enviará de forma confidencial sin exponer datos privados de expedientes.'
+  ));
+
+  const categoryField = field('Tipo de anomalía detectada', {
+    name: 'error_category',
+    options: [
+      {value: 'sentencia_incorrecta', label: 'Sentencia incorrecta o inexistente'},
+      {value: 'referencia_equivocada', label: 'Referencia documental equivocada [O#-S#]'},
+      {value: 'interpretacion_incorrecta', label: 'Interpretación jurídica o alcance incorrecto'},
+      {value: 'informacion_desactualizada', label: 'Información desactualizada o precedente superado'},
+      {value: 'fragmento_incompleto', label: 'Fragmento incompleto o truncado'},
+      {value: 'otro', label: 'Otro problema de calidad'}
+    ]
+  });
+
+  const descField = field('Observaciones o justificación jurídica (opcional)', {
+    name: 'description',
+    type: 'textarea',
+    rows: 4,
+    placeholder: 'Indica por qué consideras que la sentencia, cita o interpretación presenta una inconsistencia…'
+  });
+
+  body.append(categoryField.wrap, descField.wrap);
+
+  const sendBtn = button('Radicar reporte de error', async () => {
+    await busy(sendBtn, async () => {
+      try {
+        const payload = {
+          target_type: targetInfo.target_type || 'agente_respuesta',
+          document_id: targetInfo.document_id || null,
+          sentencia: targetInfo.sentencia || null,
+          error_category: categoryField.input.value,
+          description: descField.input.value.trim(),
+          source_fragment_id: targetInfo.source_fragment_id || null,
+          query_summary: targetInfo.query_summary || null
+        };
+        const res = await api('/despacho/calidad/reportes-error', {method: 'POST', body: payload});
+        toast(res.message || 'Reporte radicado con éxito en el Centro de Calidad.');
+        closeModal();
+      } catch (err) {
+        toast('Error al enviar reporte: ' + err.message);
+      }
+    });
+  }, {class: 'button primary', icon: 'check'});
+
+  showModal('⚠️ Reportar error o inconsistencia jurídica', body, [button('Cancelar', closeModal), sendBtn]);
+}
+
+function renderCalidadJuridica(){
+  const container = el('section', {class: 'calidad-container'});
+
+  const header = el('div', {class: 'calidad-header'},
+    el('div', {class: 'calidad-title'},
+      el('h1', {}, 'Centro de Calidad Jurídica Continua'),
+      el('p', {}, 'Supervisión permanente del Corpus Oficial, verificación de respuestas del Agente y seguimiento jurisprudencial.')
+    ),
+    el('div', {class: 'calidad-header-actions'},
+      button('↻ Actualizar', async () => {
+        calidadState.loading = true;
+        render();
+        await loadCalidadData();
+        calidadState.loading = false;
+        render();
+      }, {class: 'button small'}),
+      button('Auditar muestra ahora', async () => {
+        try {
+          toast('Iniciando auditoría incremental de muestra…');
+          const res = await api('/despacho/calidad/corpus/auditar', {method: 'POST', body: {sample_size: 5}});
+          toast(`Muestra auditada con éxito (${res.result?.audited_count || 0} providencias).`);
+          await loadCalidadData();
+          render();
+        } catch (err) {
+          toast('Error en auditoría: ' + err.message);
+        }
+      }, {class: 'button small primary', icon: 'check'})
+    )
+  );
+
+  const m = calidadState.metrics?.metricas_tecnicas || {};
+  const j = calidadState.metrics?.evaluaciones_juridicas || {};
+  const metricsBar = el('div', {class: 'v5-sync-metrics-grid'},
+    el('div', {class: 'v5-metric-box'},
+      el('div', {class: 'v5-metric-num'}, String(m.documentos_publicados ?? '—')),
+      el('div', {class: 'v5-metric-label'}, 'Providencias Publicadas')
+    ),
+    el('div', {class: 'v5-metric-box'},
+      el('div', {class: 'v5-metric-num'}, String(m.documentos_auditados ?? '—')),
+      el('div', {class: 'v5-metric-label'}, 'Providencias Auditadas')
+    ),
+    el('div', {class: 'v5-metric-box'},
+      el('div', {class: 'v5-metric-num'}, String(m.documentos_retirados ?? '0')),
+      el('div', {class: 'v5-metric-label'}, 'Retiradas Preventivamente')
+    ),
+    el('div', {class: 'v5-metric-box'},
+      el('div', {class: 'v5-metric-num'}, String(m.errores_criticos ?? '0')),
+      el('div', {class: 'v5-metric-label'}, 'Errores Críticos')
+    ),
+    el('div', {class: 'v5-metric-box'},
+      el('div', {class: 'v5-metric-num'}, String(j.respuestas_reportadas ?? '0')),
+      el('div', {class: 'v5-metric-label'}, 'Reportes de Usuarios')
+    ),
+    el('div', {class: 'v5-metric-box'},
+      el('div', {class: 'v5-metric-num'}, String(j.incidencias_solucionadas ?? '0')),
+      el('div', {class: 'v5-metric-label'}, 'Incidencias Resueltas')
+    ),
+    el('div', {class: 'v5-metric-box'},
+      el('div', {class: 'v5-metric-num'}, '$0.00 USD'),
+      el('div', {class: 'v5-metric-label'}, 'Coste Infraestructura')
+    )
+  );
+
+  const tabsBar = el('div', {class: 'calidad-tabs'});
+  const tabs = [
+    {id: 'corpus', label: 'A. Calidad del Corpus'},
+    {id: 'agente', label: 'B. Calidad del Agente e Incidencias'},
+    {id: 'evolucion', label: 'C. Seguimiento Jurisprudencial'}
+  ];
+  for (const t of tabs) {
+    const btn = el('button', {
+      type: 'button',
+      class: 'calidad-tab-btn ' + (calidadState.activeTab === t.id ? 'active' : '')
+    }, t.label);
+    btn.addEventListener('click', () => {
+      calidadState.activeTab = t.id;
+      render();
+    });
+    tabsBar.append(btn);
+  }
+
+  let tabPane;
+  if (calidadState.activeTab === 'corpus') {
+    tabPane = renderTabCorpus();
+  } else if (calidadState.activeTab === 'agente') {
+    tabPane = renderTabAgente();
+  } else {
+    tabPane = renderTabEvolucion();
+  }
+
+  container.append(header, metricsBar, tabsBar, tabPane);
+
+  if (!calidadState.metrics && !calidadState.loading) {
+    calidadState.loading = true;
+    loadCalidadData().then(() => {
+      calidadState.loading = false;
+      render();
+    });
+  }
+
+  return container;
+}
+
+function renderTabCorpus(){
+  const wrap = el('div', {class: 'calidad-tab-pane'});
+  const docs = calidadState.docs;
+
+  if (!docs.length) {
+    wrap.append(el('p', {class: 'inline-help'}, 'Cargando providencias del Corpus Oficial…'));
+    return wrap;
+  }
+
+  const tableWrap = el('div', {class: 'calidad-table-wrapper'});
+  const table = el('table', {class: 'calidad-table'});
+  table.append(
+    el('thead', {},
+      el('tr', {},
+        el('th', {}, 'Providencia'),
+        el('th', {}, 'Calidad Oficial'),
+        el('th', {}, 'Score'),
+        el('th', {}, 'Estado'),
+        el('th', {}, 'Última Auditoría'),
+        el('th', {}, 'Acciones')
+      )
+    )
+  );
+
+  const tbody = el('tbody', {});
+  for (const d of docs) {
+    const qStatus = d.quality_status || 'sin_auditar';
+    const pillClass = qStatus === 'optimo' ? 'optimo' : (qStatus === 'con_advertencias' ? 'advertencia' : (qStatus === 'critico_retirado' ? 'retirado' : 'incidencia'));
+    const isWithdrawn = !!d.is_withdrawn;
+
+    const row = el('tr', {},
+      el('td', {},
+        el('strong', {}, d.title || 'Providencia Oficial'),
+        el('div', {class: 'v5-grouped-meta'}, d.metadata?.magistrado ? `Ponente: ${d.metadata.magistrado}` : '')
+      ),
+      el('td', {}, el('span', {class: 'calidad-pill ' + pillClass}, qStatus.replace('_', ' '))),
+      el('td', {}, `${d.quality_score ?? 100}%`),
+      el('td', {}, isWithdrawn ? el('span', {class: 'calidad-pill retirado'}, 'Retirado') : el('span', {class: 'calidad-pill optimo'}, 'Publicado')),
+      el('td', {}, d.last_quality_audit_at ? shortDate(d.last_quality_audit_at, true) : 'Pendiente'),
+      el('td', {style: 'display:flex;gap:6px;flex-wrap:wrap;'},
+        button('Auditar', async () => {
+          try {
+            toast('Auditando ' + d.title + '…');
+            const res = await api('/despacho/calidad/corpus/auditar', {method: 'POST', body: {document_id: d.id}});
+            toast(`Auditoría concluida: score ${res.result?.quality_score}% (${res.result?.quality_status})`);
+            await loadCalidadData();
+            render();
+          } catch (err) {
+            toast('Error auditando: ' + err.message);
+          }
+        }, {class: 'button small'}),
+        isWithdrawn ? button('Restaurar', async () => {
+          const reasonPrompt = prompt('Ingresa nota de subsanación para restaurar la providencia:', 'Inconsistencia subsanada tras verificación.');
+          if (!reasonPrompt) return;
+          try {
+            await api('/despacho/calidad/corpus/restaurar', {method: 'POST', body: {document_id: d.id, resolution_note: reasonPrompt}});
+            toast('Providencia restaurada con éxito.');
+            await loadCalidadData();
+            render();
+          } catch (err) {
+            toast('Error restaurando: ' + err.message);
+          }
+        }, {class: 'button small primary'}) : button('Retirar', async () => {
+          const reasonPrompt = prompt('Motivo del retiro preventivo de esta providencia:', 'Inconsistencia grave detectada en texto o metadatos.');
+          if (!reasonPrompt) return;
+          try {
+            await api('/despacho/calidad/corpus/retirar', {method: 'POST', body: {document_id: d.id, reason: reasonPrompt}});
+            toast('Providencia retirada temporalmente de búsquedas.');
+            await loadCalidadData();
+            render();
+          } catch (err) {
+            toast('Error retirando: ' + err.message);
+          }
+        }, {class: 'button small text-button report-error-btn'})
+      )
+    );
+    tbody.append(row);
+  }
+
+  table.append(tbody);
+  tableWrap.append(table);
+  wrap.append(tableWrap);
+  return wrap;
+}
+
+function renderTabAgente(){
+  const wrap = el('div', {class: 'calidad-tab-pane'});
+  const incs = calidadState.incidencias;
+
+  if (!incs.length) {
+    wrap.append(el('p', {class: 'inline-help'}, 'No hay incidencias registradas en este momento. El sistema se encuentra operando con integridad.'));
+    return wrap;
+  }
+
+  const tableWrap = el('div', {class: 'calidad-table-wrapper'});
+  const table = el('table', {class: 'calidad-table'});
+  table.append(
+    el('thead', {},
+      el('tr', {},
+        el('th', {}, 'Fecha'),
+        el('th', {}, 'Ámbito'),
+        el('th', {}, 'Tipo de Problema'),
+        el('th', {}, 'Gravedad'),
+        el('th', {}, 'Estado'),
+        el('th', {}, 'Acciones')
+      )
+    )
+  );
+
+  const tbody = el('tbody', {});
+  for (const inc of incs) {
+    const sevPill = inc.severity === 'critica' ? 'incidencia' : (inc.severity === 'alta' ? 'advertencia' : 'optimo');
+    const stPill = inc.status === 'corregido' || inc.status === 'cerrado' ? 'verificado' : (inc.status === 'en_investigacion' ? 'advertencia' : 'pendiente');
+
+    const row = el('tr', {},
+      el('td', {}, shortDate(inc.detected_at, true)),
+      el('td', {}, el('strong', {}, inc.scope?.toUpperCase() || 'GENERAL')),
+      el('td', {}, inc.issue_type?.replace(/_/g, ' ') || 'Anomalía'),
+      el('td', {}, el('span', {class: 'calidad-pill ' + sevPill}, inc.severity)),
+      el('td', {}, el('span', {class: 'calidad-pill ' + stPill}, inc.status?.replace(/_/g, ' '))),
+      el('td', {style: 'display:flex;gap:6px;'},
+        button('Ver expediente', () => {
+          const body = el('div', {});
+          body.append(el('p', {}, el('strong', {}, 'Sentencia / Afectado: '), inc.sentencia || inc.document_id || 'Respuesta Agente'));
+          body.append(el('p', {}, el('strong', {}, 'Tipo: '), inc.issue_type, ' · ', el('strong', {}, 'Gravedad: '), inc.severity));
+          if (inc.evidence) {
+            body.append(el('h4', {}, 'Evidencia Técnica'), el('pre', {class: 'v5-prewrap'}, JSON.stringify(inc.evidence, null, 2)));
+          }
+          if (inc.action_history && inc.action_history.length) {
+            body.append(el('h4', {}, 'Historial de Acciones Inmutables'));
+            const histList = el('ul', {});
+            for (const a of inc.action_history) {
+              histList.append(el('li', {}, `[${shortDate(a.timestamp, true)}] ${a.actor}: ${a.action} — ${a.note || ''}`));
+            }
+            body.append(histList);
+          }
+          showModal('Expediente de Incidencia Jurídica', body, [button('Cerrar', closeModal)], true);
+        }, {class: 'button small'}),
+        inc.status !== 'cerrado' ? button('Resolver', async () => {
+          const resNote = prompt('Indica cómo se solucionó la incidencia:', 'Verificado y corregido.');
+          if (!resNote) return;
+          try {
+            await api('/despacho/calidad/incidencias/' + inc.id, {method: 'PATCH', body: {status: 'corregido', resolution_note: resNote}});
+            toast('Incidencia resuelta.');
+            await loadCalidadData();
+            render();
+          } catch (err) {
+            toast('Error resolviendo: ' + err.message);
+          }
+        }, {class: 'button small primary'}) : null
+      )
+    );
+    tbody.append(row);
+  }
+
+  table.append(tbody);
+  tableWrap.append(table);
+  wrap.append(tableWrap);
+  return wrap;
+}
+
+function renderTabEvolucion(){
+  const wrap = el('div', {class: 'calidad-tab-pane'});
+  wrap.append(el('div', {class: 'evo-disclaimer-box'},
+    el('span', {}, '⚖️'),
+    el('span', {}, 'Las relaciones descubiertas automáticamente corresponden a evidencia textual preliminar. Se muestran como "Posible evolución jurisprudencial — pendiente de verificación" hasta que un profesional jurídico autorizado confirme su vigencia vinculante.')
+  ));
+
+  const rels = calidadState.evolucion;
+  if (!rels.length) {
+    wrap.append(el('p', {class: 'inline-help'}, 'No hay relaciones jurisprudenciales registradas. Haz clic en "Escanear relaciones del corpus" para iniciar el mapeo.'));
+    wrap.append(button('Escanear relaciones del corpus', async () => {
+      try {
+        toast('Escaneando providencias del corpus en búsqueda de precedentes…');
+        const res = await api('/despacho/calidad/evolucion/escanear?limit=10', {method: 'POST'});
+        toast(`Escaneo finalizado: ${res.relations_found || 0} relaciones detectadas.`);
+        await loadCalidadData();
+        render();
+      } catch (err) {
+        toast('Error escaneando: ' + err.message);
+      }
+    }, {class: 'button primary small', icon: 'check'}));
+    return wrap;
+  }
+
+  const tableWrap = el('div', {class: 'calidad-table-wrapper'});
+  const table = el('table', {class: 'calidad-table'});
+  table.append(
+    el('thead', {},
+      el('tr', {},
+        el('th', {}, 'Origen'),
+        el('th', {}, 'Destino'),
+        el('th', {}, 'Relación'),
+        el('th', {}, 'Evidencia Textual'),
+        el('th', {}, 'Estado Jurídico'),
+        el('th', {}, 'Acciones')
+      )
+    )
+  );
+
+  const tbody = el('tbody', {});
+  for (const r of rels) {
+    const isVerified = r.status === 'verificado_humano';
+    const pillClass = isVerified ? 'verificado' : (r.status === 'descartado' ? 'descartado' : 'advertencia');
+    const labelStatus = isVerified ? '✓ Precedente verificado' : (r.status === 'descartado' ? 'Descartado' : 'Posible evolución pendiente');
+
+    const row = el('tr', {},
+      el('td', {}, el('strong', {}, r.source_sentencia)),
+      el('td', {}, el('strong', {}, r.target_sentencia)),
+      el('td', {}, el('span', {class: 'calidad-pill pendiente'}, r.relation_type?.replace(/_/g, ' '))),
+      el('td', {style: 'max-width:320px;font-size:0.78rem;color:#475569;'}, `"${r.evidence_quote}"`),
+      el('td', {}, el('span', {class: 'calidad-pill ' + pillClass}, labelStatus)),
+      el('td', {style: 'display:flex;gap:6px;'},
+        !isVerified ? button('Certificar', async () => {
+          const notes = prompt('Notas de certificación jurídica vinculante:', 'Confirmada regla de reiteración/unificación.');
+          if (notes === null) return;
+          try {
+            await api(`/despacho/calidad/evolucion/${r.id}/verificar`, {method: 'POST', body: {verified: true, notes}});
+            toast('Evolución jurisprudencial certificada por profesional jurídico.');
+            await loadCalidadData();
+            render();
+          } catch (err) {
+            toast('Error certificando: ' + err.message);
+          }
+        }, {class: 'button small primary'}) : null,
+        !isVerified ? button('Descartar', async () => {
+          const notes = prompt('Motivo del descarte:', 'Simple mención incidental sin alcance doctrinario.');
+          if (notes === null) return;
+          try {
+            await api(`/despacho/calidad/evolucion/${r.id}/verificar`, {method: 'POST', body: {verified: false, notes}});
+            toast('Relación descartada.');
+            await loadCalidadData();
+            render();
+          } catch (err) {
+            toast('Error descartando: ' + err.message);
+          }
+        }, {class: 'button small text-button report-error-btn'}) : null
+      )
+    );
+    tbody.append(row);
+  }
+
+  table.append(tbody);
+  tableWrap.append(table);
+  wrap.append(tableWrap);
+  return wrap;
 }
 
 init();
