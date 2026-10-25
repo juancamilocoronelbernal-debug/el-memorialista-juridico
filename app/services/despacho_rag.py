@@ -844,6 +844,8 @@ async def verify_and_resolve_selected_fragments(
                         continue
                     doc_data = d_res.json()[0]
                     actual_doc_id = doc_data["id"]
+                    doc_active_ver = doc_data.get("version", 1)
+                    req_ver = sf.get("version")
 
                     f_query = f"document_id=eq.{actual_doc_id}"
                     if segment is not None:
@@ -853,11 +855,28 @@ async def verify_and_resolve_selected_fragments(
                     else:
                         f_query += "&order=ordinal.asc&limit=1"
 
-                    fr_res = await client.get(f"{base}/rest/v1/despacho_corpus_fragmentos?{f_query}&limit=1", headers=headers)
-                    if fr_res.status_code >= 400 or not fr_res.json():
-                        log.warning("Seguridad RAG: fragmento oficial no encontrado en BD (doc_id=%s, seg=%s)", actual_doc_id, segment)
+                    # Preservación histórica: si la referencia cita una versión documental anterior,
+                    # consultar primero la tabla de archivo histórico inmutable.
+                    frag_data = None
+                    if req_ver is not None and int(req_ver) < int(doc_active_ver):
+                        hist_query = f"{f_query}&document_version=eq.{req_ver}"
+                        h_res = await client.get(f"{base}/rest/v1/despacho_corpus_fragmentos_historicos?{hist_query}&limit=1", headers=headers)
+                        if h_res.status_code < 400 and h_res.json():
+                            frag_data = h_res.json()[0]
+
+                    if not frag_data:
+                        fr_res = await client.get(f"{base}/rest/v1/despacho_corpus_fragmentos?{f_query}&limit=1", headers=headers)
+                        if fr_res.status_code < 400 and fr_res.json():
+                            frag_data = fr_res.json()[0]
+                        else:
+                            # Fallback de seguridad: buscar en fragmentos históricos si la versión cambió silenciosamente
+                            h_res = await client.get(f"{base}/rest/v1/despacho_corpus_fragmentos_historicos?{f_query}&order=document_version.desc&limit=1", headers=headers)
+                            if h_res.status_code < 400 and h_res.json():
+                                frag_data = h_res.json()[0]
+
+                    if not frag_data:
+                        log.warning("Seguridad RAG: fragmento oficial no encontrado en BD ni en archivo histórico (doc_id=%s, seg=%s, req_ver=%s)", actual_doc_id, segment, req_ver)
                         continue
-                    frag_data = fr_res.json()[0]
 
                     verified_candidates.append({
                         "id": citation_id,
@@ -865,7 +884,7 @@ async def verify_and_resolve_selected_fragments(
                         "source_id": doc_data.get("source_id") or "oficial",
                         "source_url": doc_data.get("source_url") or "",
                         "date": doc_data.get("date"),
-                        "version": doc_data.get("version", 1),
+                        "version": frag_data.get("document_version") or req_ver or doc_active_ver,
                         "segment": frag_data.get("segment") or (idx + 1),
                         "section": frag_data.get("section") or "fundamentos_juridicos",
                         "excerpt": frag_data.get("content", ""),  # TEXTO AUTÉNTICO RECUPERADO DE LA BD

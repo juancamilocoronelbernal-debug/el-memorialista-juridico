@@ -316,6 +316,7 @@ async def get_document_fragments(
     offset: int = 0,
     limit: int = 50,
     q: str | None = None,
+    version: int | None = None,
 ) -> dict:
     """Recupera la totalidad de los fragmentos indexados de un documento bajo demanda
     con paginación y búsqueda textual interna sin sobrecargar el contexto.
@@ -347,9 +348,19 @@ async def get_document_fragments(
                 raise HTTPException(404, "Documento oficial no encontrado en el corpus compartido.")
 
             doc_data = doc_res.json()[0]
-            if doc_data.get("is_withdrawn") or (doc_data.get("published") is False) or doc_data.get("workflow_status") in ("withdrawn", "retirado_temporalmente"):
+            is_historical = bool(version and int(version) < int(doc_data.get("version", 1)))
+
+            if doc_data.get("is_withdrawn") or doc_data.get("workflow_status") in ("withdrawn", "retirado_temporalmente"):
                 reason = doc_data.get("withdrawn_reason") or "Providencia retirada preventivamente por control de calidad"
                 status_wf = doc_data.get("workflow_status") or "retirado_temporalmente"
+                raise HTTPException(
+                    410,
+                    f"Providencia no disponible: {reason}. Estado actual: {status_wf}."
+                )
+
+            if not is_historical and (doc_data.get("published") is False):
+                reason = doc_data.get("withdrawn_reason") or "Providencia en proceso de revisión editorial no publicada"
+                status_wf = doc_data.get("workflow_status") or "pending_legal_review"
                 raise HTTPException(
                     410,
                     f"Providencia no disponible: {reason}. Estado actual: {status_wf}."
@@ -362,14 +373,18 @@ async def get_document_fragments(
                 )
             actual_doc_id = doc_data["id"]
 
+            target_table = "despacho_corpus_fragmentos_historicos" if is_historical else "despacho_corpus_fragmentos"
+            
             frag_query = f"document_id=eq.{actual_doc_id}&order=ordinal.asc&select=document_id,document_version,ordinal,segment,content,section"
+            if is_historical:
+                frag_query += f"&document_version=eq.{version}"
             if q and q.strip():
                 clean_q = re.sub(r"[^\w\s\-\.]", "", q.strip())
                 if clean_q:
                     frag_query += f"&content=ilike.*{clean_q}*"
 
             frags_res = await client.get(
-                f"{base}/rest/v1/despacho_corpus_fragmentos?{frag_query}",
+                f"{base}/rest/v1/{target_table}?{frag_query}",
                 headers=headers
             )
             if frags_res.status_code >= 400:
@@ -397,7 +412,9 @@ async def get_document_fragments(
                     "title": doc_data.get("title"),
                     "source_url": doc_data.get("source_url"),
                     "source_id": doc_data.get("source_id"),
-                    "version": doc_data.get("version", 1),
+                    "version": version if is_historical else doc_data.get("version", 1),
+                    "is_historical_version": is_historical,
+                    "active_version": doc_data.get("version", 1),
                     "workflow_status": doc_data.get("workflow_status", "published"),
                     "integrity_status": doc_data.get("integrity_status", "complete"),
                     "coverage_pct": doc_meta.get("coverage_pct", 100.0),

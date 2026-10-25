@@ -397,7 +397,7 @@ async def test_prueba_f_modificacion_contenido_versionamiento_estricto():
     if not key:
         pytest.skip("Requiere SUPABASE_SERVICE_ROLE_KEY")
 
-    # Ingesta inicial v1
+    # Ingesta inicial v1 (publicada oficialmente)
     res1 = await store.db_request(
         "POST",
         "rpc/despacho_upsert_providencia_corpus_atomico",
@@ -411,12 +411,14 @@ async def test_prueba_f_modificacion_contenido_versionamiento_estricto():
             "p_hash": TEST_HASH,
             "p_chunks": TEST_CHUNKS,
             "p_metadata": {"magistrado": "Magistrado Ponente"},
-            "p_workflow_status": "technically_validated",
-            "p_published": False,
+            "p_workflow_status": "published",
+            "p_published": True,
+            "p_finalize": True,
         },
     )
     doc_id = res1["id"]
     assert res1["version"] == 1
+    assert res1["published"] is True
 
     # Simular nueva versión v2 con texto oficial modificado y hash distinto
     new_hash = hashlib.sha256(b"Texto oficial corregido con aclaracion de voto v2").hexdigest()
@@ -463,6 +465,99 @@ async def test_prueba_f_modificacion_contenido_versionamiento_estricto():
     )
     assert len(audit) >= 1
     assert audit[0]["decision"] == "reopen"
+
+    # =========================================================================
+    # VERIFICACIÓN DE PRESERVACIÓN HISTÓRICA INMUTABLE DE CITAS
+    # =========================================================================
+    # 1. Comprobar que la versión anterior (v1) quedó archivada en despacho_corpus_documentos_historicos
+    hist_docs = await store.db_request(
+        "GET",
+        f"despacho_corpus_documentos_historicos?document_id=eq.{doc_id}&document_version=eq.1&select=document_version,content_hash",
+        key,
+        service=True,
+    )
+    assert len(hist_docs) == 1
+    assert hist_docs[0]["document_version"] == 1
+    assert hist_docs[0]["content_hash"] == TEST_HASH
+
+    # 2. Comprobar que los fragmentos de la versión 1 se preservaron íntegros en despacho_corpus_fragmentos_historicos
+    hist_frags = await store.db_request(
+        "GET",
+        f"despacho_corpus_fragmentos_historicos?document_id=eq.{doc_id}&document_version=eq.1&select=document_version,ordinal,content",
+        key,
+        service=True,
+    )
+    assert len(hist_frags) == 1
+    assert hist_frags[0]["document_version"] == 1
+    assert "sobre derecho a la salud" in hist_frags[0]["content"]
+
+    # 3. Comprobar que la versión activa (v2) en despacho_corpus_fragmentos tiene el nuevo contenido
+    active_frags = await store.db_request(
+        "GET",
+        f"despacho_corpus_fragmentos?document_id=eq.{doc_id}&select=document_version,ordinal,content",
+        key,
+        service=True,
+    )
+    assert len(active_frags) == 1
+    assert active_frags[0]["document_version"] == 2
+    assert "con aclaración de voto" in active_frags[0]["content"]
+
+    # 4. Probar recuperación a través del servicio de fuentes con version=1 (Visor de Evidencia Histórica)
+    from app.services.despacho_corpus_fuentes import get_document_fragments
+    # Simular consulta histórica del Visor sobre v1 mientras v2 está en revisión
+    hist_view = await get_document_fragments(
+        key,
+        doc_id=doc_id,
+        kind="official",
+        version=1,
+    )
+    assert hist_view["document"]["is_historical_version"] is True
+    assert hist_view["document"]["version"] == 1
+    assert len(hist_view["fragments"]) == 1
+    assert "sobre derecho a la salud" in hist_view["fragments"][0]["content"]
+
+    # Publicar v2 formalmente
+    await store.db_request(
+        "POST",
+        "rpc/despacho_actualizar_validacion_documento",
+        key,
+        service=True,
+        json={
+            "p_document_id": doc_id,
+            "p_validation_status": "technically_validated",
+            "p_validation_details": {"approved": True},
+            "p_workflow_status": "published",
+            "p_published": True,
+        },
+    )
+
+    # Simular consulta activa del Visor (sin versión o versión 2)
+    active_view = await get_document_fragments(
+        key,
+        doc_id=doc_id,
+        kind="official",
+    )
+    assert active_view["document"]["is_historical_version"] is False
+    assert active_view["document"]["version"] == 2
+    assert len(active_view["fragments"]) == 1
+    assert "con aclaración de voto" in active_view["fragments"][0]["content"]
+
+    # 5. Probar recuperación en RAG: citas históricas (v1) vs citas contemporáneas (v2)
+    from app.services.despacho_rag import verify_and_resolve_selected_fragments
+    evidence_payload = [
+        {"document_id": doc_id, "segment": 1, "version": 1, "kind": "official", "id": "CITA-HIST-1"},
+        {"document_id": doc_id, "segment": 1, "version": 2, "kind": "official", "id": "CITA-ACTUAL-2"},
+    ]
+    verified = await verify_and_resolve_selected_fragments("test_user_id", key, evidence_payload)
+    assert len(verified) == 2
+    c_hist = next(c for c in verified if c["id"] == "CITA-HIST-1")
+    c_act = next(c for c in verified if c["id"] == "CITA-ACTUAL-2")
+
+    assert c_hist["version"] == 1
+    assert "sobre derecho a la salud" in c_hist["excerpt"]
+
+    assert c_act["version"] == 2
+    assert "con aclaración de voto" in c_act["excerpt"]
 
 
 # ---------------------------------------------------------------------------

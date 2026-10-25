@@ -68,8 +68,9 @@ async def document_fragments(
     offset: int = 0,
     limit: int = 50,
     q: Optional[str] = None,
+    version: Optional[int] = None,
 ):
-    """Consulta paginada bajo demanda de todos los fragmentos indexados de un documento."""
+    """Consulta paginada bajo demanda de todos los fragmentos indexados de un documento (activo o versión histórica)."""
     uid, token = await identity(request)
     limitador.verificar(request, 'citas', user_id=uid)
     return await get_document_fragments(
@@ -82,6 +83,7 @@ async def document_fragments(
         offset=offset,
         limit=limit,
         q=q,
+        version=version,
     )
 
 
