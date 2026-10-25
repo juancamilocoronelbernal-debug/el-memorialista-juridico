@@ -86,12 +86,23 @@ class CorpusDocumentAuditResult:
             return "con_advertencias"
         return "optimo"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, legal_certified: bool = False, certified_by: Optional[str] = None) -> Dict[str, Any]:
         return {
             "document_id": self.document_id,
             "sentencia": self.sentencia,
             "quality_status": self.quality_status,
             "quality_score": round(self.score, 2),
+            "technical_score": round(self.score, 2),
+            "score_type": "technical_automated",
+            "legal_certification_status": "certificada_humana" if legal_certified else "pendiente_certificacion_humana",
+            "legal_certified": legal_certified,
+            "legal_certified_by": certified_by,
+            "disclaimer": (
+                "El indicador de calidad técnica (technical_score) representa exclusivamente comprobaciones "
+                "técnicas y digitales de hashes SHA-256, dimensiones de embeddings, continuidad de fragmentos "
+                "y estructura de providencias. NO constituye garantía de fondo ni certificación de exactitud o vigencia "
+                "jurídica, la cual requiere revisión humana independiente."
+            ),
             "critical_failures": self.critical_failures,
             "warnings": self.warnings,
             "checks": self.checks,
@@ -295,7 +306,17 @@ async def audit_document_quality(document_id: str, service_key: Optional[str] = 
         is_critical=True,
     )
 
-    result_dict = audit.to_dict()
+    # Comprobar certificación jurídica humana previa en auditoría inmutable
+    legal_reviews = await store.db_request(
+        "GET",
+        f"despacho_corpus_auditoria_revisiones?document_id=eq.{document_id}&decision=eq.approve&responsible_role=in.(profesional_juridico,profesional_juridico_autorizado)&limit=1",
+        key,
+        service=True,
+    ) or []
+    is_legal_certified = bool(legal_reviews)
+    certified_by = legal_reviews[0].get("responsible_name") if legal_reviews else None
+
+    result_dict = audit.to_dict(legal_certified=is_legal_certified, certified_by=certified_by)
 
     # 3. Actualizar despacho_corpus_documentos con los resultados de auditoría
     update_payload = {
@@ -365,6 +386,18 @@ async def audit_document_quality(document_id: str, service_key: Optional[str] = 
     return result_dict
 
 
+def invalidate_document_caches(document_id: str, sentencia: Optional[str] = None) -> Dict[str, Any]:
+    """Invalida inmediatamente las entradas en caché de memoria (RAG memory y citas) cuando un documento se retira o modifica."""
+    purged_rag = 0
+    try:
+        from app.services.despacho_rag import document_memory
+        purged_rag = document_memory.invalidate_document(document_id, sentencia)
+    except Exception as exc:
+        log.warning("Memoria RAG: fallo al purgar caché para doc %s: %s", document_id, exc)
+
+    return {"purged_rag_entries": purged_rag, "document_id": document_id, "sentencia": sentencia}
+
+
 async def withdraw_document_reversible(
     document_id: str,
     reason: str,
@@ -418,6 +451,9 @@ async def withdraw_document_reversible(
         except Exception: meta = {}
     sentencia = str(meta.get("sentencia") or doc.get("title", "")).strip().upper()
 
+    # Invalidar cachés asociadas de inmediato
+    purge_info = invalidate_document_caches(document_id, sentencia)
+
     inc_payload = {
         "document_id": document_id,
         "sentencia": sentencia,
@@ -425,7 +461,11 @@ async def withdraw_document_reversible(
         "issue_type": "otro",
         "severity": "critica",
         "status": "en_investigacion",
-        "evidence": {"withdrawal_reason": reason, "previous_status": doc.get("workflow_status")},
+        "evidence": {
+            "withdrawal_reason": reason,
+            "previous_status": doc.get("workflow_status"),
+            "purged_caches": purge_info,
+        },
         "assigned_to": actor.get("name"),
         "action_history": [
             {
@@ -445,6 +485,7 @@ async def withdraw_document_reversible(
         "is_withdrawn": True,
         "reason": reason,
         "withdrawn_at": now_iso,
+        "purged_caches": purge_info,
     }
 
 
@@ -494,6 +535,15 @@ async def restore_document_reversible(
     }
     await store.db_request("POST", "despacho_corpus_auditoria_revisiones", key, json=audit_payload, service=True)
 
+    meta = doc.get("metadata") or {}
+    if isinstance(meta, str):
+        try: meta = json.loads(meta)
+        except Exception: meta = {}
+    sentencia = str(meta.get("sentencia") or doc.get("title", "")).strip().upper()
+
+    # Invalidar cachés asociadas para refrescar datos vigentes
+    purge_info = invalidate_document_caches(document_id, sentencia)
+
     # Cerrar incidencias abiertas asociadas
     open_incs = await store.db_request(
         "GET",
@@ -529,23 +579,112 @@ async def restore_document_reversible(
         "is_withdrawn": False,
         "resolution_note": resolution_note,
         "restored_at": now_iso,
+        "purged_caches": purge_info,
     }
 
 
+async def select_corpus_audit_candidates(
+    sample_size: int = 5,
+    service_key: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Selecciona de forma priorizada y equitativamente rotativa una muestra de documentos del corpus.
+    Prioridades estrictas:
+    1. Documentos con incidencias abiertas o reportes de error no resueltos.
+    2. Documentos con advertencias o incidencias técnicas (quality_status in ('con_advertencias', 'con_incidencias')).
+    3. Documentos nuevos sin auditar (last_quality_audit_at is null).
+    4. Documentos no auditados recientemente (rotación equitativa: order=last_quality_audit_at.asc.nullsfirst).
+    """
+    settings = get_settings()
+    key = service_key or settings.SUPABASE_SERVICE_ROLE_KEY
+    if not key:
+        return []
+
+    selected_ids: List[str] = []
+    selected_docs: List[Dict[str, Any]] = []
+
+    def _add_candidates(rows: List[Dict[str, Any]]):
+        for r in rows:
+            d_id = str(r.get("id") or r.get("document_id") or "")
+            if d_id and d_id not in selected_ids and len(selected_ids) < sample_size:
+                selected_ids.append(d_id)
+                selected_docs.append({"id": d_id, "title": r.get("title") or r.get("sentencia") or ""})
+
+    # Prioridad 1: Documentos reportados con incidencias abiertas
+    try:
+        inc_rows = await store.db_request(
+            "GET",
+            "despacho_corpus_incidencias?status=in.(detectado,pendiente_revision,en_investigacion)&select=document_id,sentencia&limit=10",
+            key,
+            service=True,
+        ) or []
+        for inc in inc_rows:
+            d_id = inc.get("document_id")
+            if d_id and d_id not in selected_ids and len(selected_ids) < sample_size:
+                doc_check = await store.db_request(
+                    "GET",
+                    f"despacho_corpus_documentos?id=eq.{d_id}&select=id,title",
+                    key,
+                    service=True,
+                ) or []
+                if doc_check:
+                    _add_candidates(doc_check)
+    except Exception as ex_inc:
+        log.warning("Fallo al consultar incidencias para selección de auditoría: %s", ex_inc)
+
+    # Prioridad 2: Documentos con advertencias o incidencias técnicas
+    if len(selected_ids) < sample_size:
+        try:
+            warn_docs = await store.db_request(
+                "GET",
+                f"despacho_corpus_documentos?quality_status=in.(con_advertencias,con_incidencias)&select=id,title&order=last_quality_audit_at.asc.nullsfirst&limit={sample_size}",
+                key,
+                service=True,
+            ) or []
+            _add_candidates(warn_docs)
+        except Exception as ex_warn:
+            log.warning("Fallo al consultar advertencias para selección de auditoría: %s", ex_warn)
+
+    # Prioridad 3: Documentos nuevos sin auditar
+    if len(selected_ids) < sample_size:
+        try:
+            new_docs = await store.db_request(
+                "GET",
+                f"despacho_corpus_documentos?last_quality_audit_at=is.null&select=id,title&limit={sample_size}",
+                key,
+                service=True,
+            ) or []
+            _add_candidates(new_docs)
+        except Exception as ex_new:
+            log.warning("Fallo al consultar documentos nuevos sin auditar: %s", ex_new)
+
+    # Prioridad 4: Rotación equitativa ordenada por menor fecha de última auditoría (los más antiguos primero)
+    if len(selected_ids) < sample_size:
+        needed = sample_size - len(selected_ids)
+        not_in_clause = f"&id=not.in.({','.join(selected_ids)})" if selected_ids else ""
+        try:
+            rot_docs = await store.db_request(
+                "GET",
+                f"despacho_corpus_documentos?select=id,title{not_in_clause}&order=last_quality_audit_at.asc.nullsfirst&limit={needed}",
+                key,
+                service=True,
+            ) or []
+            _add_candidates(rot_docs)
+        except Exception as ex_rot:
+            log.warning("Fallo al consultar rotación equitativa de documentos: %s", ex_rot)
+
+    return selected_docs
+
+
 async def audit_corpus_sample(sample_size: int = 5, service_key: Optional[str] = None) -> Dict[str, Any]:
-    """Audita periódicamente una muestra rotativa de documentos del corpus sin sobrecostes."""
+    """Audita periódicamente una muestra rotativa y priorizada de documentos del corpus sin sobrecostes."""
     settings = get_settings()
     key = service_key or settings.SUPABASE_SERVICE_ROLE_KEY
     if not key:
         return {"audited": 0, "results": [], "error": "No service key"}
 
-    # Seleccionar documentos ordenados por última auditoría (los más antiguos primero)
-    docs = await store.db_request(
-        "GET",
-        f"despacho_corpus_documentos?select=id,title&order=last_quality_audit_at.asc.nullsfirst&limit={sample_size}",
-        key,
-        service=True,
-    ) or []
+    # Seleccionar candidatos con rotación equitativa y priorización estricta
+    docs = await select_corpus_audit_candidates(sample_size=sample_size, service_key=key)
 
     results = []
     for d in docs:

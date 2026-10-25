@@ -20,6 +20,7 @@ import asyncio
 from datetime import datetime, timezone
 import json
 import logging
+import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -81,12 +82,17 @@ class IncidentUpdateRequest(BaseModel):
 class UserErrorReportRequest(BaseModel):
     target_type: str = Field(..., pattern=r"^(agente_respuesta|jurisprudencia_tarjeta|documento_corpus)$")
     document_id: Optional[str] = None
+    document_version: Optional[int] = 1
+    fragment_ordinal: Optional[int] = None
+    fragment_segment: Optional[int] = None
+    response_id: Optional[str] = None
     sentencia: Optional[str] = None
     error_category: str = Field(
         ...,
         pattern=r"^(sentencia_incorrecta|referencia_equivocada|interpretacion_incorrecta|informacion_desactualizada|fragmento_incompleto|otro)$"
     )
     description: Optional[str] = ""
+    temporal_citation: Optional[str] = None
     source_fragment_id: Optional[str] = None
     query_summary: Optional[str] = None
 
@@ -188,19 +194,48 @@ async def get_corpus_documents(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
-    """Lista providencias del Corpus Oficial con sus atributos de calidad y auditoría."""
+    """Lista providencias del Corpus Oficial distinguiendo puntaje técnico de certificación jurídica humana."""
     await verificar_acceso(request)
     settings = get_settings()
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 
-    query_parts = ["select=id,title,published,workflow_status,quality_status,quality_score,is_withdrawn,last_quality_audit_at,metadata,created_at"]
+    query_parts = ["select=id,title,published,workflow_status,quality_status,quality_score,is_withdrawn,last_quality_audit_at,metadata,created_at,first_seen_at"]
     if quality_status:
         query_parts.append(f"quality_status=eq.{quality_status}")
-    query_parts.append(f"order=created_at.desc&limit={limit}&offset={offset}")
+    query_parts.append(f"order=first_seen_at.desc.nullslast&limit={limit}&offset={offset}")
 
     endpoint = f"despacho_corpus_documentos?{'&'.join(query_parts)}"
     docs = await store.db_request("GET", endpoint, key, service=True) or []
-    return {"documentos": docs, "limit": limit, "offset": offset}
+
+    # Consultar revisiones jurídicas aprobadas por abogados para mapear la certificación
+    approved_revs = await store.db_request(
+        "GET",
+        "despacho_corpus_auditoria_revisiones?decision=eq.approve&responsible_role=in.(profesional_juridico,profesional_juridico_autorizado)&select=document_id,responsible_name",
+        key,
+        service=True,
+    ) or []
+    approved_map = {r["document_id"]: r.get("responsible_name") for r in approved_revs if r.get("document_id")}
+
+    disclaimer = (
+        "El puntaje técnico representa exclusivamente comprobaciones automatizadas de integridad de archivos "
+        "(hashes SHA-256, ausencia de duplicados, continuidad de fragmentos y formato de embeddings). Una puntuación "
+        "técnica del 100 % NO constituye garantía ni certificación de exactitud jurídica, la cual requiere revisión humana."
+    )
+
+    enriched_docs = []
+    for d in docs:
+        doc_id = d.get("id")
+        has_legal_cert = doc_id in approved_map
+        enriched_docs.append({
+            **d,
+            "technical_score": d.get("quality_score", 100.0),
+            "legal_certification_status": "certificada_humana" if has_legal_cert else "pendiente_certificacion_humana",
+            "legal_certified": has_legal_cert,
+            "legal_certified_by": approved_map.get(doc_id),
+            "disclaimer": disclaimer,
+        })
+
+    return {"documentos": enriched_docs, "limit": limit, "offset": offset, "disclaimer": disclaimer}
 
 
 @router.post("/corpus/auditar")
@@ -319,30 +354,77 @@ async def update_incidencia(incident_id: str, payload: IncidentUpdateRequest, re
 
 @router.post("/reportes-error")
 async def report_user_error(payload: UserErrorReportRequest, request: Request):
-    """Permite al abogado reportar un error desde una respuesta del Agente o tarjeta de Jurisprudencia."""
+    """Permite al abogado reportar un error desde una respuesta del Agente o tarjeta de Jurisprudencia vinculándolo a identificadores estables."""
     user = await verificar_acceso(request)
     identity = extract_user_identity(user)
     settings = get_settings()
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 
     now_iso = datetime.now(timezone.utc).isoformat()
-    # Respeto riguroso de la privacidad: no se guardan chats privados completos ni PII de terceros
+    doc_id = payload.document_id
+    doc_version = payload.document_version or 1
+    sentencia_title = payload.sentencia or ""
+    frag_ordinal = payload.fragment_ordinal
+    frag_segment = payload.fragment_segment
+
+    # Resolver referencia temporal si vino en citation ej: [O1-S1] o [O2-S3]
+    ref_input = payload.temporal_citation or payload.source_fragment_id
+    if ref_input and (frag_ordinal is None or frag_segment is None):
+        m_ord = re.search(r"\[?O(\d+)(?:-S(\d+))?\]?", ref_input, re.IGNORECASE)
+        if m_ord:
+            if frag_ordinal is None:
+                frag_ordinal = int(m_ord.group(1))
+            if frag_segment is None and m_ord.group(2):
+                frag_segment = int(m_ord.group(2))
+
+    # Si doc_id no es UUID válido o viene vacío, buscar documento permanente por sentencia
+    if not doc_id and sentencia_title:
+        doc_rows = await store.db_request(
+            "GET",
+            f"despacho_corpus_documentos?title=ilike.*{sentencia_title.strip()}*&select=id,version,title&limit=1",
+            key,
+            service=True,
+        ) or []
+        if doc_rows:
+            doc_id = doc_rows[0].get("id")
+            doc_version = doc_rows[0].get("version", 1)
+            sentencia_title = doc_rows[0].get("title", sentencia_title)
+    elif doc_id:
+        doc_rows = await store.db_request(
+            "GET",
+            f"despacho_corpus_documentos?id=eq.{doc_id}&select=id,version,title&limit=1",
+            key,
+            service=True,
+        ) or []
+        if doc_rows:
+            doc_version = doc_rows[0].get("version", 1)
+            if not sentencia_title:
+                sentencia_title = doc_rows[0].get("title", "")
+
+    # Resguardo riguroso de privacidad: NO registrar contenido de conversaciones privadas, expedientes ni PII
     evidence = {
         "error_category": payload.error_category,
         "description": payload.description,
-        "source_fragment_id": payload.source_fragment_id,
-        "query_summary": payload.query_summary[:200] if payload.query_summary else None,
+        "target_type": payload.target_type,
+        "document_version": doc_version,
+        "fragment_ordinal": frag_ordinal,
+        "fragment_segment": frag_segment,
+        "response_id": payload.response_id,
+        "temporal_citation": ref_input,
+        "reported_by_id": identity["id"],
         "reported_by_role": identity["role"],
+        "reported_by_email": identity.get("email"),
     }
 
     inc_payload = {
-        "document_id": payload.document_id,
-        "sentencia": payload.sentencia,
-        "scope": "agente" if payload.target_type == "agente_respuesta" else "jurisprudencia",
-        "issue_type": "reporte_usuario",
+        "document_id": doc_id,
+        "sentencia": sentencia_title or (f"Providencia {doc_id}" if doc_id else "Sin providencia identificada"),
+        "scope": "agente" if payload.target_type == "agente_respuesta" else ("jurisprudencia" if payload.target_type == "jurisprudencia_tarjeta" else "corpus"),
+        "issue_type": payload.error_category,
         "severity": "media" if payload.error_category not in ("sentencia_incorrecta", "interpretacion_incorrecta") else "alta",
-        "status": "pendiente_revision",
+        "status": "detectado",
         "evidence": evidence,
+        "assigned_to": None,
         "action_history": [
             {
                 "timestamp": now_iso,

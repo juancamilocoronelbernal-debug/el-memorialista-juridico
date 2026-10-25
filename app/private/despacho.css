@@ -663,3 +663,40 @@
   align-items: center;
   gap: 8px;
 }
+.calidad-disclaimer-box {
+  background: #f8fafc;
+  border-left: 4px solid #0284c7;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: #334155;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+@media (max-width: 768px) {
+  .calidad-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .calidad-header-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .calidad-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .calidad-tab-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  .calidad-table th, .calidad-table td {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+  }
+  .calidad-disclaimer-box {
+    font-size: 0.78rem;
+    padding: 8px 10px;
+  }
+}

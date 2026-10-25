@@ -1800,9 +1800,14 @@ function openErrorReportModal(targetInfo={}){
         const payload = {
           target_type: targetInfo.target_type || 'agente_respuesta',
           document_id: targetInfo.document_id || null,
+          document_version: targetInfo.document_version || targetInfo.version || 1,
+          fragment_ordinal: targetInfo.fragment_ordinal !== undefined ? targetInfo.fragment_ordinal : (targetInfo.ordinal !== undefined ? targetInfo.ordinal : null),
+          fragment_segment: targetInfo.fragment_segment !== undefined ? targetInfo.fragment_segment : (targetInfo.segment !== undefined ? targetInfo.segment : null),
+          response_id: targetInfo.response_id || null,
           sentencia: targetInfo.sentencia || null,
           error_category: categoryField.input.value,
           description: descField.input.value.trim(),
+          temporal_citation: targetInfo.source_fragment_id || targetInfo.citation_id || null,
           source_fragment_id: targetInfo.source_fragment_id || null,
           query_summary: targetInfo.query_summary || null
         };
@@ -1925,6 +1930,12 @@ function renderTabCorpus(){
   const wrap = el('div', {class: 'calidad-tab-pane'});
   const docs = calidadState.docs;
 
+  const disclaimerBox = el('div', {class: 'calidad-disclaimer-box'},
+    el('strong', {}, 'Distinción obligatoria entre integridad técnica y certificación jurídica: '),
+    el('span', {}, 'El Puntaje Técnico Automático refleja exclusivamente comprobaciones sistemáticas de archivos (hashes SHA-256, ausencia de duplicados, continuidad de fragmentos y formato de embeddings). Una puntuación técnica del 100 % NO constituye garantía ni certificación de exactitud o vigencia jurídica, las cuales requieren revisión jurídica humana profesional.')
+  );
+  wrap.append(disclaimerBox);
+
   if (!docs.length) {
     wrap.append(el('p', {class: 'inline-help'}, 'Cargando providencias del Corpus Oficial…'));
     return wrap;
@@ -1936,9 +1947,9 @@ function renderTabCorpus(){
     el('thead', {},
       el('tr', {},
         el('th', {}, 'Providencia'),
-        el('th', {}, 'Calidad Oficial'),
-        el('th', {}, 'Score'),
-        el('th', {}, 'Estado'),
+        el('th', {}, 'Puntaje Técnico Automático'),
+        el('th', {}, 'Certificación Jurídica'),
+        el('th', {}, 'Estado en Corpus'),
         el('th', {}, 'Última Auditoría'),
         el('th', {}, 'Acciones')
       )
@@ -1950,22 +1961,37 @@ function renderTabCorpus(){
     const qStatus = d.quality_status || 'sin_auditar';
     const pillClass = qStatus === 'optimo' ? 'optimo' : (qStatus === 'con_advertencias' ? 'advertencia' : (qStatus === 'critico_retirado' ? 'retirado' : 'incidencia'));
     const isWithdrawn = !!d.is_withdrawn;
+    const isLegalCertified = !!d.legal_certified;
+    const isPublished = !!d.published;
 
     const row = el('tr', {},
       el('td', {},
         el('strong', {}, d.title || 'Providencia Oficial'),
-        el('div', {class: 'v5-grouped-meta'}, d.metadata?.magistrado ? `Ponente: ${d.metadata.magistrado}` : '')
+        el('div', {class: 'v5-grouped-meta'}, d.metadata?.magistrado ? `Ponente: ${d.metadata.magistrado}` : (d.metadata?.radicado ? `Exp: ${d.metadata.radicado}` : ''))
       ),
-      el('td', {}, el('span', {class: 'calidad-pill ' + pillClass}, qStatus.replace('_', ' '))),
-      el('td', {}, `${d.quality_score ?? 100}%`),
-      el('td', {}, isWithdrawn ? el('span', {class: 'calidad-pill retirado'}, 'Retirado') : el('span', {class: 'calidad-pill optimo'}, 'Publicado')),
+      el('td', {},
+        el('div', {style: 'display:flex;align-items:center;gap:6px;'},
+          el('span', {class: 'calidad-pill ' + pillClass}, `${d.technical_score ?? d.quality_score ?? 100}% Técnico`),
+          el('span', {style: 'font-size:0.75rem;color:var(--text-muted);'}, `(${qStatus.replace(/_/g, ' ')})`)
+        )
+      ),
+      el('td', {},
+        isLegalCertified
+          ? el('span', {class: 'calidad-pill verificado', title: d.legal_certified_by ? `Revisada por: ${d.legal_certified_by}` : 'Certificada formalmente'}, '✓ Certificada por Abogado')
+          : el('span', {class: 'calidad-pill advertencia', title: 'Pendiente de revisión jurídica humana formal'}, '⏳ Pendiente Revisión Humana')
+      ),
+      el('td', {},
+        isWithdrawn
+          ? el('span', {class: 'calidad-pill retirado'}, 'Retirado')
+          : (isPublished ? el('span', {class: 'calidad-pill optimo'}, 'Publicado') : el('span', {class: 'calidad-pill pendiente'}, 'En Triage'))
+      ),
       el('td', {}, d.last_quality_audit_at ? shortDate(d.last_quality_audit_at, true) : 'Pendiente'),
       el('td', {style: 'display:flex;gap:6px;flex-wrap:wrap;'},
         button('Auditar', async () => {
           try {
             toast('Auditando ' + d.title + '…');
             const res = await api('/despacho/calidad/corpus/auditar', {method: 'POST', body: {document_id: d.id}});
-            toast(`Auditoría concluida: score ${res.result?.quality_score}% (${res.result?.quality_status})`);
+            toast(`Auditoría técnica: score ${res.result?.quality_score}% (${res.result?.quality_status})`);
             await loadCalidadData();
             render();
           } catch (err) {

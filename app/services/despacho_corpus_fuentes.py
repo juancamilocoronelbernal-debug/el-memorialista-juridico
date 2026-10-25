@@ -331,7 +331,7 @@ async def get_document_fragments(
 
     async with httpx.AsyncClient(timeout=35) as client:
         if kind == "official" or source_url or (doc_id and not user_id):
-            doc_query = "published=eq.true&limit=1"
+            doc_query = "limit=1"
             if doc_id:
                 doc_query += f"&id=eq.{doc_id}"
             elif source_url:
@@ -347,10 +347,18 @@ async def get_document_fragments(
                 raise HTTPException(404, "Documento oficial no encontrado en el corpus compartido.")
 
             doc_data = doc_res.json()[0]
-            if doc_data.get("integrity_status") == "partial" or doc_data.get("workflow_status") == "withdrawn":
+            if doc_data.get("is_withdrawn") or (doc_data.get("published") is False) or doc_data.get("workflow_status") in ("withdrawn", "retirado_temporalmente"):
+                reason = doc_data.get("withdrawn_reason") or "Providencia retirada preventivamente por control de calidad"
+                status_wf = doc_data.get("workflow_status") or "retirado_temporalmente"
+                raise HTTPException(
+                    410,
+                    f"Providencia no disponible: {reason}. Estado actual: {status_wf}."
+                )
+
+            if doc_data.get("integrity_status") == "partial":
                 raise HTTPException(
                     404,
-                    "Documento oficial retirado o con indexación parcial en curso; no disponible como providencia íntegra."
+                    "Documento oficial con indexación parcial en curso; no disponible como providencia íntegra."
                 )
             actual_doc_id = doc_data["id"]
 

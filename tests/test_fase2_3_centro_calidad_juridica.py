@@ -153,11 +153,15 @@ async def test_control_calidad_corpus_doc_optimo():
             mock_doc,     # GET doc
             mock_frags,   # GET fragments
             [],           # GET other_docs (duplicados)
+            [],           # GET legal reviews (auditoria revisiones)
             {},           # PATCH doc update
         ]
         res = await audit_document_quality(doc_id, service_key="test-key")
         assert res["quality_status"] == "optimo"
         assert res["quality_score"] == 100.0
+        assert res["technical_score"] == 100.0
+        assert res["legal_certification_status"] == "pendiente_certificacion_humana"
+        assert "disclaimer" in res
         assert len(res["critical_failures"]) == 0
         assert res["checks"]["identidad_oficial"]["passed"] is True
         assert res["checks"]["fragmentos_continuidad"]["passed"] is True
@@ -193,14 +197,17 @@ async def test_control_calidad_corpus_doc_con_fallos_criticos():
         mock_db.side_effect = [
             mock_doc,
             mock_frags,
-            [],
-            {},  # PATCH doc
-            [],  # GET existing incidents
-            {},  # POST new incident
+            [],   # other docs
+            [],   # legal reviews
+            {},   # PATCH doc
+            [],   # GET existing incidents
+            {},   # POST new incident
         ]
         res = await audit_document_quality(doc_id, service_key="test-key")
         assert res["quality_status"] == "con_incidencias"
         assert res["quality_score"] < 50.0
+        assert res["technical_score"] < 50.0
+        assert res["legal_certification_status"] == "pendiente_certificacion_humana"
         assert len(res["critical_failures"]) > 0
         assert res["checks"]["hash_version"]["passed"] is False
         assert res["checks"]["embeddings_calidad"]["passed"] is False

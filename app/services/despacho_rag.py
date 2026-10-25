@@ -720,6 +720,28 @@ class ConversationDocumentMemory:
         for k in to_del:
             self._cache.pop(k, None)
 
+    def invalidate_document(self, document_id: str, sentencia: Optional[str] = None) -> int:
+        """Invalida de inmediato todas las entradas cacheadas que hagan referencia a este document_id o providencia."""
+        to_del = []
+        doc_id_str = str(document_id).strip()
+        sentencia_clean = (sentencia or "").strip().upper()
+        for k, v in self._cache.items():
+            passages = v.get("data", {}).get("passages", [])
+            has_doc = any(
+                str(p.get("document_id", "")).strip() == doc_id_str or
+                (sentencia_clean and sentencia_clean in str(p.get("title", "")).upper())
+                for p in passages
+            )
+            intent = v.get("intent_info", {})
+            target_ruling = str(intent.get("target_ruling", "")).strip().upper()
+            if has_doc or (sentencia_clean and target_ruling == sentencia_clean):
+                to_del.append(k)
+        for k in to_del:
+            self._cache.pop(k, None)
+        if to_del:
+            log.info("Memoria RAG: invalidadas %d entradas para documento %s (%s)", len(to_del), document_id, sentencia or "")
+        return len(to_del)
+
 
 # Instancia singleton de memoria documental
 document_memory = ConversationDocumentMemory()
