@@ -320,8 +320,13 @@ def test_admin_router_endpoints():
     """Verifica la respuesta de los nuevos endpoints administrativos expuestos en FastAPI."""
     client = TestClient(app)
 
-    with patch("app.main.verificar_acceso", new_callable=AsyncMock, return_value={"id": "00000000-0000-4000-8000-000000000001", "email": "admin@example.com"}), \
-         patch("app.routers.despacho_corpus_fuentes.identity", new_callable=AsyncMock, return_value=("00000000-0000-4000-8000-000000000001", "token")), \
+    admin_mock = {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "email": "admin@example.com",
+        "app_metadata": {"role": "admin"},
+    }
+    with patch("app.main.verificar_acceso", new_callable=AsyncMock, return_value=admin_mock), \
+         patch("app.routers.despacho_corpus_fuentes.verificar_acceso", new_callable=AsyncMock, return_value=admin_mock), \
          patch("app.services.limites.limitador.verificar", return_value=None):
 
         # 1. Pause schedule
