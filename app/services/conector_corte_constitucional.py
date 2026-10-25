@@ -2451,23 +2451,56 @@ async def validate_and_stage_ruling(
         },
     )
 
-    # Registrar en tabla de descubrimientos
+    # Registrar o sincronizar en tabla de descubrimientos
     if key:
         try:
-            await store.db_request(
-                "PATCH",
-                f"despacho_conector_descubrimientos?sentencia=eq.{sentencia}",
+            target_status = "published" if should_finalize else "technically_validated"
+            existing_desc = await store.db_request(
+                "GET",
+                f"despacho_conector_descubrimientos?sentencia=eq.{sentencia}&select=id",
                 key,
                 service=True,
-                json={
-                    "source_url": url,
-                    "source_status": "published" if should_finalize else "technically_validated",
-                    "document_id": doc_id,
-                    "last_checked_at": datetime.now(timezone.utc).isoformat(),
-                },
-            )
+            ) or []
+            if existing_desc:
+                await store.db_request(
+                    "PATCH",
+                    f"despacho_conector_descubrimientos?sentencia=eq.{sentencia}",
+                    key,
+                    service=True,
+                    json={
+                        "source_url": url,
+                        "source_status": target_status,
+                        "document_id": doc_id,
+                        "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
+            else:
+                tipo_ruling = "T" if sentencia.startswith("T-") else ("C" if sentencia.startswith("C-") else ("SU" if sentencia.startswith("SU-") else "A"))
+                await store.db_request(
+                    "POST",
+                    "despacho_conector_descubrimientos",
+                    key,
+                    service=True,
+                    json={
+                        "sentencia": sentencia,
+                        "tipo": tipo_ruling,
+                        "anio": ruling_meta.get("anio") or (int(fecha[:4]) if (fecha and len(fecha) >= 4 and fecha[:4].isdigit()) else None),
+                        "fecha": fecha,
+                        "magistrado": header_meta.get("magistrado") or ruling_meta.get("magistrado"),
+                        "sala": header_meta.get("sala") or ruling_meta.get("sala"),
+                        "expediente": header_meta.get("radicado") or ruling_meta.get("expediente"),
+                        "proceso": ruling_meta.get("proceso") or "Control de constitucionalidad / Tutela",
+                        "tema": ruling_meta.get("tema"),
+                        "source_dataset": "relatoria_oficial",
+                        "source_url": url,
+                        "source_status": target_status,
+                        "document_id": doc_id,
+                        "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                        "first_discovered_at": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
         except Exception as e_desc_up:
-            log.debug("Aviso actualizando estado en descubrimientos para %s: %s", sentencia, e_desc_up)
+            log.warning("Aviso actualizando o registrando estado en descubrimientos para %s: %s", sentencia, e_desc_up)
 
     return {
         "id": doc_id,
