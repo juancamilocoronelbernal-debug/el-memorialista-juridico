@@ -108,12 +108,42 @@ class RelationVerificationRequest(BaseModel):
     notes: Optional[str] = None
 
 
+# Helpers de protección de datos personales (PII) en incidencias (EM-03)
+
+def _mask_email(email: Optional[str]) -> Optional[str]:
+    """Enmascara direcciones de correo electrónico para evitar divulgación transversal de PII."""
+    if not email or not isinstance(email, str) or "@" not in email:
+        return None
+    local, domain = email.strip().split("@", 1)
+    if not local or not domain:
+        return None
+    prefix = local[:2] if len(local) >= 2 else local[:1]
+    return f"{prefix}***@{domain}"
+
+
+def _sanitize_incidencia_item(inc: Dict[str, Any]) -> Dict[str, Any]:
+    """Elimina o enmascara datos personales de terceros (`reported_by_email`) en respuestas de incidencias."""
+    if not isinstance(inc, dict):
+        return inc
+    sanitized = dict(inc)
+    ev = sanitized.get("evidence")
+    if isinstance(ev, dict):
+        ev_copy = dict(ev)
+        if "reported_by_email" in ev_copy:
+            raw_email = ev_copy.get("reported_by_email")
+            if raw_email and "***" not in str(raw_email):
+                ev_copy["reported_by_email"] = _mask_email(str(raw_email))
+        sanitized["evidence"] = ev_copy
+    return sanitized
+
+
 # Endpoints
 
 @router.get("/metricas")
 async def get_calidad_metricas(request: Request):
     """Métricas ejecutivas de supervisión continua, distinguiendo comprobaciones técnicas y evaluaciones jurídicas."""
     user = await verificar_acceso(request)
+    require_document_auditor(user, "consultar métricas ejecutivas del Centro de Calidad")
     settings = get_settings()
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 
@@ -195,7 +225,8 @@ async def get_corpus_documents(
     offset: int = Query(0, ge=0),
 ):
     """Lista providencias del Corpus Oficial distinguiendo puntaje técnico de certificación jurídica humana."""
-    await verificar_acceso(request)
+    user = await verificar_acceso(request)
+    require_document_auditor(user, "consultar el catálogo administrativo de calidad del corpus")
     settings = get_settings()
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 
@@ -276,11 +307,21 @@ async def list_incidencias(
     status: Optional[str] = None,
     severity: Optional[str] = None,
     scope: Optional[str] = None,
+    mine_only: bool = Query(False),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
-    """Consulta la bandeja unificada de incidencias con filtros de gravedad, estado y alcance."""
-    await verificar_acceso(request)
+    """Consulta la bandeja unificada de incidencias con control de autorización y aislamiento por usuario."""
+    user = await verificar_acceso(request)
+    identity = extract_user_identity(user)
+
+    if identity.get("has_role_conflict"):
+        require_document_auditor(user, "consultar la bandeja de incidencias")
+
+    if not identity["is_document_auditor"]:
+        if not mine_only:
+            require_document_auditor(user, "consultar la bandeja global de incidencias")
+
     settings = get_settings()
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 
@@ -291,30 +332,58 @@ async def list_incidencias(
         query_parts.append(f"severity=eq.{severity}")
     if scope:
         query_parts.append(f"scope=eq.{scope}")
+    if not identity["is_document_auditor"] or mine_only:
+        query_parts.append(f"evidence->>reported_by_id=eq.{identity['id']}")
     query_parts.append(f"order=detected_at.desc&limit={limit}&offset={offset}")
 
-    incidencias = await store.db_request("GET", f"despacho_corpus_incidencias?{'&'.join(query_parts)}", key, service=True) or []
+    raw_incidencias = await store.db_request("GET", f"despacho_corpus_incidencias?{'&'.join(query_parts)}", key, service=True) or []
+    if not identity["is_document_auditor"] or mine_only:
+        raw_incidencias = [
+            inc for inc in raw_incidencias
+            if str((inc.get("evidence") or {}).get("reported_by_id") or "") == str(identity["id"])
+        ]
+
+    incidencias = [_sanitize_incidencia_item(inc) for inc in raw_incidencias]
     return {"incidencias": incidencias, "limit": limit, "offset": offset}
 
 
 @router.get("/incidencias/{incident_id}")
 async def get_incidencia(incident_id: str, request: Request):
-    """Obtiene el expediente completo de una incidencia con su historial inmutable de acciones."""
-    await verificar_acceso(request)
+    """Obtiene el expediente completo de una incidencia verificando permisos o titularidad del reporte."""
+    user = await verificar_acceso(request)
+    identity = extract_user_identity(user)
+
+    if identity.get("has_role_conflict"):
+        require_document_auditor(user, "consultar detalle de incidencia")
+
     settings = get_settings()
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 
     incs = await store.db_request("GET", f"despacho_corpus_incidencias?id=eq.{incident_id}&select=*", key, service=True)
     if not incs:
+        if not identity["is_document_auditor"]:
+            raise HTTPException(403, "Acceso denegado: no tiene permisos para consultar incidencias de otros usuarios.")
         raise HTTPException(404, "Incidencia no encontrada.")
-    return incs[0]
+
+    inc = incs[0]
+    reported_by_id = str((inc.get("evidence") or {}).get("reported_by_id") or "")
+
+    if not identity["is_document_auditor"]:
+        if not reported_by_id or reported_by_id != str(identity["id"]):
+            raise HTTPException(
+                status_code=403,
+                detail="Acceso denegado: no tiene permisos para consultar incidencias reportadas por otros usuarios.",
+            )
+
+    return _sanitize_incidencia_item(inc)
 
 
 @router.patch("/incidencias/{incident_id}")
 async def update_incidencia(incident_id: str, payload: IncidentUpdateRequest, request: Request):
     """Actualiza el estado de una incidencia, asigna responsable o añade una anotación a la bitácora."""
     user = await verificar_acceso(request)
-    identity = extract_user_identity(user)
+    # SEGURIDAD (EM-03): Exigir como mínimo rol de auditor documental o administrador técnico para cualquier mutación
+    identity = require_document_auditor(user, "modificar el estado, asignación o bitácora de incidencias")
     settings = get_settings()
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 
@@ -323,9 +392,11 @@ async def update_incidencia(incident_id: str, payload: IncidentUpdateRequest, re
         raise HTTPException(404, "Incidencia no encontrada.")
     inc = incs[0]
 
-    # Si se intenta cerrar o corregir una incidencia jurídica de fondo, exigir acreditación jurídica
-    if payload.status in ("corregido", "cerrado") and inc.get("scope") in ("agente", "jurisprudencia"):
-        require_legal_professional(user, "resolver formalmente incidencias jurídicas de fondo")
+    # Si se intenta resolver o cerrar una incidencia (o descartar una incidencia jurídica de fondo), exigir acreditación jurídica
+    if payload.status in ("corregido", "cerrado") or (
+        payload.status == "descartado" and inc.get("scope") in ("agente", "jurisprudencia")
+    ):
+        identity = require_legal_professional(user, "resolver o cerrar formalmente incidencias jurídicas de fondo")
 
     now_iso = datetime.now(timezone.utc).isoformat()
     history = inc.get("action_history") or []
@@ -354,9 +425,11 @@ async def update_incidencia(incident_id: str, payload: IncidentUpdateRequest, re
 
 @router.post("/reportes-error")
 async def report_user_error(payload: UserErrorReportRequest, request: Request):
-    """Permite al abogado reportar un error desde una respuesta del Agente o tarjeta de Jurisprudencia vinculándolo a identificadores estables."""
+    """Permite al usuario autenticado reportar un error desde una respuesta del Agente o tarjeta de Jurisprudencia vinculándolo a identificadores estables."""
     user = await verificar_acceso(request)
     identity = extract_user_identity(user)
+    if not user or not user.get("id") or identity["id"] == "anon":
+        raise HTTPException(401, "No autenticado.")
     settings = get_settings()
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 
@@ -401,7 +474,7 @@ async def report_user_error(payload: UserErrorReportRequest, request: Request):
             if not sentencia_title:
                 sentencia_title = doc_rows[0].get("title", "")
 
-    # Resguardo riguroso de privacidad: NO registrar contenido de conversaciones privadas, expedientes ni PII
+    # Resguardo riguroso de privacidad (EM-03): enmascarar correo del reportante y no exponer PII
     evidence = {
         "error_category": payload.error_category,
         "description": payload.description,
@@ -413,14 +486,14 @@ async def report_user_error(payload: UserErrorReportRequest, request: Request):
         "temporal_citation": ref_input,
         "reported_by_id": identity["id"],
         "reported_by_role": identity["role"],
-        "reported_by_email": identity.get("email"),
+        "reported_by_email": _mask_email(identity.get("email")),
     }
 
     inc_payload = {
         "document_id": doc_id,
         "sentencia": sentencia_title or (f"Providencia {doc_id}" if doc_id else "Sin providencia identificada"),
         "scope": "agente" if payload.target_type == "agente_respuesta" else ("jurisprudencia" if payload.target_type == "jurisprudencia_tarjeta" else "corpus"),
-        "issue_type": payload.error_category,
+        "issue_type": "reporte_usuario",
         "severity": "media" if payload.error_category not in ("sentencia_incorrecta", "interpretacion_incorrecta") else "alta",
         "status": "detectado",
         "evidence": evidence,
@@ -439,7 +512,7 @@ async def report_user_error(payload: UserErrorReportRequest, request: Request):
     return {
         "success": True,
         "message": "Reporte de error radicado exitosamente. Ha sido incorporado al Centro de Calidad Jurídica para revisión profesional.",
-        "incident": inc_payload,
+        "incident": _sanitize_incidencia_item(inc_payload),
     }
 
 
@@ -468,7 +541,8 @@ async def get_jurisprudential_evolution(
     limit: int = Query(50, ge=1, le=100),
 ):
     """Consulta relaciones jurisprudenciales detectadas entre providencias."""
-    await verificar_acceso(request)
+    user = await verificar_acceso(request)
+    require_document_auditor(user, "consultar el seguimiento de evolución jurisprudencial")
     settings = get_settings()
     key = settings.SUPABASE_SERVICE_ROLE_KEY
 

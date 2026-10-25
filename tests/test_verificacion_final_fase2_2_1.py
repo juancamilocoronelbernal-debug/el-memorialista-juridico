@@ -292,11 +292,12 @@ def test_triage_review_security_identity_and_role_enforcement():
         assert res.status_code == 403
         assert "no cuenta con atribuciones jurídicas acreditadas" in res.json()["detail"]
 
-    # 2. Profesional jurídico acreditado (rol 'abogado') -> autoriza y fija identidad verificada del servidor
+    # 2. Profesional jurídico acreditado en app_metadata (rol 'abogado') -> autoriza y fija identidad verificada del servidor
     user_abogado = {
         "id": "22222222-3333-4444-5555-666666666666",
         "email": "abogada.relatora@despacho.co",
-        "user_metadata": {"full_name": "Dra. María Paula González", "rol": "abogado"},
+        "user_metadata": {"full_name": "Dra. María Paula González"},
+        "app_metadata": {"role": "abogado"},
     }
     with patch("app.main.verificar_acceso", new_callable=AsyncMock, return_value=user_abogado), \
          patch("app.routers.despacho_corpus_fuentes.verificar_acceso", new_callable=AsyncMock, return_value=user_abogado), \

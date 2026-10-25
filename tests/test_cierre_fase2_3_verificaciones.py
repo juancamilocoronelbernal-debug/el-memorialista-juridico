@@ -82,7 +82,7 @@ async def test_reporte_error_resolucion_identificadores_y_privacidad():
             "id": "usr-abogado-789",
             "name": "Dra. Abogada Litigante",
             "email": "abogada@ejemplo.com",
-            "role": "profesional_juridico",
+            "app_metadata": {"role": "profesional_juridico"},
         }
         mock_auth.return_value = user_info
         mock_auth_router.return_value = user_info
@@ -117,7 +117,7 @@ async def test_reporte_error_resolucion_identificadores_y_privacidad():
         assert incident["evidence"]["fragment_segment"] == 2
         assert incident["evidence"]["response_id"] == "msg-resp-987"
         assert incident["evidence"]["reported_by_id"] == "usr-abogado-789"
-        assert incident["evidence"]["reported_by_email"] == "abogada@ejemplo.com"
+        assert incident["evidence"]["reported_by_email"] == "ab***@ejemplo.com"
 
         # Comprobar resguardo de privacidad: sin transcripción de chats ni consultas completas privadas
         assert "prompt" not in incident["evidence"]
