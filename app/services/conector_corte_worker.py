@@ -76,7 +76,11 @@ async def conector_corte_worker():
             if should_run:
                 log.info("Conector Corte: Hora de ejecución alcanzada. Iniciando ciclo programado...")
                 settings = get_settings()
-                batch_limit = getattr(settings, "CONECTOR_CORTE_PILOT_MAX_BATCH", 20)
+                batch_limit = int(
+                    status.get("batch_limit")
+                    or (status.get("details") or {}).get("batch_limit")
+                    or getattr(settings, "CONECTOR_CORTE_PILOT_MAX_BATCH", 20)
+                )
                 auto_publish = getattr(settings, "CONECTOR_CORTE_AUTO_PUBLISH_DEFAULT", False)
 
                 # Programar inmediatamente la próxima ejecución para evitar tormentas de reintentos

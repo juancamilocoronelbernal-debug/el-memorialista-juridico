@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 from typing import Literal, Optional
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.routers.despacho_data import identity
 from app.services.despacho_corpus_fuentes import (
     catalog, constitutional_metadata, search_corpus, corpus_status, get_document_fragments
 )
-from app.services.limites import limitador
+from app.services.limites import limitador, verificar_acceso
 
 router = APIRouter(prefix='/api/despacho/official', tags=['Corpus oficial'])
 
@@ -117,8 +117,6 @@ class ConnectorTriageReviewRequest(BaseModel):
     decision: Literal['approve', 'reject', 'withdraw']
     reason: Optional[str] = Field(None, max_length=500)
     review_type: Literal['revision_juridica_humana', 'aprobacion_administrativa'] = 'revision_juridica_humana'
-    responsible_name: Optional[str] = Field(None, max_length=150)
-    responsible_role: Optional[str] = Field(None, max_length=100)
 
 
 class ConnectorPauseRequest(BaseModel):
@@ -206,17 +204,52 @@ async def list_triage_endpoint(
 
 @router.post('/connector/triage/review')
 async def review_triage_endpoint(payload: ConnectorTriageReviewRequest, request: Request):
-    """Resuelve la revisión humana/administrativa de un documento en triage (aprobar, rechazar o retirar)."""
-    uid, _ = await identity(request)
-    limitador.verificar(request, 'citas', user_id=uid)
+    """Resuelve la revisión de un documento en triage con estricta verificación de identidad y roles de revisor."""
+    usuario = await verificar_acceso(request)
+    limitador.verificar(request, 'citas', user_id=usuario['id'])
+
+    user_id = str(usuario.get('id'))
+    user_email = usuario.get('email') or ''
+    user_meta = usuario.get('user_metadata') or {}
+    app_meta = usuario.get('app_metadata') or {}
+
+    verified_name = (
+        user_meta.get('full_name')
+        or user_meta.get('nombre')
+        or (user_email.split('@')[0] if user_email else f'Usuario_{user_id[:8]}')
+    )
+    raw_role = (
+        user_meta.get('rol')
+        or user_meta.get('role')
+        or app_meta.get('role')
+        or usuario.get('role')
+        or 'abogado'
+    ).lower().strip()
+
+    # Roles jurídicos autorizados para emitir revisión jurídica humana vinculante
+    LEGAL_ROLES = {'abogado', 'relator', 'magistrado', 'auditor_juridico', 'admin', 'superadmin'}
+
+    if payload.review_type == 'revision_juridica_humana':
+        if raw_role not in LEGAL_ROLES:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Acceso denegado: el rol '{raw_role}' no cuenta con atribuciones jurídicas acreditadas para emitir revisiones jurídicas humanas vinculantes."
+            )
+        responsible_name = f"{verified_name} ({user_email})" if user_email else verified_name
+        responsible_role = f"profesional_juridico_{raw_role}"
+    else:
+        responsible_name = f"{verified_name} [Admin] ({user_email})" if user_email else f"{verified_name} [Admin]"
+        responsible_role = "administrador_sistema"
+
     from app.services import conector_corte_constitucional as conector
     return await conector.review_triage_document(
         document_id=payload.document_id,
         decision=payload.decision,
         reason=payload.reason,
         review_type=payload.review_type,
-        responsible_name=payload.responsible_name or f"admin_{str(uid)[:8]}",
-        responsible_role=payload.responsible_role,
+        responsible_id=user_id,
+        responsible_name=responsible_name,
+        responsible_role=responsible_role,
     )
 
 

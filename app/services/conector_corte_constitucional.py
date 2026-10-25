@@ -1741,32 +1741,32 @@ async def discover_incremental_soda_rulings(
             rows = res.json()
             candidates = []
             
-            # Obtener sentencias ya registradas en descubrimientos para evitar duplicidad
-            known_sentencias: set[str] = set()
+            # Obtener sentencias y metadatos ya registrados en descubrimientos
+            known_records: dict[str, dict] = {}
             if key:
                 try:
                     desc_rows = await store.db_request(
                         "GET",
-                        "despacho_conector_descubrimientos?select=sentencia",
+                        "despacho_conector_descubrimientos?select=sentencia,magistrado,sala,expediente,proceso,tema,fecha,source_status,document_id",
                         key,
                         service=bool(settings.SUPABASE_SERVICE_ROLE_KEY),
                     )
                     if isinstance(desc_rows, list):
-                        known_sentencias = {r["sentencia"].strip().upper() for r in desc_rows if r.get("sentencia")}
+                        known_records = {r["sentencia"].strip().upper(): r for r in desc_rows if r.get("sentencia")}
                 except Exception as e:
                     log.warning("Aviso leyendo sentencias conocidas de descubrimientos: %s", e)
 
-            for row in rows:
+            def _process_soda_row(row: dict) -> dict:
                 raw_fecha = str(row.get("fecha_sentencia") or "")[:10]
                 sentencia = (row.get("sentencia") or row.get("providencia") or "").strip().upper()
                 if not sentencia:
-                    continue
+                    return {}
                 tipo = (row.get("sentencia_tipo") or row.get("tipo") or (sentencia.split("-")[0] if "-" in sentencia else "T")).strip().upper()
                 exp_tipo = row.get("expediente_tipo") or ""
                 exp_num = row.get("expediente_numero") or ""
                 exp_full = f"{exp_tipo}-{exp_num}".strip("-") if (exp_tipo or exp_num) else (row.get("expediente") or "")
 
-                is_already_known = sentencia in known_sentencias
+                is_already_known = sentencia in known_records
 
                 candidate_dict = {
                     "sentencia": sentencia,
@@ -1781,9 +1781,17 @@ async def discover_incremental_soda_rulings(
                     "source_dataset": SODA_DATASET_ID,
                     "is_already_known": is_already_known,
                 }
-                candidates.append(candidate_dict)
+                return candidate_dict
 
-                # Registrar automáticamente en despacho_conector_descubrimientos si es nueva
+            for row in rows:
+                c_dict = _process_soda_row(row)
+                if not c_dict:
+                    continue
+                sentencia = c_dict["sentencia"]
+                is_already_known = c_dict["is_already_known"]
+                candidates.append(c_dict)
+
+                # 1. Si es nueva, registrar en despacho_conector_descubrimientos
                 if not is_already_known and key:
                     try:
                         await store.db_request(
@@ -1793,25 +1801,251 @@ async def discover_incremental_soda_rulings(
                             service=True,
                             json={
                                 "sentencia": sentencia,
-                                "tipo": tipo,
-                                "anio": candidate_dict["anio"],
-                                "fecha": candidate_dict["fecha"],
-                                "magistrado": candidate_dict["magistrado"],
-                                "sala": candidate_dict["sala"],
-                                "expediente": candidate_dict["expediente"],
-                                "proceso": candidate_dict["proceso"],
-                                "tema": candidate_dict["tema"],
+                                "tipo": c_dict["tipo"],
+                                "anio": c_dict["anio"],
+                                "fecha": c_dict["fecha"],
+                                "magistrado": c_dict["magistrado"],
+                                "sala": c_dict["sala"],
+                                "expediente": c_dict["expediente"],
+                                "proceso": c_dict["proceso"],
+                                "tema": c_dict["tema"],
                                 "source_dataset": SODA_DATASET_ID,
                                 "source_status": "discovered",
                             },
                         )
-                        known_sentencias.add(sentencia)
+                        known_records[sentencia] = c_dict
                     except Exception as e_reg:
                         log.debug("Aviso registrando descubrimiento de %s: %s", sentencia, e_reg)
 
+                # 2. Si ya existía, detectar cambios en metadatos oficiales (correcciones de magistrado, sala, etc.)
+                elif is_already_known and key:
+                    existing = known_records[sentencia]
+                    changed_fields = []
+                    for f in ("magistrado", "sala", "expediente", "proceso", "tema", "fecha"):
+                        old_v = (existing.get(f) or "").strip()
+                        new_v = (c_dict.get(f) or "").strip()
+                        if old_v and new_v and old_v.lower() != new_v.lower():
+                            changed_fields.append(f"{f}: '{old_v}' -> '{new_v}'")
+                    if changed_fields:
+                        c_dict["metadata_updated"] = True
+                        c_dict["metadata_changes"] = changed_fields
+                        try:
+                            await store.db_request(
+                                "PATCH",
+                                f"despacho_conector_descubrimientos?sentencia=eq.{sentencia}",
+                                key,
+                                service=True,
+                                json={
+                                    "magistrado": c_dict["magistrado"],
+                                    "sala": c_dict["sala"],
+                                    "expediente": c_dict["expediente"],
+                                    "proceso": c_dict["proceso"],
+                                    "tema": c_dict["tema"],
+                                    "fecha": c_dict["fecha"],
+                                    "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                                },
+                            )
+                            # Si el documento ya está en el corpus, sincronizar su metadata y registrar auditoría
+                            doc_id = existing.get("document_id")
+                            if doc_id:
+                                doc_rows = await store.db_request("GET", f"despacho_corpus_documentos?id=eq.{doc_id}&select=id,metadata", key, service=True)
+                                if isinstance(doc_rows, list) and doc_rows:
+                                    merged_meta = {**doc_rows[0].get("metadata", {}), **c_dict}
+                                    await store.db_request("PATCH", f"despacho_corpus_documentos?id=eq.{doc_id}", key, service=True, json={"metadata": merged_meta})
+                                    await store.db_request("POST", "rpc/despacho_registrar_auditoria_revision", key, service=True, json={
+                                        "p_document_id": doc_id,
+                                        "p_document_version": 1,
+                                        "p_responsible_id": "validador_automatico",
+                                        "p_responsible_name": "Sincronizador SODA (Detección de Cambios)",
+                                        "p_responsible_role": "sistema",
+                                        "p_review_type": "validacion_tecnica_automatica",
+                                        "p_decision": "approve",
+                                        "p_reason": f"Actualización de metadatos oficiales en SODA: {', '.join(changed_fields)}",
+                                        "p_validation_summary": {"changed_fields": changed_fields},
+                                        "p_previous_workflow": existing.get("source_status", "published"),
+                                        "p_new_workflow": existing.get("source_status", "published"),
+                                        "p_previous_pub": True,
+                                        "p_new_pub": True,
+                                    })
+                        except Exception as e_chg:
+                            log.warning("Aviso actualizando cambio de metadatos en %s: %s", sentencia, e_chg)
+
+            # 3. Drenado dinámico contra omisiones cuando se publican > 20 providencias entre dos sincronizaciones
+            if not seek_before_fecha and len(rows) == limit_clamped and all(not c.get("is_already_known") for c in candidates):
+                max_drain_ceiling = 100
+                while len(candidates) < max_drain_ceiling:
+                    last_c = candidates[-1]
+                    if not last_c.get("fecha") or not last_c.get("sentencia"):
+                        break
+                    drain_where = f"fecha_sentencia < '{last_c['fecha']}' or (fecha_sentencia = '{last_c['fecha']}' and sentencia < '{last_c['sentencia']}')"
+                    next_url = f"{SODA_ENDPOINT}?$where={quote(drain_where)}&$order=fecha_sentencia%20DESC,%20sentencia%20DESC&$limit={limit_clamped}"
+                    res_drain = await client.get(next_url)
+                    if res_drain.status_code != 200:
+                        break
+                    drain_rows = res_drain.json()
+                    if not drain_rows:
+                        break
+                    new_found = 0
+                    for row in drain_rows:
+                        d_cand = _process_soda_row(row)
+                        if not d_cand:
+                            continue
+                        candidates.append(d_cand)
+                        if not d_cand["is_already_known"]:
+                            new_found += 1
+                            if key:
+                                try:
+                                    await store.db_request("POST", "despacho_conector_descubrimientos", key, service=True, json={
+                                        "sentencia": d_cand["sentencia"],
+                                        "tipo": d_cand["tipo"],
+                                        "anio": d_cand["anio"],
+                                        "fecha": d_cand["fecha"],
+                                        "magistrado": d_cand["magistrado"],
+                                        "sala": d_cand["sala"],
+                                        "expediente": d_cand["expediente"],
+                                        "proceso": d_cand["proceso"],
+                                        "tema": d_cand["tema"],
+                                        "source_dataset": SODA_DATASET_ID,
+                                        "source_status": "discovered",
+                                    })
+                                    known_records[d_cand["sentencia"]] = d_cand
+                                except Exception as e_drain_reg:
+                                    log.debug("Aviso en drenado dinámico para %s: %s", d_cand["sentencia"], e_drain_reg)
+                    if new_found == 0 or len(drain_rows) < limit_clamped:
+                        break  # Encontradas sentencias ya conocidas o alcanzado el final de la colección
+
             return candidates
     except Exception as e:
-        log.warning("Error consultando SODA incrementalmente con marcas de agua: %s", e)
+        log.warning("Error consultando SODA incrementalmente con marcas de agua: %s", repr(e))
+    finally:
+        if close_client:
+            await client.aclose()
+    return []
+
+
+async def discover_retrospective_soda_rulings(
+    batch_size: int = 10,
+    client: Optional[httpx.AsyncClient] = None,
+    target_year: Optional[int] = None,
+) -> list[dict]:
+    """Revisión retrospectiva periódica para detectar providencias históricas
+    o con fechas de fallo anteriores incorporadas tardíamente al dataset SODA.
+    
+    Recorre los años en rotación circular decreciente (2025 -> 1992 -> 2025).
+    """
+    settings = get_settings()
+    key = settings.SUPABASE_SERVICE_ROLE_KEY.strip() or settings.SUPABASE_ANON_KEY.strip()
+
+    status_st = await get_connector_status()
+    retro_cursor = status_st.get("retrospective_cursor") or {}
+    current_year = target_year or int(retro_cursor.get("year") or (datetime.now(timezone.utc).year - 1))
+    offset = int(retro_cursor.get("offset") or 0)
+
+    if current_year < 1992:
+        current_year = datetime.now(timezone.utc).year - 1
+        offset = 0
+
+    where_clause = f"fecha_sentencia >= '{current_year}-01-01T00:00:00.000' and fecha_sentencia <= '{current_year}-12-31T23:59:59.000'"
+    url = f"{SODA_ENDPOINT}?$where={quote(where_clause)}&$order=fecha_sentencia%20DESC,%20sentencia%20DESC&$limit={batch_size}&$offset={offset}"
+
+    close_client = False
+    if client is None:
+        client = httpx.AsyncClient(headers={"User-Agent": USER_AGENT}, timeout=20.0)
+        close_client = True
+
+    try:
+        res = await client.get(url)
+        if res.status_code == 200:
+            rows = res.json()
+            if not rows:
+                next_year = current_year - 1
+                if next_year < 1992:
+                    next_year = datetime.now(timezone.utc).year - 1
+                if key:
+                    await store.db_request(
+                        "PATCH",
+                        "despacho_conector_corte_estado?id=eq.corte_constitucional",
+                        key,
+                        service=True,
+                        json={"batch_progress": {"retrospective_cursor": {"year": next_year, "offset": 0}}},
+                    )
+                return []
+
+            known_sentencias = set()
+            if key:
+                desc_rows = await store.db_request("GET", "despacho_conector_descubrimientos?select=sentencia", key, service=True)
+                if isinstance(desc_rows, list):
+                    known_sentencias = {r["sentencia"].strip().upper() for r in desc_rows if r.get("sentencia")}
+
+            discovered_retro = []
+            for row in rows:
+                sentencia = (row.get("sentencia") or row.get("providencia") or "").strip().upper()
+                if not sentencia:
+                    continue
+                raw_fecha = str(row.get("fecha_sentencia") or "")[:10]
+                tipo = (row.get("sentencia_tipo") or row.get("tipo") or (sentencia.split("-")[0] if "-" in sentencia else "T")).strip().upper()
+                exp_tipo = row.get("expediente_tipo") or ""
+                exp_num = row.get("expediente_numero") or ""
+                exp_full = f"{exp_tipo}-{exp_num}".strip("-") if (exp_tipo or exp_num) else (row.get("expediente") or "")
+
+                cand = {
+                    "sentencia": sentencia,
+                    "fecha": raw_fecha if len(raw_fecha) == 10 else None,
+                    "anio": int(raw_fecha[:4]) if len(raw_fecha) >= 4 and raw_fecha[:4].isdigit() else current_year,
+                    "tipo": tipo,
+                    "magistrado": (row.get("magistrado_a") or row.get("magistrado") or "").strip(),
+                    "sala": (row.get("sala") or ("Sala Plena" if tipo in ("C", "SU") else "Sala de Revisión")).strip(),
+                    "expediente": exp_full,
+                    "proceso": row.get("proceso") or ("Acción pública de inconstitucionalidad" if tipo == "C" else "Acción de tutela"),
+                    "tema": row.get("tema") or "",
+                    "source_dataset": SODA_DATASET_ID,
+                    "is_already_known": sentencia in known_sentencias,
+                    "is_retrospective": True,
+                }
+                discovered_retro.append(cand)
+
+                if sentencia not in known_sentencias and key:
+                    try:
+                        await store.db_request("POST", "despacho_conector_descubrimientos", key, service=True, json={
+                            "sentencia": sentencia,
+                            "tipo": tipo,
+                            "anio": cand["anio"],
+                            "fecha": cand["fecha"],
+                            "magistrado": cand["magistrado"],
+                            "sala": cand["sala"],
+                            "expediente": cand["expediente"],
+                            "proceso": cand["proceso"],
+                            "tema": cand["tema"],
+                            "source_dataset": SODA_DATASET_ID,
+                            "source_status": "discovered",
+                        })
+                        known_sentencias.add(sentencia)
+                    except Exception as e_reg:
+                        log.debug("Aviso registrando providencia retrospectiva %s: %s", sentencia, e_reg)
+
+            next_offset = offset + len(rows)
+            next_year = current_year
+            if len(rows) < batch_size:
+                next_year = current_year - 1
+                next_offset = 0
+                if next_year < 1992:
+                    next_year = datetime.now(timezone.utc).year - 1
+
+            if key:
+                try:
+                    await store.db_request(
+                        "PATCH",
+                        "despacho_conector_corte_estado?id=eq.corte_constitucional",
+                        key,
+                        service=True,
+                        json={"batch_progress": {"retrospective_cursor": {"year": next_year, "offset": next_offset}}},
+                    )
+                except Exception as e_cur:
+                    log.debug("Aviso actualizando cursor retrospectivo: %s", e_cur)
+
+            return discovered_retro
+    except Exception as ex:
+        log.warning("Error en revisión retrospectiva SODA: %s", ex)
     finally:
         if close_client:
             await client.aclose()
@@ -2293,11 +2527,85 @@ async def retry_pending_source_rulings(
             else:
                 failed_count += 1
                 new_retry_count = retry_count + 1
-                # Retroceso exponencial: 6h * retry_count (máx 72h)
-                backoff_hours = min(6 * new_retry_count, 72)
+
+                # 1. Diagnóstico preciso de la causa del fallo
+                err_msg = (res.get("reasons") or [res.get("message") or "Texto no disponible en Relatoría"])[0]
+                err_lower = err_msg.lower()
+                if any(w in err_lower for w in ("timeout", "connection", "502", "503", "504", "desconexión")):
+                    failure_cause = "temporary_error"
+                elif any(w in err_lower for w in ("404", "not found", "spa", "relatoría", "en proceso")):
+                    failure_cause = "pending_source"
+                elif any(w in err_lower for w in ("truncamiento", "resuelve", "ponente", "invalido")):
+                    failure_cause = "validation_failed"
+                elif any(w in err_lower for w in ("anulad", "inexistente", "retirad")):
+                    failure_cause = "permanently_unavailable"
+                else:
+                    failure_cause = "pending_source"
+
+                # 2. Progresión escalonada de reintentos
+                if failure_cause == "temporary_error":
+                    # Error temporal de red: reintento corto en 2 horas
+                    backoff_hours = 2
+                    is_dormant = False
+                    new_status = "pending_source"
+                elif failure_cause == "validation_failed":
+                    # Defecto técnico de validación: retener en triage para subsanación humana
+                    backoff_hours = 168  # 7 días
+                    is_dormant = True
+                    new_status = "validation_failed"
+                elif failure_cause == "permanently_unavailable":
+                    # Providencia formalmente anulada o retirada
+                    backoff_hours = 720  # 30 días
+                    is_dormant = True
+                    new_status = "permanently_unavailable"
+                else:
+                    # pending_source: texto en diagramación editorial
+                    # Fase frecuente progresiva: 4h, 8h, 16h, 24h, 48h, 72h
+                    if new_retry_count <= 1:
+                        backoff_hours = 4
+                    elif new_retry_count == 2:
+                        backoff_hours = 8
+                    elif new_retry_count == 3:
+                        backoff_hours = 16
+                    elif new_retry_count == 4:
+                        backoff_hours = 24
+                    elif new_retry_count == 5:
+                        backoff_hours = 48
+                    elif new_retry_count == 6:
+                        backoff_hours = 72
+                    else:
+                        # Fase latente periódica: una vez por semana (168 horas)
+                        # ¡NUNCA se clasifica como inexistente ni se elimina!
+                        backoff_hours = 168
+
+                    is_dormant = new_retry_count >= 6
+                    new_status = "pending_source"
+
                 next_retry = datetime.now(timezone.utc) + timedelta(hours=backoff_hours)
-                is_permanent = new_retry_count >= max_retries
-                new_status = "permanently_unavailable" if is_permanent else "pending_source"
+
+                # 3. Preservar historial inmutable de reintentos en metadata
+                existing_meta = item.get("metadata") or {}
+                if isinstance(existing_meta, str):
+                    try:
+                        existing_meta = json.loads(existing_meta)
+                    except Exception:
+                        existing_meta = {}
+                history = list(existing_meta.get("retry_history") or [])
+                history.append({
+                    "attempt": new_retry_count,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "cause": failure_cause,
+                    "error": err_msg[:250],
+                    "backoff_hours": backoff_hours,
+                    "next_retry_at": next_retry.isoformat(),
+                    "phase": "dormant_poll" if is_dormant else "frequent_retry",
+                })
+                updated_meta = {
+                    **existing_meta,
+                    "retry_history": history[-20:],
+                    "dormant_phase": is_dormant,
+                    "failure_cause": failure_cause,
+                }
 
                 await store.db_request(
                     "PATCH",
@@ -2306,13 +2614,21 @@ async def retry_pending_source_rulings(
                     service=True,
                     json={
                         "retry_count": new_retry_count,
-                        "next_retry_at": next_retry.isoformat() if not is_permanent else None,
+                        "next_retry_at": next_retry.isoformat(),
                         "source_status": new_status,
-                        "last_error": f"Reintento {new_retry_count}/{max_retries} fallido: texto aún no publicado en Relatoría.",
+                        "last_error": f"Reintento {new_retry_count} ({failure_cause}): {err_msg[:200]}",
                         "last_checked_at": datetime.now(timezone.utc).isoformat(),
+                        "metadata": updated_meta,
                     },
                 )
-                details.append({"sentencia": sentencia, "status": "still_pending", "retries": new_retry_count})
+                details.append({
+                    "sentencia": sentencia,
+                    "status": "still_pending",
+                    "cause": failure_cause,
+                    "retries": new_retry_count,
+                    "phase": "dormant_poll" if is_dormant else "frequent_retry",
+                    "next_retry_at": next_retry.isoformat(),
+                })
 
             await asyncio.sleep(0.3)
 
@@ -2370,6 +2686,18 @@ async def run_incremental_sync(
             limit=limit,
             watermark_fecha=watermark_fecha,
         )
+
+        # Descubrimiento retrospectivo para sentencias históricas incorporadas tardíamente
+        try:
+            retro_candidates = await discover_retrospective_soda_rulings(batch_size=5)
+            if retro_candidates:
+                new_retro = [rc for rc in retro_candidates if not rc.get("is_already_known")]
+                if new_retro:
+                    log.info("Conector Corte: Descubiertas %d providencias retrospectivas tardías.", len(new_retro))
+                    candidates.extend(new_retro)
+        except Exception as e_retro:
+            log.warning("Aviso en descubrimiento retrospectivo: %s", e_retro)
+
         discovered_count = len(candidates)
 
         validated_count = 0
